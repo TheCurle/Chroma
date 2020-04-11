@@ -1,9 +1,10 @@
 #include <kernel/chroma.h>
+#include <kernel/system/heap.h>
 
 uint8_t* Memory = ((uint8_t*)(&end));
 uint8_t MemoryStart;
-uint32_t MemoryPages;
-uint32_t MemoryLength;
+size_t MemoryBuckets;
+
 
 void InitMemoryManager() {
 
@@ -11,7 +12,8 @@ void InitMemoryManager() {
     size_t BootstructLoc = (size_t) &bootldr;
 
     size_t BootstructEnd = BootstructLoc + BootstructSize;
-    size_t MemorySize = 0, MemMapEntryCount = 0;
+    MemorySize = 0;
+    size_t MemMapEntryCount = 0;
 
     MMapEnt* MemMap = &bootldr.mmap;
 
@@ -25,39 +27,69 @@ void InitMemoryManager() {
 
 
     MemoryPages = MemorySize / PAGE_SIZE;
-    MemoryLength = MemoryPages / PAGES_PER_BUCKET;
+    MemoryBuckets = MemoryPages / PAGES_PER_BUCKET;
 
-    if(MemoryLength * PAGES_PER_BUCKET < MemoryPages)
-        MemoryLength++; // Always round up
+    if(MemoryBuckets * PAGES_PER_BUCKET < MemoryPages)
+        MemoryBuckets++; // Always round up
     
 
-    memset(Memory, 0, MemoryLength);
+    memset(Memory, 0, MemoryBuckets);
 
-    MemoryStart = (uint8_t*)PAGE_ALIGN(((uint32_t)(Memory + MemoryLength)));
+    MemoryStart = (uint8_t*) PAGE_ALIGN((size_t)(Memory + MemoryBuckets));
 
 
     SerialPrintf("Initializing Memory.\r\n");
 
     SerialPrintf("%u MB of memory detected.\r\n", (MemorySize / 1024) / 1024);
 
-    for(size_t i = 0; i < MemoryLength; i++) {
+    for(size_t i = 0; i < MemoryBuckets; i++) {
         if(Memory[i] != 0)
             SerialPrintf("Memory at 0x%p is not empty!", Memory + i);
     }
 
 }
 
-size_t AllocatePage() {
-    size_t FreePage = FirstFreePage();
+
+void ListMemoryMap() {
+
+    SerialPrintf("BIOS-Provided memory map:\r\n");
+
+
+
+    for(MMapEnt* MapEntry = &bootldr.mmap; MapEntry < (size_t) &bootldr + bootldr.size; MapEntry++) {
+        char EntryType[8] = {0};
+        switch(MMapEnt_Type(MapEntry)) {
+            case MMAP_FREE:
+                memcpy(EntryType, "FREE", 5);
+                break;
+            case MMAP_USED:
+                memcpy(EntryType, "RESERVED", 8);
+                break;
+            case MMAP_ACPI:
+                memcpy(EntryType, "ACPI", 4);
+                break;
+            case MMAP_MMIO:
+                memcpy(EntryType, "MMIO", 4);
+                break;
+        }
+
+        SerialPrintf("[ mem 0x%p-0x%p] %s\r\n", MMapEnt_Ptr(MapEntry), MMapEnt_Ptr(MapEntry) + MMapEnt_Size(MapEntry), EntryType);
+
+    }
+
+}
+
+size_t AllocateFrame() {
+    size_t FreePage = SeekFrame();
     SET_BIT(FreePage);
     return FreePage;
 }
 
-void FreePage(size_t Page) {
-    UNSET_BIT(Page);
+void FreeFrame(size_t Frame) {
+    UNSET_BIT(Frame);
 }
 
-size_t FirstFreePage() {
+size_t SeekFrame() {
     for(size_t i = 0; i < MemoryPages; i++) {
         if(!READ_BIT(i))
             return i;
@@ -70,24 +102,24 @@ size_t FirstFreePage() {
 void MemoryTest() {
     SerialPrintf("Initializing basic memory test..\r\n");
     bool Passed = true;
-    size_t FirstPage = FirstFreePage();
-    void* FirstPageAlloc = AllocatePage();
-    size_t SecondPage = FirstFreePage();
-    void* SecondPageAlloc = AllocatePage();
+    size_t FirstPage = SeekFrame();
+    void* FirstPageAlloc = (void*) AllocateFrame();
+    size_t SecondPage = SeekFrame();
+    void* SecondPageAlloc = (void*) AllocateFrame();
 
     if(!(FirstPage == 0 && SecondPage == 1)) {
         Passed = false;
         SerialPrintf("First iteration: Failed, First page %x, Second page %x.\r\n", FirstPage, SecondPage);
     }
     
-    FreePage(SecondPage);
-    SecondPage = FirstFreePage();
+    FreeFrame(SecondPage);
+    SecondPage = SeekFrame();
 
     if(SecondPage != 1)
         Passed = false;
 
-    FreePage(FirstPage);
-    FirstPage = FirstFreePage();
+    FreeFrame(FirstPage);
+    FirstPage = SeekFrame();
 
     if(FirstPage != 0)
         Passed = false;

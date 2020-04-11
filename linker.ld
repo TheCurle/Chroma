@@ -9,7 +9,8 @@ PHDRS
 
 SECTIONS
 {
-	. = 0xffffffffffe00000;
+	. = 0xFFFFFFFFFFE00000;
+	LoadAddr = .;
 	bootldr = .; . += 4096;
 	environment = .; . += 4096;
 

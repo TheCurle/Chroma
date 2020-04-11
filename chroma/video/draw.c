@@ -39,7 +39,7 @@ void InitPrint() {
     PrintInfo.charScale = 2;
 
     PrintInfo.charPosX = 0;
-    PrintInfo.charPosY = 0;
+    PrintInfo.charPosY = 1;
 
     PrintInfo.scrlMode = 0;
 
@@ -68,23 +68,23 @@ static void DrawChar(const char character, size_t x, size_t y) {
                 X++;
             }
 
-            if((FONT[character][Row * Y + X] >> (Bit & 0x7)) & 1) {
-                for(uint32_t ScaleY = 0; ScaleY < PrintInfo.charScale; ScaleY++) {
-                    for(uint32_t ScaleX = 0; ScaleX < PrintInfo.charScale; ScaleX++) {
+            // This one is crazy. Stick with me.
+
+            if((FONT[character][Row * Y + X] >> (Bit & 0x7)) & 1) { // Check the bit in the bitmap, if it's solid..
+                for(uint32_t ScaleY = 0; ScaleY < PrintInfo.charScale; ScaleY++) { // Take care of the scale height
+                    for(uint32_t ScaleX = 0; ScaleX < PrintInfo.charScale; ScaleX++) { // And the scale width
                     
-                        size_t offset = ((y * bootldr.fb_width + x) + 
-                                PrintInfo.charScale * (Row * bootldr.fb_width + Bit) + 
-                                (ScaleY * bootldr.fb_width + ScaleX) + 
-                                PrintInfo.charScale * 1 * PrintInfo.charWidth) - 10;  
+                        size_t offset = ((y * bootldr.fb_width + x) +  // Calculate the offset from the framebuffer
+                                PrintInfo.charScale * (Row * bootldr.fb_width + Bit) + // With the appropriate scale
+                                (ScaleY * bootldr.fb_width + ScaleX) +  // In X and Y
+                                PrintInfo.charScale * 1 * PrintInfo.charWidth) - 10;  // With some offset to start at 0
                         
-                        // This one is crazy. Stick with me.
-                        *(uint32_t* )(&fb + offset * 4)// Offset from the framebuffer, find the pixel..
-                        // and find which column we need to be in. Multiply by 4 to navigate the 4bpp array,
-                                = PrintInfo.charFGColor; // And set the color of the pixel.
+                        *(uint32_t* )(&fb + offset * 4) // And use it to set the correct pixel on the screen
+                                = PrintInfo.charFGColor; // In the set foreground color
                     }
                 }
             } else {
-                // We need to draw the pixel transparently..
+                // We need to draw the pixel transparently, using the background color
                 for(uint32_t ScaleY = 0; ScaleY < PrintInfo.charScale; ScaleY++) {
                     for(uint32_t ScaleX = 0; ScaleX < PrintInfo.charScale; ScaleX++) {
                         if(PrintInfo.charHLColor != 0xFF000000) {
@@ -93,7 +93,7 @@ static void DrawChar(const char character, size_t x, size_t y) {
                                     (ScaleY * bootldr.fb_width + ScaleX) + 
                                     PrintInfo.charScale * 1 * PrintInfo.charWidth) - 10;
                             if( y == 0 && x == 0){
-                            SerialPrintf("Writing first pixel at %x\r\n", offset);
+                                //SerialPrintf("Writing first pixel at %x\r\n", offset);
                             }
 
                           *(uint32_t*)(&fb + offset *4)
@@ -190,8 +190,8 @@ void DrawPixel(uint32_t x, uint32_t y, uint32_t color) {
     } else if(y > bootldr.fb_height) {
         DrawPixel(x, y - bootldr.fb_height, color);
     } else {
-        *((uint32_t*) (&fb + (y * bootldr.fb_scanline + x) * 4)) = color;
-        SerialPrintf("Drawing a pixel at %d, %d with color 0x%x\r\n", x, y, color);
+        *((uint32_t*) (&fb + (y * bootldr.fb_width + x) * 4)) = color;
+        //SerialPrintf("Drawing a pixel at %d, %d with color 0x%x\r\n", x, y, color);
     }
 }
 
@@ -226,6 +226,21 @@ static void ProgressCursor() {
     ProgressCursorS(1);
 }
 
+static void Backspace() {
+
+    SerialPrintf("Backspacing from %d to %d\r\n", PrintInfo.charPosX, PrintInfo.charPosX - 1);
+    if(PrintInfo.charPosX - 1 <= 0) {
+        if(PrintInfo.charPosY - 1 <= 0) {
+            PrintInfo.charPosY = 0;
+        } else {
+            PrintInfo.charPosY--;
+        }
+        PrintInfo.charPosX = 0;
+    } else {
+        PrintInfo.charPosX -= 1;
+    }
+}
+
 void WriteChar(const char character) {
 
     //size_t y = PrintInfo.charPos / RowsWidth * (PrintInfo.charScale * PrintInfo.charHeight);
@@ -233,18 +248,14 @@ void WriteChar(const char character) {
 
     switch(character) {
         case '\b':
-            if(PrintInfo.charPosX - 1 == 0) {
-                if(PrintInfo.charPosY - 1 == 0) {
-                    PrintInfo.charPosY = 0;
-                } else {
-                    PrintInfo.charPosY--;
-                }
-            } else {
-                PrintInfo.charPosX = 0;
-            }
+            Backspace();
+            DrawChar((char) 32, PrintInfo.charPosX, PrintInfo.charPosY);
             break;
         case '\n':
             Newline();
+            break;
+        case '\t':
+            ProgressCursorS(4);
             break;
         default:
             DrawChar(character, PrintInfo.charPosX, PrintInfo.charPosY);
@@ -255,10 +266,48 @@ void WriteChar(const char character) {
 
 }
 
-
-
 void WriteString(const char* string) {
     for(int i = 0; i < strlen(string); i++) {
         WriteChar(string[i]);
+    }
+}
+
+void WriteStringWithFont(const char *inChar)
+{
+    psf_t *font = (psf_t*) &_binary_font_psf_start;
+
+    int drawX, drawY, kx = 0, fontLine, bitMask, offset;
+
+    int bytesPerLine = ( font -> glyphWidth + 7 ) / 8;
+
+    while(*inChar) {
+        unsigned char *glyph = 
+            (unsigned char*) &_binary_font_psf_start
+            + font->headerSize 
+            + (*inChar > 0 && *inChar < font->numGlyphs ? *inChar : 0) *
+            font->glyphSize;
+
+
+        offset = (kx * (font->glyphWidth + 1) * 4);
+
+        for( drawY = 0; drawY < font->glyphHeight ; drawY++) {
+            fontLine = offset;
+            bitMask = 1 << (font->glyphWidth - 1);
+            
+            for( drawX = 0; drawX < font->glyphWidth; drawX++) {
+
+                *((uint32_t*)((uint64_t) &fb + fontLine)) =
+                    ((int) *glyph) & (bitMask) ? 0xFFFFFF : 0;
+                bitMask >>= 1;
+                fontLine += 4;
+
+            }
+
+            *((uint32_t*)((uint64_t) &fb + fontLine)) = 0;
+            glyph += bytesPerLine;
+            offset += bootldr.fb_scanline;
+        }
+
+        inChar++; kx++;
     }
 }
