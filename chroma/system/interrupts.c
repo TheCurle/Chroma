@@ -49,8 +49,7 @@ void ISR_Common(INTERRUPT_FRAME* Frame, size_t Exception) {
 		FillScreen(0x0000FF00);
 		/* ExceptionStrings is an array of c-strings defined in kernel.h */
 		
-		//serialPrint(ExceptionStrings[Exception]);
-		//serialPrint(" Exception.\r\n");
+		SerialPrintf("%s exception!\r\n", ExceptionStrings[Exception]);
 		//printf("%s exception!", ExceptionStrings[Exception]);
 		//panic();
 	}
@@ -61,10 +60,10 @@ void ISR_Common(INTERRUPT_FRAME* Frame, size_t Exception) {
 void ISR_Error_Common(INTERRUPT_FRAME* Frame, size_t ErrorCode, size_t Exception) {
 	if(Exception < 32) {
 
-		FillScreen(0x00FF0000);
+		FillScreen(0x0000FF00);
 		
 		SerialPrintf("ISR Error %d raised, EC %d!\r\n", Exception, ErrorCode);
-
+		SerialPrintf("%s exception!\r\n", ExceptionStrings[Exception]);
 		while(true) {}
 		//serialPrint(ExceptionStrings[Exception]);
 		//serialPrintf(" Exception. Context given: %d\r\n", Frame->ErrorCode);
@@ -268,7 +267,26 @@ __attribute__((interrupt)) void ISR13Handler(INTERRUPT_FRAME* Frame, size_t Erro
 	ISR_Error_Common(Frame, ErrorCode, 13); // General Protection
 }
 __attribute__((interrupt)) void ISR14Handler(INTERRUPT_FRAME* Frame, size_t ErrorCode) {
-	ISR_Error_Common(Frame, ErrorCode, 14);
+	__asm__ __volatile__("sti");
+
+	SerialPrintf("Page fault! Caused by: [\r\n");
+
+	size_t FaultAddr = ReadControlRegister(2);
+	uint8_t FaultPres = 	ErrorCode & 0x1;
+	uint8_t FaultRW = 		ErrorCode & 0x2;
+	uint8_t FaultUser = 	ErrorCode & 0x4;
+	uint8_t FaultReserved = ErrorCode & 0x8;
+	uint8_t FaultInst = 	ErrorCode & 0x10;
+
+	if(!FaultPres) SerialPrintf("Accessed a page that isn't present.\r\n");
+	if(FaultRW || FaultUser) SerialPrintf("Accessed a Read-Only page.\r\n");
+	if(FaultReserved) SerialPrintf("Overwrote reserved bits.\r\n");
+	if(FaultInst) SerialPrintf("\"Instruction Fetch\"");
+
+	SerialPrintf("];");	
+
+	
+	ISR_Error_Common(Frame, ErrorCode, 14); // Page Fault
 }
 __attribute__((interrupt)) void ISR15Handler(INTERRUPT_FRAME* Frame) {
 	ISR_Common(Frame, 15);

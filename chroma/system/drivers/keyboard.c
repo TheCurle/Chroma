@@ -79,7 +79,7 @@ void UpdateKeyboard(uint8_t msg) {
     if(msg & 0x80) {
 
     } else {
-        SerialPrintf("Key pressed %c\r\n", keys[msg]);
+        SerialPrintf("Key pressed: [\%c]\r\n", keys[msg]);
         WriteChar(keys[msg]);
     }
 
