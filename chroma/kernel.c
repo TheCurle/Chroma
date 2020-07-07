@@ -15,6 +15,7 @@ void _start(void) {
     InitPrint();
 
     WriteStringWithFont("Initty Testing");
+    WriteStringWithFont("Lenny");
 
     SetupInitialGDT();
     SetupIDT();
