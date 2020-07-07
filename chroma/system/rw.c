@@ -41,10 +41,9 @@ size_t ReadModelSpecificRegister(size_t MSR) {
 }
 
 size_t WriteModelSpecificRegister(size_t MSR, size_t Data) {
-    size_t DataLow = 0, DataHigh = 0;
 
-    DataLow = ((uint32_t*) &Data)[0];
-    DataHigh = ((uint32_t*) &Data)[1];
+    const size_t DataLow = Data & 0x00000000ffffffff;
+    const size_t DataHigh = (Data & 0xffffffff00000000) >> 32;
 
     __asm__ __volatile__ ("wrmsr" : : "a" (DataLow), "c" (MSR), "d" (DataHigh) :);
 
@@ -104,6 +103,8 @@ size_t ReadControlRegister(int CRX) {
             __asm__ __volatile__ ("pushfq\n\t" "popq %[dest]" : [dest] "=r" (Data) : :);
             break;
         default:
+            SerialPrintf("invalid crx read %x\r\n",CRX);
+            Data = 0xdeadbeef;
             break;
     }
 
@@ -148,9 +149,12 @@ size_t ReadExtendedControlRegister(size_t XCRX) {
     return (RegHigh << 32 | RegLow);
 }
 
+//TODO: make this just have an assert as returning data for a write to catch
+// errors that shoudlunt really happen doesent make alot of sense
 size_t WriteExtendedControlRegister(size_t XCRX, size_t Data){
-
-    __asm__ __volatile__("xsetbv" : : "a" ( ((uint32_t*) &Data)[0]), "c" (XCRX), "d" ( ((uint32_t*) &Data)[1] ) :);
+    uint32_t DataLow = Data & 0xffffffff;
+    uint32_t DataHigh = (Data & 0xffffffff00000000) >> 32;
+    __asm__ __volatile__("xsetbv" : : "a" (DataLow), "c" (XCRX), "d" (DataHigh) :);
     return Data;
 }
 

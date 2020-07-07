@@ -2,7 +2,7 @@
 #include <kernel/system/heap.h>
 
 uint8_t* Memory = ((uint8_t*)(&end));
-uint8_t MemoryStart;
+uint8_t* MemoryStart;
 size_t MemoryBuckets;
 
 
@@ -56,7 +56,7 @@ void ListMemoryMap() {
 
 
 
-    for(MMapEnt* MapEntry = &bootldr.mmap; MapEntry < (size_t) &bootldr + bootldr.size; MapEntry++) {
+    for(MMapEnt* MapEntry = &bootldr.mmap; (size_t)MapEntry < (size_t)&environment; MapEntry++) {
         char EntryType[8] = {0};
         switch(MMapEnt_Type(MapEntry)) {
             case MMAP_FREE:
@@ -103,9 +103,9 @@ void MemoryTest() {
     SerialPrintf("Initializing basic memory test..\r\n");
     bool Passed = true;
     size_t FirstPage = SeekFrame();
-    void* FirstPageAlloc = (void*) AllocateFrame();
+    /*(void* FirstPageAlloc = (void*)*/ AllocateFrame();
     size_t SecondPage = SeekFrame();
-    void* SecondPageAlloc = (void*) AllocateFrame();
+    /*void* SecondPageAlloc = (void*)*/ AllocateFrame();
 
     if(!(FirstPage == 0 && SecondPage == 1)) {
         Passed = false;

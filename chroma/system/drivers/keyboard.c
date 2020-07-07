@@ -36,6 +36,18 @@ char keys[128] = {
 
 
 
+void KbdEcho() {
+    if(!KbdFlags.EchoCount) {
+        if(!KbdFlags.Echo) {
+            Send8042(0xEE);
+        }
+    } else {
+        KbdFlags.EchoCount = 0;
+        KbdFlags.Echo = 0;
+    }
+}
+
+
 void UpdateKeyboard(uint8_t msg) {
 
     InputBuffer[0] = msg;
@@ -79,21 +91,10 @@ void UpdateKeyboard(uint8_t msg) {
     if(msg & 0x80) {
 
     } else {
-        SerialPrintf("Key pressed: [\%c]\r\n", keys[msg]);
+        SerialPrintf("Key pressed: [\\%c]\r\n", keys[msg]);
         WriteChar(keys[msg]);
     }
 
-}
-
-void KbdEcho() {
-    if(!KbdFlags.EchoCount) {
-        if(!KbdFlags.Echo) {
-            Send8042(0xEE);
-        }
-    } else {
-        KbdFlags.EchoCount = 0;
-        KbdFlags.Echo = 0;
-    }
 }
 
 void Send8042(size_t info) {

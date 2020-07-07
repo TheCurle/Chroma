@@ -36,6 +36,51 @@
 #include <kernel/system/interrupts.h>
 #include <stdbool.h>
 
+#define UNUSED(X) ((void)X)
+
+const char* ExceptionStrings[] = {
+	"Division by Zero",
+	"Debug",
+	"Non Maskable Interrupt",
+	"Breakpoint", 
+	"Into Detected Overflow",
+	"Out of Bounds",
+	"Invalid Opcode",
+	"No Coprocessor",
+	"Double Fault",
+	"Coprocessor Segment Overrun",
+	"Bad TSS",
+	"Segment Not Present",
+	"Stack Fault",
+	"General Protection Fault",
+	"Page Fault",
+	"Unknown Interrupt",
+	"Coprocessor Fault",
+	"Alignment Check",
+	"Machine Check",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved"
+};
+
+typedef void (*IRQHandler)(INTERRUPT_FRAME* Frame);
+
+IRQHandler IRQ_Handlers[16] = {
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+};
+
+
 typedef unsigned long long int uword_t;
 
 /* All of the ISR routines call this function for now.
@@ -43,6 +88,9 @@ typedef unsigned long long int uword_t;
    ! Be careful! 
 */
 void ISR_Common(INTERRUPT_FRAME* Frame, size_t Exception) {
+
+	UNUSED(Frame);
+
 	/* Only the first 32 ISR/IRQs are reserved for exceptions by the CPU. We can handle up to 512 interrupts total, though. */
 	if(Exception < 32) {
 
@@ -58,6 +106,9 @@ void ISR_Common(INTERRUPT_FRAME* Frame, size_t Exception) {
 /* The common handler for exceptions that throw error codes, which give us useful insight
 	into what went wrong. In pure Curle style, though, we just ignore the error code. */
 void ISR_Error_Common(INTERRUPT_FRAME* Frame, size_t ErrorCode, size_t Exception) {
+
+	UNUSED(Frame);
+
 	if(Exception < 32) {
 
 		FillScreen(0x0000FF00);
@@ -125,11 +176,14 @@ void InstallIRQ(int IRQ, void (*Handler)(INTERRUPT_FRAME* Frame)) {
 
 /* A simple wrapper that unlinks a function pointer, rendering the IRQ unused. */
 void UninstallIRQHandler(int IRQ) {
-	IRQ_Handlers[IRQ] = 0; // 0 is used in the common check to make sure that the function is callable.
+	IRQ_Handlers[IRQ] = NULL; // 0 is used in the common check to make sure that the function is callable.
 	// This removes this irq from that check, ergo the function will no longer be called.
 }
 
 void EmptyIRQ(INTERRUPT_FRAME* frame) {
+
+	UNUSED(frame);
+
 	// Flash the borders green, then back to blue
 
 	for(size_t y = 0; y < bootldr.fb_height; y++) {
@@ -174,6 +228,8 @@ void EmptyIRQ(INTERRUPT_FRAME* frame) {
 }
 
 static void KeyboardCallback(INTERRUPT_FRAME* frame) {
+
+	UNUSED(frame);
 
 	uint8_t msg = ReadPort(0x60, 1);
 
@@ -271,7 +327,7 @@ __attribute__((interrupt)) void ISR14Handler(INTERRUPT_FRAME* Frame, size_t Erro
 
 	SerialPrintf("Page fault! Caused by: [\r\n");
 
-	size_t FaultAddr = ReadControlRegister(2);
+	//size_t FaultAddr = ReadControlRegister(2);
 	uint8_t FaultPres = 	ErrorCode & 0x1;
 	uint8_t FaultRW = 		ErrorCode & 0x2;
 	uint8_t FaultUser = 	ErrorCode & 0x4;
