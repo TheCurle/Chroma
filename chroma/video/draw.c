@@ -70,7 +70,7 @@ static void DrawChar(const char character, size_t x, size_t y) {
 
             // This one is crazy. Stick with me.
 
-            if((FONT[character][Row * Y + X] >> (Bit & 0x7)) & 1) { // Check the bit in the bitmap, if it's solid..
+            if((FONT[(int)character][Row * Y + X] >> (Bit & 0x7)) & 1) { // Check the bit in the bitmap, if it's solid..
                 for(uint32_t ScaleY = 0; ScaleY < PrintInfo.charScale; ScaleY++) { // Take care of the scale height
                     for(uint32_t ScaleX = 0; ScaleX < PrintInfo.charScale; ScaleX++) { // And the scale width
                     
@@ -267,7 +267,7 @@ void WriteChar(const char character) {
 }
 
 void WriteString(const char* string) {
-    for(int i = 0; i < strlen(string); i++) {
+    for(unsigned int i = 0; i < strlen(string); i++) {
         WriteChar(string[i]);
     }
 }
@@ -276,15 +276,15 @@ void WriteStringWithFont(const char *inChar)
 {
     psf_t *font = (psf_t*) &_binary_font_psf_start;
 
-    int drawX, drawY, kx = 0, fontLine, bitMask, offset;
+    unsigned int drawX, drawY, kx = 0, fontLine, bitMask, offset;
 
-    int bytesPerLine = ( font -> glyphWidth + 7 ) / 8;
+    const unsigned int bytesPerLine = ( font -> glyphWidth + 7 ) / 8;
 
     while(*inChar) {
         unsigned char *glyph = 
             (unsigned char*) &_binary_font_psf_start
             + font->headerSize 
-            + (*inChar > 0 && *inChar < font->numGlyphs ? *inChar : 0) *
+            + (*inChar > 0 && *inChar < (int)font->numGlyphs ? *inChar : 0) *
             font->glyphSize;
 
 

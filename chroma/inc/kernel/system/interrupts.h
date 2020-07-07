@@ -1,41 +1,7 @@
 #pragma once
 #include <stddef.h>
 
-static const char* ExceptionStrings[] = {
-	"Division by Zero",
-	"Debug",
-	"Non Maskable Interrupt",
-	"Breakpoint", 
-	"Into Detected Overflow",
-	"Out of Bounds",
-	"Invalid Opcode",
-	"No Coprocessor",
-	"Double Fault",
-	"Coprocessor Segment Overrun",
-	"Bad TSS",
-	"Segment Not Present",
-	"Stack Fault",
-	"General Protection Fault",
-	"Page Fault",
-	"Unknown Interrupt",
-	"Coprocessor Fault",
-	"Alignment Check",
-	"Machine Check",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved"
-};
-
+extern const char* ExceptionStrings[];
 
 
 typedef struct __attribute__((packed)) {
@@ -55,10 +21,10 @@ typedef struct __attribute__((packed)) {
     size_t ss;
 } EXCEPTION_FRAME;
 
-static void* IRQ_Handlers[16] = {
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0
-};
+
+typedef void (*IRQHandler)(INTERRUPT_FRAME* Frame);
+
+extern IRQHandler IRQ_Handlers[16];
 
 void IRQ_Common(INTERRUPT_FRAME* Frame, size_t Interupt);
 void ISR_Common(INTERRUPT_FRAME* Frame, size_t Interrupt);

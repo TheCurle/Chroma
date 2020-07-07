@@ -1,6 +1,6 @@
 #include <kernel/chroma.h>
 
-__attribute__((aligned(4096))) static size_t Pagetable[512] = {0};
+//__attribute__((aligned(4096))) static size_t Pagetable[512] = {0};
 
 #define LAST_ENTRY 0xFF8
 
@@ -72,7 +72,7 @@ void InitPaging() {
     SET_ADDRESS(PT_KERNEL + LAST_ENTRY, 0xF14003);
     MappingIterations = 1;
     // For every core:
-    for(size_t i = 0; i < (bootldr.numcores + 3) >> 2; i++) {
+    for(size_t i = 0; i < (bootldr.numcores + 3U) >> 2; i++) {
         // PT_KERNEL[512 - (iterations + 1)] = 0x14003 + (iterations * page-width) 
         SET_ADDRESS(PT_KERNEL + LAST_ENTRY - (MappingIterations * 8), 0xF14003 + (4096 * MappingIterations));
         MappingIterations++;
@@ -115,7 +115,7 @@ void InitPagingOldImpl() {
 
     // Clear space for our pagetable
     size_t PagetableDest = 0x1000;
-    memset(PagetableDest, 0, 4096);
+    memset((char*)PagetableDest, 0, 4096);
 
     // Start setting pagetable indexes
     *((size_t*)PagetableDest) = 0x2003; // PDP at 0x2000, present & r/w

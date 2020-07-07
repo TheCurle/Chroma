@@ -29,6 +29,6 @@ SET(src_no_sse
 set_property(SOURCE ${src_no_sse} PROPERTY COMPILE_FLAGS -mgeneral-regs-only)
 
 add_executable(kernel.elf ${src_files} ${src_no_sse} font.o)
-target_compile_options(kernel.elf PRIVATE -ffreestanding -O2 -Wall -Wextra -v -fPIC)
+target_compile_options(kernel.elf PRIVATE -ffreestanding -O2 -Wall -Wextra -Wall -Werror -pedantic -fPIC)
 target_link_options(kernel.elf PRIVATE -T linker.ld -ffreestanding -O2 -nostdlib -lgcc)
 
