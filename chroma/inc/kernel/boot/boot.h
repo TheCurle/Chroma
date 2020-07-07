@@ -90,7 +90,37 @@ typedef struct {
       uint64_t unused2;
       uint64_t unused3;
       uint64_t unused4;
-    } aarch64;
+    } aarch64;    
+    struct { /* redundancy; may remove if not used */
+      uint64_t acpi_ptr;
+      uint64_t mmio_ptr;
+      uint64_t bios_ptr;
+      uint64_t unused0;
+      uint64_t unused1;
+      uint64_t unused2;
+      uint64_t unused3;
+      uint64_t unused4;
+    } ppc64;
+    struct { /* redundancy; may remove if not used */
+      uint64_t acpi_ptr;
+      uint64_t mmio_ptr;
+      uint64_t bios_ptr;
+      uint64_t unused0;
+      uint64_t unused1;
+      uint64_t unused2;
+      uint64_t unused3;
+      uint64_t unused4;
+    } mips;
+    struct { /* redundancy; may remove if not used */
+      uint64_t acpi_ptr;
+      uint64_t mmio_ptr;
+      uint64_t bios_ptr;
+      uint64_t unused0;
+      uint64_t unused1;
+      uint64_t unused2;
+      uint64_t unused3;
+      uint64_t unused4;
+    } sparc;
   } arch;
 
   /* from 128th byte, MMapEnt[], more records may follow */
