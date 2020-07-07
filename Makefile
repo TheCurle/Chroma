@@ -123,14 +123,14 @@ kernel.elf/fast:
 	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/build
 .PHONY : kernel.elf/fast
 
-chroma/kernel.o: chroma/kernel.c.o
+chroma/kernel.obj: chroma/kernel.c.obj
 
-.PHONY : chroma/kernel.o
+.PHONY : chroma/kernel.obj
 
 # target to build an object file
-chroma/kernel.c.o:
-	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/kernel.c.o
-.PHONY : chroma/kernel.c.o
+chroma/kernel.c.obj:
+	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/kernel.c.obj
+.PHONY : chroma/kernel.c.obj
 
 chroma/kernel.i: chroma/kernel.c.i
 
@@ -150,14 +150,14 @@ chroma/kernel.c.s:
 	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/kernel.c.s
 .PHONY : chroma/kernel.c.s
 
-chroma/system/cpu.o: chroma/system/cpu.c.o
+chroma/system/cpu.obj: chroma/system/cpu.c.obj
 
-.PHONY : chroma/system/cpu.o
+.PHONY : chroma/system/cpu.obj
 
 # target to build an object file
-chroma/system/cpu.c.o:
-	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/cpu.c.o
-.PHONY : chroma/system/cpu.c.o
+chroma/system/cpu.c.obj:
+	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/cpu.c.obj
+.PHONY : chroma/system/cpu.c.obj
 
 chroma/system/cpu.i: chroma/system/cpu.c.i
 
@@ -177,14 +177,14 @@ chroma/system/cpu.c.s:
 	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/cpu.c.s
 .PHONY : chroma/system/cpu.c.s
 
-chroma/system/drivers/keyboard.o: chroma/system/drivers/keyboard.c.o
+chroma/system/drivers/keyboard.obj: chroma/system/drivers/keyboard.c.obj
 
-.PHONY : chroma/system/drivers/keyboard.o
+.PHONY : chroma/system/drivers/keyboard.obj
 
 # target to build an object file
-chroma/system/drivers/keyboard.c.o:
-	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/drivers/keyboard.c.o
-.PHONY : chroma/system/drivers/keyboard.c.o
+chroma/system/drivers/keyboard.c.obj:
+	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/drivers/keyboard.c.obj
+.PHONY : chroma/system/drivers/keyboard.c.obj
 
 chroma/system/drivers/keyboard.i: chroma/system/drivers/keyboard.c.i
 
@@ -204,14 +204,14 @@ chroma/system/drivers/keyboard.c.s:
 	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/drivers/keyboard.c.s
 .PHONY : chroma/system/drivers/keyboard.c.s
 
-chroma/system/interrupts.o: chroma/system/interrupts.c.o
+chroma/system/interrupts.obj: chroma/system/interrupts.c.obj
 
-.PHONY : chroma/system/interrupts.o
+.PHONY : chroma/system/interrupts.obj
 
 # target to build an object file
-chroma/system/interrupts.c.o:
-	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/interrupts.c.o
-.PHONY : chroma/system/interrupts.c.o
+chroma/system/interrupts.c.obj:
+	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/interrupts.c.obj
+.PHONY : chroma/system/interrupts.c.obj
 
 chroma/system/interrupts.i: chroma/system/interrupts.c.i
 
@@ -231,14 +231,14 @@ chroma/system/interrupts.c.s:
 	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/interrupts.c.s
 .PHONY : chroma/system/interrupts.c.s
 
-chroma/system/memory/paging.o: chroma/system/memory/paging.c.o
+chroma/system/memory/paging.obj: chroma/system/memory/paging.c.obj
 
-.PHONY : chroma/system/memory/paging.o
+.PHONY : chroma/system/memory/paging.obj
 
 # target to build an object file
-chroma/system/memory/paging.c.o:
-	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/memory/paging.c.o
-.PHONY : chroma/system/memory/paging.c.o
+chroma/system/memory/paging.c.obj:
+	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/memory/paging.c.obj
+.PHONY : chroma/system/memory/paging.c.obj
 
 chroma/system/memory/paging.i: chroma/system/memory/paging.c.i
 
@@ -258,14 +258,14 @@ chroma/system/memory/paging.c.s:
 	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/memory/paging.c.s
 .PHONY : chroma/system/memory/paging.c.s
 
-chroma/system/memory/physmem.o: chroma/system/memory/physmem.c.o
+chroma/system/memory/physmem.obj: chroma/system/memory/physmem.c.obj
 
-.PHONY : chroma/system/memory/physmem.o
+.PHONY : chroma/system/memory/physmem.obj
 
 # target to build an object file
-chroma/system/memory/physmem.c.o:
-	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/memory/physmem.c.o
-.PHONY : chroma/system/memory/physmem.c.o
+chroma/system/memory/physmem.c.obj:
+	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/memory/physmem.c.obj
+.PHONY : chroma/system/memory/physmem.c.obj
 
 chroma/system/memory/physmem.i: chroma/system/memory/physmem.c.i
 
@@ -285,14 +285,14 @@ chroma/system/memory/physmem.c.s:
 	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/memory/physmem.c.s
 .PHONY : chroma/system/memory/physmem.c.s
 
-chroma/system/rw.o: chroma/system/rw.c.o
+chroma/system/rw.obj: chroma/system/rw.c.obj
 
-.PHONY : chroma/system/rw.o
+.PHONY : chroma/system/rw.obj
 
 # target to build an object file
-chroma/system/rw.c.o:
-	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/rw.c.o
-.PHONY : chroma/system/rw.c.o
+chroma/system/rw.c.obj:
+	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/rw.c.obj
+.PHONY : chroma/system/rw.c.obj
 
 chroma/system/rw.i: chroma/system/rw.c.i
 
@@ -312,14 +312,14 @@ chroma/system/rw.c.s:
 	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/rw.c.s
 .PHONY : chroma/system/rw.c.s
 
-chroma/system/serial.o: chroma/system/serial.c.o
+chroma/system/serial.obj: chroma/system/serial.c.obj
 
-.PHONY : chroma/system/serial.o
+.PHONY : chroma/system/serial.obj
 
 # target to build an object file
-chroma/system/serial.c.o:
-	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/serial.c.o
-.PHONY : chroma/system/serial.c.o
+chroma/system/serial.c.obj:
+	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/serial.c.obj
+.PHONY : chroma/system/serial.c.obj
 
 chroma/system/serial.i: chroma/system/serial.c.i
 
@@ -339,14 +339,14 @@ chroma/system/serial.c.s:
 	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/system/serial.c.s
 .PHONY : chroma/system/serial.c.s
 
-chroma/video/draw.o: chroma/video/draw.c.o
+chroma/video/draw.obj: chroma/video/draw.c.obj
 
-.PHONY : chroma/video/draw.o
+.PHONY : chroma/video/draw.obj
 
 # target to build an object file
-chroma/video/draw.c.o:
-	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/video/draw.c.o
-.PHONY : chroma/video/draw.c.o
+chroma/video/draw.c.obj:
+	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/video/draw.c.obj
+.PHONY : chroma/video/draw.c.obj
 
 chroma/video/draw.i: chroma/video/draw.c.i
 
@@ -366,14 +366,14 @@ chroma/video/draw.c.s:
 	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/video/draw.c.s
 .PHONY : chroma/video/draw.c.s
 
-chroma/video/print.o: chroma/video/print.c.o
+chroma/video/print.obj: chroma/video/print.c.obj
 
-.PHONY : chroma/video/print.o
+.PHONY : chroma/video/print.obj
 
 # target to build an object file
-chroma/video/print.c.o:
-	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/video/print.c.o
-.PHONY : chroma/video/print.c.o
+chroma/video/print.c.obj:
+	$(MAKE) -f CMakeFiles/kernel.elf.dir/build.make CMakeFiles/kernel.elf.dir/chroma/video/print.c.obj
+.PHONY : chroma/video/print.c.obj
 
 chroma/video/print.i: chroma/video/print.c.i
 
@@ -402,34 +402,34 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... kernel.elf"
-	@echo "... chroma/kernel.o"
+	@echo "... chroma/kernel.obj"
 	@echo "... chroma/kernel.i"
 	@echo "... chroma/kernel.s"
-	@echo "... chroma/system/cpu.o"
+	@echo "... chroma/system/cpu.obj"
 	@echo "... chroma/system/cpu.i"
 	@echo "... chroma/system/cpu.s"
-	@echo "... chroma/system/drivers/keyboard.o"
+	@echo "... chroma/system/drivers/keyboard.obj"
 	@echo "... chroma/system/drivers/keyboard.i"
 	@echo "... chroma/system/drivers/keyboard.s"
-	@echo "... chroma/system/interrupts.o"
+	@echo "... chroma/system/interrupts.obj"
 	@echo "... chroma/system/interrupts.i"
 	@echo "... chroma/system/interrupts.s"
-	@echo "... chroma/system/memory/paging.o"
+	@echo "... chroma/system/memory/paging.obj"
 	@echo "... chroma/system/memory/paging.i"
 	@echo "... chroma/system/memory/paging.s"
-	@echo "... chroma/system/memory/physmem.o"
+	@echo "... chroma/system/memory/physmem.obj"
 	@echo "... chroma/system/memory/physmem.i"
 	@echo "... chroma/system/memory/physmem.s"
-	@echo "... chroma/system/rw.o"
+	@echo "... chroma/system/rw.obj"
 	@echo "... chroma/system/rw.i"
 	@echo "... chroma/system/rw.s"
-	@echo "... chroma/system/serial.o"
+	@echo "... chroma/system/serial.obj"
 	@echo "... chroma/system/serial.i"
 	@echo "... chroma/system/serial.s"
-	@echo "... chroma/video/draw.o"
+	@echo "... chroma/video/draw.obj"
 	@echo "... chroma/video/draw.i"
 	@echo "... chroma/video/draw.s"
-	@echo "... chroma/video/print.o"
+	@echo "... chroma/video/print.obj"
 	@echo "... chroma/video/print.i"
 	@echo "... chroma/video/print.s"
 .PHONY : help
