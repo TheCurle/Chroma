@@ -1,3 +1,0 @@
-/home/noone/projects/Chroma/CMakeFiles/rebuild_cache.dir
-/home/noone/projects/Chroma/CMakeFiles/edit_cache.dir
-/home/noone/projects/Chroma/CMakeFiles/kernel.elf.dir
