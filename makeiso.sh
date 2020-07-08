@@ -1,3 +1,4 @@
+#!/bin/sh
 # generate our iso image :D
 # copy the elf to where grub wants it 
 # and delete any old ones for good measure first
