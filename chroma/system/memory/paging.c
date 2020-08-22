@@ -1,5 +1,25 @@
 #include <kernel/chroma.h>
 
+/************************
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
+ ***********************/
+
+/****************************************
+ *  W O R K    I N     P R O G R E S S  *
+ ****************************************
+ *
+ * This file contains functions for virtual memory management.
+ * 
+ * Virtual Memory Management is still a work in progress.
+ * The functions here are hold-offs from old versions of the software implemented here, as well as from the EFI version of Chroma, called Sync.
+ * 
+ * There, these functions worked, but here, under BIOS, it's a lot more difficult.
+ * It will take some time to get these functions working.
+ * 
+ */ 
+
+
 //__attribute__((aligned(4096))) static size_t Pagetable[512] = {0};
 
 #define LAST_ENTRY 0xFF8

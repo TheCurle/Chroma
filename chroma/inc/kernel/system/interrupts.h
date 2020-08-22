@@ -1,6 +1,11 @@
 #pragma once
 #include <stddef.h>
 
+/************************
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
+ ***********************/
+
 extern const char* ExceptionStrings[];
 
 

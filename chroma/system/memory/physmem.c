@@ -1,6 +1,27 @@
 #include <kernel/chroma.h>
 #include <kernel/system/heap.h>
 
+/************************
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
+ ***********************/
+
+/* This file contains functions for physical memory management.
+ *
+ * This is also called blocking, or block memory allocation.
+ * It mostly deals with the memory map handed to us by the bootloader.
+ * 
+ * It is useful in virtual memory management, because it allows us to map one block of physical memory to one page of virtual memory.
+ * 
+ * Most of the processing here is done with a bitwise mapping of blocks to allocations, normally called a memory bitmap.
+ * See heap.h for the implementation.
+ * 
+ * This file also contains memory manipulation functions, like memset and memcpy.
+ * //TODO: replace these functions with SSE2 equivalent.
+ * 
+ */ 
+
+
 uint8_t* Memory = ((uint8_t*)(&end));
 uint8_t* MemoryStart;
 size_t MemoryBuckets;

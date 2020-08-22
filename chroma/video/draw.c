@@ -1,6 +1,24 @@
 #include <kernel/chroma.h>
 #include <kernel/video/bitmapfont.h>
 
+/************************
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
+ ***********************/
+
+/* This file contains all of the draw-to-screen routines. 
+ * It (currently; 23/08/20) handles the keyboard input test routine,
+ *  moving the current character back and forth, up and down.
+ * 
+ * It also handles filling the screen with color in the case of an event,
+ *  and will be hooked into Vector and Shape of lainlib to eventually provide
+ *  geometry.
+ * 
+ * It will also eventually be plugged into stb_image to provide a way to draw PNGs
+ *  and JPGs from disk.
+ */
+
+
 #define FONT bitfont_latin
 
 static size_t strlen(const char* String) {

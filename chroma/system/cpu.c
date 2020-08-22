@@ -1,6 +1,23 @@
 #include <kernel/chroma.h>
 #include <kernel/system/interrupts.h>
 
+/************************
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
+ ***********************/
+
+/* This class provides functions for setting up and preparing the CPU for the things the kernel will do.
+ * Mainly, it allows you to:
+ * 
+ * Set up and install the GDT and IDT
+ * Refresh the Code Segment to force ourselves into our own GDT
+ * Install new ISR and IRQ handlers.
+
+ * It also has (unused) functionality for extra stacks, to be used with Non-Maskable Interrupt, Double Fault, Machine Check and Breakpoint Exceptions.
+ * //TODO
+ * 
+ */
+
 #define NMI_STACK 4096
 #define DF_STACK 4096
 #define MC_STACK 4096

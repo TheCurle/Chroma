@@ -2,6 +2,11 @@
 #include <stdint.h>
 #include <kernel/system/interrupts.h>
 
+/************************
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
+ ***********************/
+
 #define PAGE_SIZE 4096
 #define PAGES_PER_BUCKET 8
 

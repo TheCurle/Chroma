@@ -1,5 +1,14 @@
 #include <kernel/chroma.h>
 
+/************************
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
+ ***********************/
+
+/* This file serves to allow us to communicate with the computer through raw I/O.
+ * It provides interfaces for Ports and commonly used Registers (Control Registers, Model-Specific Registers, GDT, IDT..)
+ */
+
 uint32_t ReadPort(uint16_t Port, int Length) {
     uint32_t Data = 0;
     uint16_t Data16 = 0;

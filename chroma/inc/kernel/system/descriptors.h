@@ -1,6 +1,11 @@
 #include <stdint.h>
 #include <stddef.h>
 
+/************************
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
+ ***********************/
+
 typedef struct __attribute__((packed)) {
     uint16_t LowLimit;
     uint16_t BaseLow;
