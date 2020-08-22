@@ -1,5 +1,18 @@
 #include <kernel/chroma.h>
 
+/************************
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
+ ***********************/
+
+/* This file contains all of the String / Print related functions
+ *  that are required by the core of the kernel.
+ * 
+ * There will be a proper C++ std::string implementation in lainlib. 
+ * 
+ * This file also provides SerialPrintf.
+ */
+
 static size_t strlen(const char* String) {
     size_t Len = 0;
     while(String[Len] != '\0') {

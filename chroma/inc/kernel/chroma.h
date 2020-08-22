@@ -1,8 +1,13 @@
 #pragma once
 /************************
  *** Team Kitty, 2020 ***
- ***       Sync       ***
+ ***     Chroma       ***
  ***********************/
+
+/* This file serves as the central kernel header. Every file in the kernel should include this header.
+ * It provides functionality to every core component of the system, and provides unrestricted cross-communication between modules.
+ * It also provides the symbols for the framebuffer and configuration file, which are both equually important.
+ */
 
 #include <stdint.h>
 #include <stddef.h>
@@ -12,6 +17,7 @@
 #include <kernel/boot/boot.h>
 #include <kernel/system/io.h>
 #include <kernel/system/memory.h>
+#include <kernel/system/pci.h>
 
 extern size_t LoadAddr;
 extern bootinfo bootldr;

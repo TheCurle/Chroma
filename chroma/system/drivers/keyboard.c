@@ -1,5 +1,20 @@
 #include <kernel/chroma.h>
 
+/************************
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
+ ***********************/
+
+/* This file contains (mostly unused) implementations of a full PS/2 keyboard driver.
+ * 
+ * It provides provisions for full 2-way communication, as well as auxiliary key commands.
+ * //TODO: Media keys?
+ * 
+ * Once this driver is to a workable state, I would like to start adding a proper keyboard buffer,
+ *   which will integrate with a window system.
+ *
+ */
+
 char keys[128] = {
     0, 27,
     '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',

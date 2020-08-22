@@ -1,5 +1,10 @@
 #include <kernel/system/descriptors.h>
 
+/************************
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
+ ***********************/
+
 uint8_t kbdSBuffer[8];
 uint8_t InputBuffer[128];
 

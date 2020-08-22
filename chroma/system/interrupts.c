@@ -1,6 +1,6 @@
 /************************
- *** Team Kitty, 2019 ***
- ***       Sync       ***
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
  ***********************/
 
 /* This file contains all of the ISR and IRQ

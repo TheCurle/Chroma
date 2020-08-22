@@ -2,6 +2,11 @@
 #ifndef _BOOTLOADER_H_
 #define _BOOTLOADER_H_
 
+/************************
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
+ ***********************/
+
 #ifdef  __cplusplus
 extern "C" {
 #endif

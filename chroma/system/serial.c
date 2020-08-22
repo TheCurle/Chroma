@@ -1,4 +1,12 @@
 #include <kernel/chroma.h>
+/************************
+ *** Team Kitty, 2020 ***
+ ***     Chroma       ***
+ ***********************/
+
+/* This file provides functions related to the Serial port.
+ * Through this file, you send and receive text and extra debugging information if available.
+ */
 
 #define SERIAL_DATA(base)           (base)
 #define SERIAL_DLAB(base)           (base + 1)
