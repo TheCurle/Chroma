@@ -16,16 +16,14 @@
 #define PCI_CONFIG_ADDRESS 0xCF8
 #define PCI_CONFIG_DATA    0xCFC
 
-extern pci_dev_t** pci_root_devices;
-extern pci_entry_t* pci_map;
 
-int pci_init_early();
+const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_t progif);
 
-const char* pci_get_name(uint8_t devclass, uint8_t subclass, uint8_t progif);
+const char* PCIGetClassName(uint8_t devclass);
 
-int pci_enumerate_devices(pci_dev_t* root);
+void PCIEnumerate();
 
-int pci_get_config(uint16_t seg, uint8_t bus, uint8_t slot, uint8_t function, void** config);
+uint32_t PCIReadConfig(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset);
 
 typedef struct __attribute__((packed)) {
     uint8_t io_space : 1;                    // Device can respond to I/O access
@@ -171,3 +169,5 @@ typedef struct {
 } pci_entry_t;
 
 
+extern pci_dev_t** pci_root_devices;
+extern pci_entry_t* pci_map;

@@ -32,6 +32,8 @@ void _start(void) {
     SetupIDT();
     InitInterrupts();
 
+    PCIEnumerate();
+
     InitMemoryManager();
     MemoryTest();
 

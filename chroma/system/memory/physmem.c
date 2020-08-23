@@ -94,7 +94,12 @@ void ListMemoryMap() {
                 break;
         }
 
-        SerialPrintf("[ mem 0x%p-0x%p] %s\r\n", MMapEnt_Ptr(MapEntry), MMapEnt_Ptr(MapEntry) + MMapEnt_Size(MapEntry), EntryType);
+        size_t entry_from = MMapEnt_Ptr(MapEntry);
+        size_t entry_to = MMapEnt_Ptr(MapEntry) + MMapEnt_Size(MapEntry);
+
+
+        if(entry_from != 0 && entry_to != 0)
+            SerialPrintf("[ mem 0x%p-0x%p] %s\r\n", entry_from, entry_to, EntryType);
 
     }
 

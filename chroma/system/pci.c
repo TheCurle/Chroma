@@ -1,4 +1,4 @@
-#include <chroma.h>
+#include <kernel/chroma.h>
 
 /************************
  *** Team Kitty, 2020 ***
@@ -15,12 +15,17 @@
 pci_dev_t** pci_root_devices = NULL;
 pci_entry_t* pci_map = NULL;
 
+//static uint32_t PCIReadConfig(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset);
+
+//static const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_t progif);
+
+//static const char* PCIGetClassName(uint8_t devclass);
 
 void PCIEnumerate() {
 
     uint8_t bus = 0, device = 0, function = 0;
 
-    uint32_t register;
+    uint32_t registerData;
 
     uint16_t device_id, vendor_id;
 
@@ -28,23 +33,23 @@ void PCIEnumerate() {
 
     SerialPrintf("Started PCI Enumeration.");
 
-    SerialPrintf("\nPCI Scan result:");
-    for (bus = 0; bus <= 255; bus++) {
+    SerialPrintf("\nPCI Scan result:\n");
+    do {
         for (device = 0; device <= 31; device++) {
             for(function = 0; function <= 7; function++) {
-                uint32_t temp = PCIReadConfig(bus, device, 0, 0xC);             // Read BIST/Header/Latency/Cache Line register
-                uint8_t header = (uint8_t) ((temp & 0x00FF0000) >> 24);         // Header is lower byte of upper word, so mask it off and shift it down
-                uint8_t multifunction_bit = header & 0x80;                      // The multifunction bit is the highest bit of the header
+                registerData = PCIReadConfig(bus, device, 0, 0xC);                      // Read BIST/Header/Latency/Cache Line register
+                uint8_t header = (uint8_t) ((registerData & 0x00FF0000) >> 24);         // Header is lower byte of upper word, so mask it off and shift it down
+                uint8_t multifunction_bit = header & 0x80;                              // The multifunction bit is the highest bit of the header
                 
-                temp = PCIReadConfig(bus, device, function, 0);                 // Read the Vendor/Device ID register
-                uint16_t vendor_id = (uint16_t) temp & 0x0000FFFF;              // Vendor ID is bottom word
-                uint16_t device_id = (uint16_t) temp >> 16;                     // Device ID is top word
+                registerData = PCIReadConfig(bus, device, function, 0);                 // Read the Vendor/Device ID register
+                vendor_id = (uint16_t) registerData & 0x0000FFFF;                       // Vendor ID is bottom word
+                device_id = (uint16_t) (registerData & 0xFFFF0000) >> 16;               // Device ID is top word
 
-                temp = PCIReadConfig(bus, device, function, 8);                 // Read the Device Info register
-                uint8_t device_class = (uint16_t) temp >> 24;                   // Device class is top byte, so shift them down
-                uint8_t device_subclass = (uint16_t) (temp >> 16) & 0x00FF;     // Device subclass is same as header - lower byte of higher word. Shift down and mask just like before.
-                uint8_t device_progif = (uint16_t) temp & 0x0000FF00 >> 8;      // Device Programming Interface is higher byte of lower word, so mask and shift
-                uint8_t device_revision = (uint16_t) temp & 0x000000FF;         // Device revision is lower byte of whole double word. Just mask it.
+                registerData = PCIReadConfig(bus, device, function, 8);                 // Read the Device Info register
+                class_code = (uint16_t) registerData >> 24;                             // Device class is top byte, so shift them down
+                subclass_code = (uint16_t) (registerData >> 16) & 0x00FF;               // Device subclass is same as header - lower byte of higher word. Shift down and mask just like before.
+                uint8_t device_progif = (uint16_t) registerData & 0x0000FF00 >> 8;      // Device Programming Interface is higher byte of lower word, so mask and shift
+                uint8_t device_revision = (uint16_t) registerData & 0x000000FF;         // Device revision is lower byte of whole double word. Just mask it.
 
 
                 /* 0xFFFF is not a valid Vendor ID. This serves as a sanity check.
@@ -52,7 +57,7 @@ void PCIEnumerate() {
                  */
                 if(vendor_id != 0xFFFF) {
                     SerialPrintf("\n\t%x:%x:\n\t\tVendor: %x\n\t\tDevice: %x", bus, device, vendor_id, device_id);
-                    SerialPrintf("\n\t\tClass: %s\n\t\tDevice Type: %s\n\t\tRevision: %s", PCIGetClassName(device_class), PCIGetDeviceName_Subclass(device_class, device_subclass, device_progif), device_revision);
+                    SerialPrintf("\n\t\tClass: %s\n\t\tDevice Type: %s\n\t\tRevision: %d\n", PCIGetClassName(class_code), PCIGetDeviceName_Subclass(class_code, subclass_code, device_progif), device_revision);
                 }
 
                 /* If the PCI Device header tells us that this is not a multifunction device,
@@ -65,7 +70,7 @@ void PCIEnumerate() {
             }
             
         }
-    }
+    } while (++bus);
     
 
 }
@@ -156,7 +161,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                 }
 
                 case 0x80: return "Other";
-                default: "Unknown Mass Storage Controller";
+                default: return "Unknown Mass Storage Controller";
             }
         }
 
@@ -172,7 +177,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                 case 0x07: return "Infiniband Controller";
                 case 0x08: return "Fabric Controller";
                 case 0x80: return "Other";
-                default: "Unknown Network Controller";
+                default: return "Unknown Network Controller";
             }
         }
 
@@ -189,7 +194,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                 case 0x01: return "XGA Controller";
                 case 0x02: return "3D Controller (Not VGA-Compatible)";
                 case 0x80: return "Other";
-                default: "Unknown Display Controller";
+                default: return "Unknown Display Controller";
             }
         }
 
@@ -288,7 +293,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                         case 0x02: return "EISA-Compatible PIC";
                         case 0x03: return "I/O APIC Interrupt Controller";
                         case 0x04: return "I/O(x) APIC Interrupt Controller";
-                        default: "PIC";
+                        default: return "PIC";
                     }
                 }
                 
@@ -297,7 +302,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                         case 0x00: return "Generic 8237-Compatible DMA Controller";
                         case 0x01: return "ISA-Compatible DMA Controller";
                         case 0x02: return "EISA-Compatible DMA Controller";
-                        default: "DMA Controller";
+                        default: return "DMA Controller";
                     }
                 }
 
@@ -307,7 +312,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                         case 0x01: return "ISA-Compatible Timer";
                         case 0x02: return "EISA-Compatible Timer";
                         case 0x03: return "HPET Timer";
-                        default: "Timer";
+                        default: return "Timer";
                     }
                 }
 
@@ -315,7 +320,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                     switch(progif) {
                         case 0x00: return "Generic RTC Controller";
                         case 0x01: return "ISA-Compatible RTC Controller";
-                        default: "RTC Controller";
+                        default: return "RTC Controller";
                     }
                 }
 
@@ -480,6 +485,8 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         case 0xFF: return "Unassigned Class";
 
     }
+
+    return "Invalid Device!";
 }
 
 const char* PCIGetClassName(uint8_t devclass) {
@@ -509,5 +516,8 @@ const char* PCIGetClassName(uint8_t devclass) {
         case 0x40: return "Co-Processor";
         case 0x41: return "Reserved";
         case 0xFF: return "Unassigned Class";
+        default: return "Unknown Category";
     }
+
+    return "Invalid device!";
 }
