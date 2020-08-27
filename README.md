@@ -31,17 +31,17 @@ Chroma can be built on Windows or Linux.
 
 ### Windows
 I (Curle) use Windows for developing Chroma.  
-Simply have an [x86_64-elf-gcc](https://github.com/lordmilko/i686-elf-tools) and ld (included!) in your PATH, and run setup.bat.  
-You will need to use WSL to generate the iso; copy the created kernel.elf file to iso/boot/ as `initrd`, and run `grub-mkrescue -o chroma.iso iso/`.  
-A new system is in the works for creating this ISO natively on Windows.  
+Simply have an [x86_64-elf-gcc](https://github.com/lordmilko/i686-elf-tools) and ld (included!) in your PATH, run `cmake` in the source directory, then `make`.
+It will compile the kernel, and create an OS image with `mkbootimg`.
 
-The generated ISO works in QEMU, or on a physical test device (unlike a lot of other hobby OSes!)
 
 ### Linux
 
 The system for linux is a lot easier, but you *do* need an x86_64-elf-gcc cross compiler. You can get one from the AUR on Arch-based distros (like Manjaro), or make one yourself using [the OSDev Wiki guide](https://wiki.osdev.org/GCC_Cross-Compiler)  
-Simply run the `init.sh` to generate a makefile, then `make` to create the kernel.elf file.  
-Same thing applies as Windows now - copy the kernel.elf file to iso/boot/ as `initrd` and run `grub-mkrescue -o chroma.iso iso/`.
+Simply run the `init.sh` to generate a makefile, then `make` to create the image file.  
 
+
+The generated IMG works in QEMU, or on a physical test device (unlike a lot of other hobby OSes!)
+This means you can use any emulator or hypervisor to run it.
 
  
