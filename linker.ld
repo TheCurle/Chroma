@@ -26,7 +26,13 @@ SECTIONS
 		*(COMMON)
 	} :boot
 
-	/DISCARD/ : { *(.eh_frame) *(.comment) }
+	.eh_frame_hdr : {
+		*(.eh_frame_hdr)
+		*(.eh_frame)
+		*(.gcc_except_table)
+	} :boot
+
+	/DISCARD/ : {*(.comment) }
 
 	end = .;
 }

@@ -58,3 +58,7 @@ void InitPrint();
 
 void SetupInitialGDT();
 void SetupIDT();
+
+int Main();
+
+void Exit();
