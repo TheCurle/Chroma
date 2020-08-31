@@ -23,6 +23,10 @@
 #define MC_STACK 4096
 #define BP_STACK 4096
 
+void InvalidatePage(size_t Page) {
+    __asm__ __volatile__("invlpg (%%eax)" : : "a" (Page) );
+}
+
 __attribute__((aligned(64))) static volatile unsigned char NMIStack[NMI_STACK] = {0};
 __attribute__((aligned(64))) static volatile unsigned char DFStack[DF_STACK] = {0};
 __attribute__((aligned(64))) static volatile unsigned char MCStack[MC_STACK] = {0};
