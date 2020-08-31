@@ -42,14 +42,14 @@ void PCIEnumerate() {
                 uint8_t multifunction_bit = header & 0x80;                              // The multifunction bit is the highest bit of the header
                 
                 registerData = PCIReadConfig(bus, device, function, 0);                 // Read the Vendor/Device ID register
-                vendor_id = (uint16_t) registerData & 0x0000FFFF;                       // Vendor ID is bottom word
-                device_id = (uint16_t) (registerData & 0xFFFF0000) >> 16;               // Device ID is top word
+                vendor_id = (uint16_t) (registerData & 0x0000FFFF);                     // Vendor ID is bottom word
+                device_id = (uint16_t) (registerData >> 16);                            // Device ID is top word
 
                 registerData = PCIReadConfig(bus, device, function, 8);                 // Read the Device Info register
-                class_code = (uint16_t) registerData >> 24;                             // Device class is top byte, so shift them down
-                subclass_code = (uint16_t) (registerData >> 16) & 0x00FF;               // Device subclass is same as header - lower byte of higher word. Shift down and mask just like before.
-                uint8_t device_progif = (uint16_t) registerData & 0x0000FF00 >> 8;      // Device Programming Interface is higher byte of lower word, so mask and shift
-                uint8_t device_revision = (uint16_t) registerData & 0x000000FF;         // Device revision is lower byte of whole double word. Just mask it.
+                class_code = (uint16_t)( registerData >> 24);                           // Device class is top byte, so shift them down
+                subclass_code = (uint16_t) ((registerData >> 16) & 0x00FF);             // Device subclass is same as header - lower byte of higher word. Shift down and mask just like before.
+                uint8_t device_progif = (uint16_t) ((registerData & 0x0000FF00) >> 8);  // Device Programming Interface is higher byte of lower word, so mask and shift
+                uint8_t device_revision = (uint16_t) (registerData & 0x000000FF);       // Device revision is lower byte of whole double word. Just mask it.
 
 
                 /* 0xFFFF is not a valid Vendor ID. This serves as a sanity check.
