@@ -7,6 +7,9 @@
 
 /* This file serves to allow us to communicate with the computer through raw I/O.
  * It provides interfaces for Ports and commonly used Registers (Control Registers, Model-Specific Registers, GDT, IDT..)
+ * 
+ * Additionally, there are wrapper functions for MMIO accesses.
+ * 
  */
 
 uint32_t ReadPort(uint16_t Port, int Length) {
@@ -40,6 +43,31 @@ uint32_t WritePort(uint16_t Port, uint32_t Data, int Length) {
 
     return Data;
 }
+
+size_t ReadMMIO(size_t Address, int Length) {
+    if (Length == 1) {
+        return *((volatile uint8_t*)(Address));
+    } else if (Length == 2) {
+        return *((volatile uint16_t*)(Address));
+    } else if (Length == 4) {
+        return *((volatile uint32_t*)(Address));
+    } else {
+        return *((volatile size_t*)(Address));
+    }
+}
+
+void WriteMMIO(size_t Address, size_t Data, int Length) {
+    if(Length == 1) {
+        (*((volatile uint8_t*)(Address))) = ((uint8_t) Data);
+    } else if (Length == 2) {
+        (*((volatile uint16_t*)(Address))) = ((uint16_t) Data);
+    } else if (Length == 4) {
+        (*((volatile uint32_t*)(Address))) = ((uint32_t) Data);
+    } else {
+        (*((volatile uint8_t*)(Address))) = (Data);
+    } 
+}
+
 
 size_t ReadModelSpecificRegister(size_t MSR) {
     size_t RegHigh = 0, RegLow = 0;
