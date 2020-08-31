@@ -14,10 +14,13 @@ SECTIONS
 	bootldr = .; . += 4096;
 	environment = .; . += 4096;
 
-
 	.text : {
+		
+		_kernel_text_start = .;
 		KEEP(*(.text.boot)) *(.text .text.*)
+		_kernel_rodata_start = .;
 		*(.rodata .rodata.*)
+		_kernel_data_start = .;
 		*(.data .data.*)
 	} :boot
 	.bss (NOLOAD) : {
