@@ -1,4 +1,5 @@
 #include <kernel/chroma.h>
+#include <lainlib/lainlib.h>
 
 /************************
  *** Team Kitty, 2020 ***
@@ -17,8 +18,39 @@
  * There, these functions worked, but here, under BIOS, it's a lot more difficult.
  * It will take some time to get these functions working.
  * 
+ * The general plan, being that the BOOTBOOT loader has given us static addresses for all of our doodads,
+ *  is to keep the core kernel where it is (FFFFFFFFFFE00000) and load in modules and libraries around it.
+ * 
+ * We start in the higher half, so we'll dedicate the lower half (7FFFFFFFFFFF and below) to userspace.
+ * 
+ * That means we have about 3 terabytes of RAM for the kernel.
+ *  This will be identity mapped, always.
+ * 
+ * Handily, since most modern processors ignore the highest 2 bytes of a virtual address, and the kernel
+ *  is mapped to 0x80000000000 and above, we can use the nomenclature:
+ *      * 0x00007FFFFFFFFFFF and below is user space.
+ *      * 0xFFFF800000000000 and above is kernel space.
+ *  The processor will ignore the first 4 chars, and this provides a great deal of readability for the
+ *   future of the kernel.
+ * 
+ * We'll have a kernel heap mapped into this kernel space, as well as a kernel stack (for task switching and error tracing).
+ *  These will be 1GB each.
+ *      We may have to increase this in the future, once Helix is fully integrated.
+ *      Helix will take a lot of memory, as it is a fully featured 3D engine. We may have to implement things like
+ *       texture streaming and mipmapping. Minimising RAM usage is NOT a priority for me, but it would be nice
+ *        to have a minimum requirement above 32GB.
+ * 
+ *      // TODO: Expand Kernel Heap
+ * 
+ * 
+ * //TODO: there are lots of calls to AllocateFrame here, those need to be separated out into AllocateZeroFrame if necessary.
+ * 
+ * 
  */ 
 
+extern size_t _kernel_text_start;
+extern size_t _kernel_rodata_start;
+extern size_t _kernel_data_start;
 
 //__attribute__((aligned(4096))) static size_t Pagetable[512] = {0};
 
@@ -26,317 +58,314 @@
 
 #define SET_ADDRESS(a,b) ((*(size_t*) (a)) = (size_t) b)
 
+/*
+ * It turns out it's useful to have macros for the standard
+ * data size units.
+ * 
+ * Who would've thoguht?
+ */
+
 #define KiB 1 * 1024
 #define MiB 1 * 1024 * KiB
 
-#define USERWRITEABLE_FLAGS(a) ((a & 0xFFFFFF00) + 0x83)
 
 #define PAGE_PRESENT 1
 #define PAGE_RW      2
+#define PAGE_USER    4
+#define PAGE_GLOBAL  8
+
+
+#define USERWRITEABLE_FLAGS(a) ((a & 0xFFFFFF00) + 0x83)
+
+// The AbstractAllocator control struct
+static allocator_t Allocator = NULL;
+// The AbstractAllocator Ticketlock.
+static ticketlock_t AllocatorLock = {0};
+
+// Entries to help allocate the Kernel Stack
+static list_entry_t StackFreeList;
+static ticketlock_t StackLock = {0};
+static void* StackPointer = (void*) KERNEL_STACK_REGION;
+
+// A temporary itoa function for better debugging..
+const char* IntToAscii(int In) {
+    char* OutputBuffer = "    ";
+
+    size_t Temp, i = 0, j = 0;
+
+    do {
+        Temp = In % 10;
+        OutputBuffer[i++] = (Temp < 10) ? (Temp + '0') : (Temp + 'a' - 10);
+    } while (In /= 10);
+
+    OutputBuffer[i--] = 0;
+
+    for(j = 0; j < i; j++, i--) {
+        Temp = OutputBuffer[j];
+        OutputBuffer[j] = OutputBuffer[i];
+        OutputBuffer[i] = Temp;
+    }
+
+    return OutputBuffer;
+
+}
 
 
 void InitPaging() {
+    StackFreeList = (list_entry_t) { &StackFreeList, &StackFreeList };
 
-    size_t* PML4 = (size_t*) 0xFFA000; // Layer 4
-    size_t* PDPE_RAM = (size_t*) 0xFFE000; // Layer 3, contains map for the first 4GB of RAM
-    size_t* PDE_RAM = (size_t*) 0xFFF000;
+    size_t Size = AlignUpwards(AllocatorSize(), PAGE_SIZE);
+    Allocator = PhysAllocateZeroMem(Size);
+    Allocator = CreateAllocatorWithPool(Allocator, Size);
 
-    size_t* PDPE_KERNEL = (size_t*) 0xFFB000; // Layer 3, contains map for the Kernel and everything it needs to run.
-    size_t* PDE_KERNEL_FB = (size_t*) 0xFFC000; // Layer 2, contains map for the linear framebuffer.
+    KernelAddressSpace = (address_space_t) {
+        .Lock = {0},
+        .PML4 = PhysAllocateZeroMem(PAGE_SIZE)
+    };
 
-    size_t* PT_KERNEL = (size_t*) 0xFFD000; // Layer 1, the page table for the kernel itself.
+    size_t* Pagetable = KernelAddressSpace.PML4;
 
-    size_t fb_ptr = (size_t) &fb;
-
-    SET_ADDRESS(PML4, PDPE_RAM); // 3rd Layer entry for RAM
-    SET_ADDRESS(PML4 + LAST_ENTRY, PDPE_KERNEL); // 3rd Layer entry for Kernel
-
-    SET_ADDRESS(PDPE_KERNEL + LAST_ENTRY, PDE_KERNEL_FB); // 2nd Layer entry for the framebuffer
-
-    // Set the 480th entry (PDE_KERNEL_FB + (480 * 8))
-    // To the framebuffer + flags
-    SET_ADDRESS(PDE_KERNEL_FB + 3840, USERWRITEABLE_FLAGS(fb_ptr)); 
-
-    // In 4 byte increments, we're gonna map 3840 (the framebuffer)
-    // Up to (4096 - 8) in the PDE_KERNEL_FB with 2MB paging.
-    size_t MappingIterations = 1;
-    for(size_t i = 3844; i < 4088; i += 4) {
-        SET_ADDRESS(PDE_KERNEL_FB + i, USERWRITEABLE_FLAGS(fb_ptr) + (MappingIterations * (2 * MiB)));
-        MappingIterations++;
+    // Identity map the higher half
+    for(int i = 256; i < 512; i++) {
+        Pagetable[i] = (size_t)PhysAllocateZeroMem(PAGE_SIZE);
+        Pagetable[i] = (size_t)(((char*)Pagetable[i]) - DIRECT_REGION);
+        Pagetable[i] |= (PAGE_PRESENT | PAGE_RW);
     }
 
-    // Now we map the last entry of PDE_KERNEL_FB to our Page Table
-    SET_ADDRESS(PDE_KERNEL_FB + LAST_ENTRY, PT_KERNEL);
+    MMapEnt* TopEntry = (MMapEnt*)(((&bootldr) + bootldr.size) - sizeof(MMapEnt));
+    size_t LargestAddress = TopEntry->ptr + TopEntry->size;
 
-    // Mapping the kernel into the page tables....
-
-    SET_ADDRESS(PT_KERNEL, 0xFF8001); // bootldr, bootinfo
-    SET_ADDRESS(PT_KERNEL + 8, 0xFF9001); // environment
-
-    // Map the kernel itself
-    SET_ADDRESS(PT_KERNEL + 16, KernelAddr + 1);
-
-    // Iterate through the pages, identity mapping each one
-    MappingIterations = 1;
-    size_t MappingOffset = 0x14;
-    for(size_t i = 0; i < ((KernelEnd - KernelAddr) >> 12); i++) {
-        // Page Table + (0x10 increasing by 0x04 each time) = x * 4KiB
-        SET_ADDRESS(PT_KERNEL + MappingOffset, (MappingIterations * (4 * KiB)));
-        MappingOffset += 4;
-        MappingIterations++;
+    for(size_t Address = 0; Address < AlignUpwards(LargestAddress, PAGE_SIZE); Address += PAGE_SIZE) {
+        MapVirtualMemory(&KernelAddressSpace, (size_t*)(((char*)Address) + DIRECT_REGION), Address, MAP_WRITE);
     }
 
-    // Now we need to map the core stacks. Top-down, from 0xDFF8
-    // There's always at least one core, so we do that one fixed.
-    // TODO: Account for 0-core CPUs
-    SET_ADDRESS(PT_KERNEL + LAST_ENTRY, 0xF14003);
-    MappingIterations = 1;
-    // For every core:
-    for(size_t i = 0; i < (bootldr.numcores + 3U) >> 2; i++) {
-        // PT_KERNEL[512 - (iterations + 1)] = 0x14003 + (iterations * page-width) 
-        SET_ADDRESS(PT_KERNEL + LAST_ENTRY - (MappingIterations * 8), 0xF14003 + (4096 * MappingIterations));
-        MappingIterations++;
+    SerialPrintf("Mapping kernel into new memory map.\r\n");
+
+    //TODO: Disallow execution of rodata and data, and bootldr/environment
+    for(void* Address = CAST(void*, KERNEL_REGION);
+            Address < CAST(void*, KERNEL_REGION + 0x2000); // Lower half of Kernel
+            Address = CAST(void*, CAST(char*, Address) + PAGE_SIZE)) {
+                MapVirtualMemory(&KernelAddressSpace, Address, (CAST(size_t, Address) - KERNEL_REGION) + KERNEL_PHYSICAL, MAP_EXEC);
     }
 
-    SET_ADDRESS(PDPE_RAM, PDE_RAM + PAGE_PRESENT + PAGE_RW);
-    SET_ADDRESS(PDPE_RAM + 8, 0xF10000 + PAGE_PRESENT + PAGE_RW);
-    SET_ADDRESS(PDPE_RAM + 16, 0xF11000 + PAGE_PRESENT + PAGE_RW);
-    SET_ADDRESS(PDPE_RAM + 24, 0xF12000 + PAGE_PRESENT + PAGE_RW);
-    
-    // Identity map 4GB of ram
-    // Each page table can only hold 512 entries, but we
-    // just set up 4 of them - overflowing PDE_RAM (0xF000)
-    // will take us into 0x10000, into 0x11000, into 0x120000.
-    for(size_t i = 0; i < 512 * 4/*GB*/; i++) {
-        // add PDE_RAM, 4
-        // mov eax, 0x83
-        // add eax, 2*1024*1024
-        SET_ADDRESS(PDE_RAM + (i * 4), USERWRITEABLE_FLAGS(i * (2 * MiB)));
+    for(void* Address = CAST(void*, KERNEL_REGION + 0x2000);
+            Address < CAST(void*, KERNEL_REGION + 0x12000); // Higher half of kernel
+            Address = CAST(void*, CAST(char*, Address) + PAGE_SIZE)) {
+                MapVirtualMemory(&KernelAddressSpace, Address, (CAST(size_t, Address) - KERNEL_REGION) + KERNEL_PHYSICAL_2, MAP_EXEC);
     }
 
-    // Map first 2MB of memory
-    SET_ADDRESS(PDE_RAM, 0xF13000 + PAGE_PRESENT + PAGE_RW);
-
-    for(size_t i = 0; i < 512; i++) {
-        SET_ADDRESS(0xF13000 + i * 4, i * (4 * KiB) + PAGE_PRESENT + PAGE_RW);
+    for(void* Address = CAST(void*, FB_REGION);
+            Address < CAST(void*, 0x200000);     // TODO: Turn this into a calculation with bootldr.fb_size
+            Address = CAST(void*, CAST(char*, Address) + PAGE_SIZE)) {
+                MapVirtualMemory(&KernelAddressSpace, Address, (CAST(size_t, Address) - FB_REGION) + FB_PHYSICAL, MAP_WRITE);
     }
 
-    // 0xA000 should now contain our memory map.
+    SerialPrintf("Kernel mapped into pagetables. New PML4 at 0x%p\r\n", KernelAddressSpace.PML4);
+    //ASSERT(Allocator != NULL);
+}
+
+static size_t GetCachingAttribute(pagecache_t Cache) {
+    switch (Cache) {
+        case CACHE_WRITE_BACK: return 0;
+        case CACHE_WRITE_THROUGH: return 1 << 2;
+        case CACHE_NONE: return 1 << 3;
+        case CACHE_WRITE_COMBINING: return 1 << 6;
+    }
+
+    return 1 << 3;
+}
+
+static bool ExpandAllocator(size_t NewSize) {
+    size_t AllocSize = AlignUpwards(AllocatorPoolOverhead() + sizeof(size_t) * 5 + NewSize, PAGE_SIZE);
+    void* Pool = PhysAllocateMem(AllocSize);
+    return AddPoolToAllocator(Allocator, Pool, AllocSize) != NULL;
+} 
+
+static void GetPageFromTables(address_space_t* AddressSpace, size_t VirtualAddress, size_t** Page) {
+
+    //ASSERT(Page != NULL);
+    //ASSERT(AddressSpace != NULL);
+
+    size_t* Pagetable = AddressSpace->PML4;
+    for(int Level = 4; Level > 1; Level--) {
+        size_t* Entry = &Pagetable[(VirtualAddress >> (12u + 9u * (Level - 1))) & 0x1FFU];
+
+        ASSERT(*Entry & PAGE_PRESENT, "Page not present during retrieval");
+
+        Pagetable = (size_t*)((char*)(*Entry & 0x7ffffffffffff000ull) + DIRECT_REGION);
+    }
+
+    ASSERT(Pagetable[(VirtualAddress >> 12U) & 0x1FFU] & PAGE_PRESENT, "PDPE not present during retrieval");
+    *Page = &Pagetable[(VirtualAddress >> 12U) & 0x1FFU];
 
 }
 
+void SetAddressSpace(address_space_t* AddressSpace) {
+    //ASSERT(AddressSpace != NULL);
 
-void InitPagingOldImpl() {
+    if((size_t)((char*)ReadControlRegister(3) + DIRECT_REGION) != (size_t) &AddressSpace->PML4) {
+        WriteControlRegister(3, CAST(size_t, &AddressSpace->PML4));
+    }
+}
 
-    // Disable paging so that we can work with the pagetable
-    //size_t registerTemp = ReadControlRegister(0);
-    //UNSET_PGBIT(registerTemp);
-    //WriteControlRegister(0, registerTemp);
+void MapVirtualMemory(address_space_t* AddressSpace, void* VirtualAddress, size_t PhysicalAddress, mapflags_t Flag) {
 
-    // Clear space for our pagetable
-    size_t PagetableDest = 0x1000;
-    memset((char*)PagetableDest, 0, 4096);
+    //bool MapGlobally = false;
+    size_t Virtual = (size_t)VirtualAddress;
 
-    // Start setting pagetable indexes
-    *((size_t*)PagetableDest) = 0x2003; // PDP at 0x2000, present & r/w
-    *((size_t*)PagetableDest + 0x1000) = 0x3003; // PDT at 0x3000, present & r/w
-    *((size_t*)PagetableDest + 0x2000) = 0x4003; // PT at 0x4000, present & r/w
+    //ASSERT(AddressSpace != NULL);
+    TicketAttemptLock(&AddressSpace->Lock);
 
-    size_t value = 0x3;
-    size_t offset = 8;
-    for(size_t i = 0; i < 512; i++) { // 512 iterations (entries into the page table)
-        *((size_t*) PagetableDest + offset) = value; // We're setting 512 bytes with x003
-        // (identity mapping the first 4 megabytes of memory)
-        // (mapping the page table to itself)
-        value += 4096; // Point to start of next page
-        offset += 8; // + 8 bytes (next entry in list)
+    size_t Flags = PAGE_PRESENT;
+
+    if(Flag & MAP_WRITE)
+        Flags |= MAP_WRITE;
+    
+    if(Virtual < USER_REGION)
+        Flags |= PAGE_USER;
+    //TODO: Global mapping
+
+    size_t* Pagetable = AddressSpace->PML4;
+    for(int Level = 4; Level > 1; Level--) {
+        size_t* Entry = &Pagetable[(Virtual >> (12u + 9u * (Level - 1))) & 0x1FFu];
+
+        if(!(*Entry & PAGE_PRESENT)) {
+            directptr_t Pointer = PhysAllocateZeroMem(PAGE_SIZE);
+            *Entry = (size_t)(((char*)Pointer) + DIRECT_REGION);
+        }
+
+        *Entry |= Flags;
+
+        Pagetable = (size_t*)(((char*)(*Entry & 0x7ffffffffffff000ull) + DIRECT_REGION));
     }
 
-    // Enable PAE paging
-    size_t reg = ReadControlRegister(4);
-    SET_PAEBIT(reg);
-    WriteControlRegister(4, reg);
-
-    WriteControlRegister(3, PagetableDest);
+    size_t* Entry = &Pagetable[(Virtual >> 12u) & 0x1FFu];
+    *Entry = Flags | PhysicalAddress;
     
+
+    if(AddressSpace != NULL) {
+        TicketUnlock(&AddressSpace->Lock);
+    }
+
+}
+
+void UnmapVirtualMemory(address_space_t* AddressSpace, void* VirtualAddress){ 
+    //ASSERT(AddressSpace != NULL);
+
+    TicketAttemptLock(&AddressSpace->Lock);
+
+    size_t* Entry;
+    GetPageFromTables(AddressSpace, (size_t)VirtualAddress, &Entry);
+
+    *Entry = 0;
+    InvalidatePage((size_t)VirtualAddress);
+
+    if(AddressSpace != NULL) {
+        TicketUnlock(&AddressSpace->Lock);
+    }
+
+}
+
+void CacheVirtualMemory(address_space_t* AddressSpace, void* VirtualAddress, pagecache_t Cache) {
+
+    //ASSERT(AddressSpace != NULL);
+
+    TicketAttemptLock(&AddressSpace->Lock);
+
+    size_t* Entry;
+
+    GetPageFromTables(AddressSpace, (size_t)VirtualAddress, &Entry);
+
+    *Entry &= ~((1 << 6) | (1 << 2) | (1 << 3));
+    *Entry |= GetCachingAttribute(Cache);
+
+    InvalidatePage((size_t)VirtualAddress);
+
+    if(AddressSpace != NULL) {
+        TicketUnlock(&AddressSpace->Lock);
+    }
 }
 
 
-/*    size_t registerTemp = ReadControlRegister(4);
-    if(registerTemp & (1 << 7)) {
-        TOGGLE_PGEBIT(registerTemp);
-        WriteControlRegister(4, registerTemp);
+void* AllocateMemory(size_t Bits) {
+    TicketAttemptLock(&AllocatorLock);
+
+    void* Result = AllocatorMalloc(Allocator, Bits);
+
+    if(Result == NULL) {
+        if(!ExpandAllocator(Bits)) {
+            TicketUnlock(&AllocatorLock);
+            return 0ULL;
+        }
+
+        Result = AllocatorMalloc(Allocator, Bits);
     }
 
-    if(registerTemp & (1 << 7))
-        WriteControlRegister(4, registerTemp ^ (1 << 7));
+    if(Result != NULL) {
+        memset(Result, 0, Bits);
+    }
 
-    size_t CPUIDReturn;
-    asm volatile("cpuid" : "=d" (CPUIDReturn) : "a" (0x80000001) : "%rbx", "%rcx");
+    TicketUnlock(&AllocatorLock);
+    return Result;
 
-    if(CPUIDReturn & (1 << 26)) {
-        SerialPrintf("System supports 1GB pages.\r\n");
-        
-        if(registerTemp & (1 << 12)) {
-            SerialPrintf("PML5 paging available - using that instead.\r\n");
+}
 
-            if(MemorySize > (1ULL << 57))
-                SerialPrintf("System has over 128Petabytes of RAM. Please consider upgrading the OS on your supercomputer.\r\n");                
-            
-            size_t MaxPML5 = 1;
-            size_t MaxPML4 = 1;
-            size_t MaxPDP = 512;
+void* ReallocateMemory(void* Address, size_t NewSize) {
+    TicketAttemptLock(&AllocatorLock);
+    void* Result = AllocatorRealloc(Allocator, Address, NewSize);
 
-            size_t LastPML4Entry = 512;
-            size_t LastPDPEntry = 512;
+    if(Result == NULL) {
+        if(!ExpandAllocator(NewSize)) {
+            TicketUnlock(&AllocatorLock);
+            return 0ULL;
+        }
 
-            size_t MemorySearchDepth = MemorySize;
+        Result = AllocatorRealloc(Allocator, Address, NewSize);
+    }
 
-            while(MemorySearchDepth > (256ULL << 30)) {
-                MaxPML5++; 
-                MemorySearchDepth -= (256ULL << 30);
-            }
+    TicketUnlock(&AllocatorLock);
+    return Result;
+    
+}
 
-            if(MaxPML5 > 512)
-                MaxPML5 = 512;
-            
-            if(MemorySearchDepth) {
-                LastPDPEntry = ( (MemorySearchDepth + ((1 << 30) - 1)) & (~0ULL << 30)) >> 30;
+void FreeMemory(void* Address) {
+    TicketAttemptLock(&AllocatorLock);
+    AllocatorFree(Allocator, Address);
+    TicketUnlock(&AllocatorLock);
+}
 
-                if(MaxPML5 > 512)
-                    MaxPML5 = 512;
-                
-            }
+void* AllocateKernelStack() {
+    void* StackAddress = NULL;
+    size_t StackSize = PAGE_SIZE * 4;
 
-            size_t PML4Size = PAGETABLE_SIZE * MaxPML5;
-            size_t PDPSize = PML4Size * MaxPML4;
+    TicketAttemptLock(&StackLock);
+    if(ListIsEmpty(&StackFreeList)) {
+        StackAddress = StackPointer;
+        StackPointer = (void*)(((char*)StackPointer) +  (4*KiB) + StackSize);
 
-            size_t PML4Base = AllocatePagetable(PML4Size + PDPSize);
-            size_t PDPBase = PML4Base + PML4Size;
-
-            for(size_t PML5Entry = 0; PML5Entry < MaxPML5; PML5Entry++) {
-                Pagetable[PML5Entry] = PML4Base + (PML5Entry << 12);
-
-                if(PML5Entry == (MaxPML5 - 1))
-                    MaxPML4 = LastPML4Entry;
-
-                for(size_t PML4Entry = 0; PML4Entry < MaxPML4; PML4Entry++) {
-
-                    ((size_t*) Pagetable[PML5Entry])[PML4Entry] = PDPBase + (((PML5Entry << 9) + PML5Entry) << 12);
-
-                    if( (PML5Entry == (MaxPML5 - 1)) && (PML4Entry == (MaxPML4 -1)) )
-                        MaxPDP = LastPDPEntry;
-                    
-                    for(size_t PDPEntry = 0; PDPEntry < MaxPDP; PDPEntry++) {
-                        ((size_t* ) ((size_t* ) Pagetable[PML5Entry])[PML4Entry])[PDPEntry] = ( ((PML5Entry << 18) + (PML4Entry << 9) + PDPEntry) << 30) | (0x83);
-                    }
-
-                    ((size_t* ) Pagetable[PML5Entry])[PML4Entry] |= 0x3;
-                }
-
-                Pagetable[PML5Entry] |= 0x3;
-            }
-        } else {
-            SerialPrintf("PML4 available - using that instead.\r\n");
-            size_t MemorySearchDepth = MemorySize;
-
-            if(MemorySearchDepth > (1ULL << 48))
-                SerialPrintf("RAM limited to 256TB.\r\n");
-            
-            size_t MaxPML4 = 1;
-            size_t MaxPDP = 512;
-
-            size_t LastPDPEntry = 512;
-
-            while(MemorySearchDepth > (512ULL << 30)) {
-                MaxPML4++;
-                MemorySearchDepth -= (512ULL << 30);
-            }
-
-            if(MaxPML4 > 512)
-                MaxPML4 = 512;
-
-            if(MemorySearchDepth) {
-                LastPDPEntry = ( (MemorySearchDepth + ((1 << 30) - 1)) & (~0ULL << 30)) >> 30;
-
-                if(LastPDPEntry > 512)
-                    LastPDPEntry = 512;
-            }
-
-            size_t PDPSize = PAGETABLE_SIZE * MaxPML4;
-            size_t PDPBase = AllocatePagetable(PDPSize);
-
-            for(size_t PML4Entry = 0; PML4Entry < MaxPML4; PML4Entry++) {
-                Pagetable[PML4Entry] = PDPBase + (PML4Entry << 12);
-
-                if(PML4Entry == (MaxPML4 - 1)) {
-                    MaxPDP = LastPDPEntry;
-                }
-
-                for(size_t PDPEntry = 0; PDPEntry < MaxPDP; PDPEntry++) {
-                    ((size_t* ) Pagetable[PML4Entry])[PDPEntry] = (((PML4Entry << 9) + PDPEntry) << 30) | 0x83;
-                }
-
-                Pagetable[PML4Entry] |=  0x3;
-            }
+        for(size_t i = 0; i < (StackSize / PAGE_SIZE); i++) {
+            directptr_t NewStack;
+            NewStack = PhysAllocateZeroMem(PAGE_SIZE);
+            MapVirtualMemory(&KernelAddressSpace, (void*)((size_t)StackAddress + i * PAGE_SIZE), (size_t)((char*)NewStack) - DIRECT_REGION, MAP_WRITE);
         }
     } else {
-        SerialPrintf("System does not support 1GB pages - using 2MiB paging instead.\r\n");
-
-        size_t MemorySearchDepth = MemorySize;
-
-        if(MemorySearchDepth > (1ULL << 48)) {
-            SerialPrintf("Usable RAM is limited to 256TB, and the page table alone will use 1GB of space in memory.\r\n");
-        }
-
-        size_t MaxPML4 = 1, MaxPDP = 512, MaxPD = 512, LastPDPEntry = 1;
-
-        while(MemorySearchDepth > (512ULL << 30)) {
-            MaxPML4++;
-            MemorySearchDepth -= (512ULL << 30);
-        }
-
-        if(MaxPML4 > 512)
-            MaxPML4 = 512;
-
-        if(MemorySearchDepth) {
-            LastPDPEntry = ((MemorySearchDepth + ((1 << 30) - 1)) & (~0ULL << 30)) >> 30;
-
-            if(LastPDPEntry > 512)
-                LastPDPEntry = 512;
-        }
-
-        size_t PDPSize = PAGETABLE_SIZE * MaxPML4;
-        size_t PDSize = PDPSize * MaxPDP;
-
-        size_t PDPBase = AllocatePagetable(PDPSize + PDSize);
-        size_t PDBase = PDPBase + PDSize;
-
-        for(size_t PML4Entry = 0; PML4Entry < MaxPML4; PML4Entry++) {
-            Pagetable[PML4Entry] = PDBase + (PML4Entry << 12);
-
-            if(PML4Entry == (MaxPML4 - 1)) {
-                MaxPDP = LastPDPEntry;
-            }
-
-            for(size_t PDPEntry = 0; PDPEntry < MaxPDP; PDPEntry++) {
-                ( (size_t* ) Pagetable[PML4Entry])[PDPEntry] = PDBase + (((PML4Entry << 9) + PDPEntry) << 12);
-
-                for(size_t PDEntry = 0; PDEntry < MaxPD; PDEntry++) {
-                    ( (size_t* )  ((size_t*) Pagetable[PML4Entry])[PDPEntry])[PDEntry] = (( (PML4Entry << 18) + (PDPEntry << 9) + PDPEntry) << 21) | 0x83;
-                }
-
-                ( (size_t* ) Pagetable[PML4Entry])[PDPEntry] |= 0x3;
-            }
-
-            Pagetable[PML4Entry] |= 0x3;
-        }
+        list_entry_t* StackEntry = StackFreeList.Next;
+        ListRemove(StackEntry);
+        memset(StackEntry, 0, StackSize);
+        StackAddress = (void*)StackEntry;
     }
 
-    WriteControlRegister(3, Pagetable);
+    TicketUnlock(&StackLock);
 
-    registerTemp = ReadControlRegister(4);
-    if(!(registerTemp & (1 << 7))) {
-        TOGGLE_PGEBIT(registerTemp);
-        WriteControlRegister(4, registerTemp);
-    }*/
+    StackAddress = (void*)((size_t)StackAddress + StackSize);
+    StackAddress = (void*)((size_t)StackAddress - sizeof(size_t) * 2);
+
+    return StackAddress;
+}
+
+void FreeKernelStack(void* StackAddress) {
+    TicketAttemptLock(&StackLock);
+    list_entry_t* ListEntry = (list_entry_t*)(((size_t)(StackAddress) + (sizeof(size_t) * 2)) - (PAGE_SIZE * 4));
+    ListAdd(&StackFreeList, ListEntry);
+    TicketUnlock(&StackLock);
+}
