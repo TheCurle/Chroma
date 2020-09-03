@@ -19,11 +19,15 @@
 #include <kernel/system/memory.h>
 #include <kernel/system/pci.h>
 
+#include <kernel/system/screen.h>
+
 extern size_t LoadAddr;
 extern bootinfo bootldr;
 extern unsigned char* environment;
 extern uint8_t fb;
 extern volatile unsigned char _binary_font_psf_start;
+
+extern address_space_t KernelAddressSpace;
 
 typedef struct {
     uint32_t magic;
@@ -62,3 +66,5 @@ void SetupIDT();
 int Main();
 
 void Exit();
+
+void SomethingWentWrong(const char* Message);
