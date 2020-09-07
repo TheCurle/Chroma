@@ -13,7 +13,7 @@ It can currently:
  - [x] draw to the screen, including text and basic images.
  - [x] output audio over the PC Speaker
  - [x] manage physical memory
- - [ ] manage virtual memory
+ - [x] manage virtual memory
  - [ ] switch to ring 3
  - [ ] switch tasks
  - [ ] schedule tasks
