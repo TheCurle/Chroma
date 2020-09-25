@@ -51,6 +51,9 @@ size_t MemorySize;
 void DrawPixel(uint32_t x, uint32_t y, uint32_t color);
 void FillScreen(uint32_t color);
 
+void SetupExtensions();
+void PrepareCPU();
+
 void WriteString(const char* string);
 void WriteChar(const char character);
 

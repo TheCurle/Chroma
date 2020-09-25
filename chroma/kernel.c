@@ -34,15 +34,13 @@ int Main(void) {
 
     WriteStringWithFont("Initty Testing");
 
-    SetupInitialGDT();
-    SetupIDT();
-    InitInterrupts();
+    PrepareCPU();
 
     PCIEnumerate();
 
     InitMemoryManager();
 
-    DrawSplash();
+    //DrawSplash();
 
     InitPaging();
 
