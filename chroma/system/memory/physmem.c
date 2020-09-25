@@ -138,20 +138,20 @@ static directptr_t BuddyAllocate(buddy_t* Buddy, size_t Size) {
     SerialPrintf("Searching for a valid order to allocate into. Condition: {\r\n\tOrder: %d,\r\n\tSize: 0x%x\r\n}\r\n\n", InitialOrder, WantedSize);
     
     for(int Order = InitialOrder; Order < Buddy->MaxOrder; Order++) {
-        SerialPrintf("\tCurrent Order: %d, Buddy entry: %x\r\n", Order, Buddy->List[Order - MIN_ORDER]);
+        //SerialPrintf("\tCurrent Order: %d, Buddy entry: %x\r\n", Order, Buddy->List[Order - MIN_ORDER]);
         if(Buddy->List[Order - MIN_ORDER] != 0) {
-            SerialPrintf("\t\tFound a valid Order!\r\n");
+            SerialPrintf("\tFound a valid Order!\r\n");
             directptr_t Address = Buddy->List[Order - MIN_ORDER];
             Buddy->List[Order - MIN_ORDER] = PEEK(directptr_t, Address);
             TicketUnlock(&Buddy->Lock);
 
             size_t FoundSize = 1ull << Order;
             
-            SerialPrintf("\t\tAdding area - Address 0x%p, Size 0x%x\r\n\n", Address, FoundSize);
+            SerialPrintf("\tAdding area - Address 0x%p, Size 0x%x\r\n\n", Address, FoundSize);
 
             AddRangeToBuddy(Buddy, (void*)((size_t)Address + WantedSize), FoundSize - WantedSize);
 
-            SerialPrintf("\t\tArea added!\r\n\n");
+            SerialPrintf("\tArea added!\r\n\n");
             return Address;
         }
     }
@@ -272,11 +272,15 @@ directptr_t PhysAllocateLowMem(size_t Size) {
 directptr_t PhysAllocateMem(size_t Size) {
     directptr_t Pointer = NULL;
 
-    if(HighBuddy.Base == 0) 
+    if(HighBuddy.Base == 0) {
+        SerialPrintf("Attempting allocation into high memory.\n");
         Pointer = BuddyAllocate(&HighBuddy, Size);
+    }
 
-    if(Pointer == NULL)
+    if(Pointer == NULL) {
+        SerialPrintf("Attempting allocation into low memory.\n");
         Pointer = BuddyAllocate(&LowBuddy, Size);
+    }
     
     ASSERT(Pointer != NULL, "PhysAllocateMem: Unable to allocate memory!");
 
