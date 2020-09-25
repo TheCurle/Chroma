@@ -118,6 +118,8 @@ void InitPaging() {
     Allocator = PhysAllocateZeroMem(Size);
     Allocator = CreateAllocatorWithPool(Allocator, Size);
 
+    SerialPrintf("Everything preallocated. Setting up paging.\n");
+
     KernelAddressSpace = (address_space_t) {
         .Lock = {0},
         .PML4 = PhysAllocateZeroMem(PAGE_SIZE)
@@ -125,6 +127,7 @@ void InitPaging() {
 
     size_t* Pagetable = KernelAddressSpace.PML4;
 
+    SerialPrintf("About to identity map the higher half.\n");
     // Identity map the higher half
     for(int i = 256; i < 512; i++) {
         Pagetable[i] = (size_t)PhysAllocateZeroMem(PAGE_SIZE);
@@ -132,12 +135,16 @@ void InitPaging() {
         Pagetable[i] |= (PAGE_PRESENT | PAGE_RW);
     }
 
+    SerialPrintf("Identity mapping complete.\n");
+
     MMapEnt* TopEntry = (MMapEnt*)(((&bootldr) + bootldr.size) - sizeof(MMapEnt));
     size_t LargestAddress = TopEntry->ptr + TopEntry->size;
 
+    SerialPrintf("About to map lower memory into the Direct Region.\n");
     for(size_t Address = 0; Address < AlignUpwards(LargestAddress, PAGE_SIZE); Address += PAGE_SIZE) {
         MapVirtualMemory(&KernelAddressSpace, (size_t*)(((char*)Address) + DIRECT_REGION), Address, MAP_WRITE);
     }
+    SerialPrintf("Lower half mapping complete.\n");
 
     SerialPrintf("Mapping kernel into new memory map.\r\n");
 
