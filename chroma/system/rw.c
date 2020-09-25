@@ -189,7 +189,7 @@ size_t ReadExtendedControlRegister(size_t XCRX) {
 //TODO: make this just have an assert as returning data for a write to catch
 // errors that shoudlunt really happen doesent make alot of sense
 size_t WriteExtendedControlRegister(size_t XCRX, size_t Data){
-    uint32_t DataLow = Data & 0xffffffff;
+    uint32_t DataLow =   Data & 0x00000000ffffffff;
     uint32_t DataHigh = (Data & 0xffffffff00000000) >> 32;
     __asm__ __volatile__("xsetbv" : : "a" (DataLow), "c" (XCRX), "d" (DataHigh) :);
     return Data;
