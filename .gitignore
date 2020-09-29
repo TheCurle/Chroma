@@ -1,5 +1,10 @@
-CMakeCache.txt
 *.o
-Makefile
 *.elf
+
+*.img
+*.vdi
+
+
+Makefile
 CMakeFiles
+CMakeCache.txt
