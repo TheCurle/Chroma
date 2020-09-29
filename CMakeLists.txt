@@ -56,6 +56,5 @@ target_link_options(kernel PRIVATE -T linker.ld -ffreestanding -O2 -nostdlib -no
 add_custom_command(
     TARGET kernel
     POST_BUILD
-    COMMAND cp ${CMAKE_SOURCE_DIR}/kernel ${CMAKE_SOURCE_DIR}/img/boot/exe
-    COMMAND ${CMAKE_SOURCE_DIR}/mkbootimg chroma.json chroma.img
+    COMMAND bash post.sh
 )
