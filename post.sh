@@ -1,5 +1,5 @@
 cp kernel img/boot/exe
-echo "Performing post-boot actions:"
+echo "Performing post-build actions:"
 echo "Creating raw img file for writing to a drive:"
 ./mkbootimg.exe chroma.json chroma.img # for linux remove the .exe
 
