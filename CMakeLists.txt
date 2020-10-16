@@ -55,6 +55,6 @@ target_link_options(kernel PRIVATE -T linker.ld -ffreestanding -O2 -nostdlib -no
 
 add_custom_command(
     TARGET kernel
-    POST_BUILD
-    COMMAND bash post.sh
+#    POST_BUILD
+#    COMMAND bash post.sh
 )
