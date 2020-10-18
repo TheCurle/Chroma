@@ -1,5 +1,8 @@
 #project config
 cmake_minimum_required(VERSION 3.10)
+
+set(CMAKE_C_COMPILER x86_64-elf-gcc)
+
 # cheat the compile test 
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 SET(CMAKE_SYSTEM_NAME Generic)
@@ -55,6 +58,6 @@ target_link_options(kernel PRIVATE -T linker.ld -ffreestanding -O2 -nostdlib -no
 
 add_custom_command(
     TARGET kernel
-#    POST_BUILD
-#    COMMAND bash post.sh
+    POST_BUILD
+    COMMAND bash post.sh
 )
