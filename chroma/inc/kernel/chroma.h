@@ -19,7 +19,8 @@
 #include <kernel/system/memory.h>
 #include <kernel/system/pci.h>
 
-#include <kernel/system/screen.h>
+//Removed cause "wacky copyrighted stuff"
+//#include <kernel/system/screen.h>
 
 extern size_t LoadAddr;
 extern bootinfo bootldr;

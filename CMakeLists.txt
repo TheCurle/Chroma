@@ -1,5 +1,8 @@
 #project config
 cmake_minimum_required(VERSION 3.10)
+
+set(CMAKE_C_COMPILER x86_64-elf-gcc)
+
 # cheat the compile test 
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 SET(CMAKE_SYSTEM_NAME Generic)
@@ -52,9 +55,3 @@ add_executable(kernel)
 target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_files} PUBLIC ${src_no_sse} PUBLIC ${lib_files} PUBLIC ${CMAKE_SOURCE_DIR}/font.o PUBLIC ${src_epilogue})
 target_compile_options(kernel PRIVATE -ffreestanding -O2 -Wall -Wextra -Wall -Werror -pedantic -fPIC -fno-exceptions )
 target_link_options(kernel PRIVATE -T linker.ld -ffreestanding -O2 -nostdlib -nostartfiles -lgcc)
-
-add_custom_command(
-    TARGET kernel
-#    POST_BUILD
-#    COMMAND bash post.sh
-)
