@@ -299,7 +299,18 @@ __attribute__((interrupt)) void ISR5Handler(INTERRUPT_FRAME* Frame) {
 	ISR_Common(Frame, 5);
 }
 __attribute__((interrupt)) void ISR6Handler(INTERRUPT_FRAME* Frame) {
-	ISR_Common(Frame, 6);
+	
+	__asm__ __volatile__("sti");
+	
+	SerialPrintf("Invalid Opcode!\n");
+	size_t retAddr = 0;
+	size_t opcodeAddr = Frame->rip;
+
+	__asm__ __volatile__("popq %%rax\n\t" "pushq %%rax": "=a" (retAddr) : :);
+	SerialPrintf("Opcode is at 0x%x, called from 0x%p\r\n", opcodeAddr, retAddr);
+
+	
+	for(;;) {}
 }
 __attribute__((interrupt)) void ISR7Handler(INTERRUPT_FRAME* Frame) {
 	ISR_Common(Frame, 7);
@@ -328,11 +339,11 @@ __attribute__((interrupt)) void ISR14Handler(INTERRUPT_FRAME* Frame, size_t Erro
 	SerialPrintf("Page fault! Caused by: [\r\n");
 
 	//size_t FaultAddr = ReadControlRegister(2);
-	uint8_t FaultPres = 	ErrorCode & 0x1;
-	uint8_t FaultRW = 		ErrorCode & 0x2;
-	uint8_t FaultUser = 	ErrorCode & 0x4;
+	uint8_t FaultPres     = ErrorCode & 0x1;
+	uint8_t FaultRW       = ErrorCode & 0x2;
+	uint8_t FaultUser     = ErrorCode & 0x4;
 	uint8_t FaultReserved = ErrorCode & 0x8;
-	uint8_t FaultInst = 	ErrorCode & 0x10;
+	uint8_t FaultInst     = ErrorCode & 0x10;
 
 	if(!FaultPres) SerialPrintf("Accessed a page that isn't present.\r\n");
 	if(FaultRW || FaultUser) SerialPrintf("Accessed a Read-Only page.\r\n");
