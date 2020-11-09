@@ -26,7 +26,7 @@
 #define MIN_ORDER 3 
 #define PEEK(type, address) (*((volatile type*)(address)))
 
-uint8_t* Memory = ((uint8_t*)(&end));
+uint8_t* Memory = ((uint8_t*)(&memstart));
 uint8_t* MemoryStart;
 size_t MemoryBuckets;
 
@@ -135,28 +135,28 @@ static directptr_t BuddyAllocate(buddy_t* Buddy, size_t Size) {
 
     TicketAttemptLock(&Buddy->Lock);
 
-    SerialPrintf("Searching for a valid order to allocate into. Condition: {\r\n\tOrder: %d,\r\n\tSize: 0x%x\r\n}\r\n\n", InitialOrder, WantedSize);
+    //SerialPrintf("Searching for a valid order to allocate into. Condition: {\r\n\tOrder: %d,\r\n\tSize: 0x%x\r\n}\r\n\n", InitialOrder, WantedSize);
     
     for(int Order = InitialOrder; Order < Buddy->MaxOrder; Order++) {
         //SerialPrintf("\tCurrent Order: %d, Buddy entry: %x\r\n", Order, Buddy->List[Order - MIN_ORDER]);
         if(Buddy->List[Order - MIN_ORDER] != 0) {
-            SerialPrintf("\tFound a valid Order!\r\n");
+            //SerialPrintf("\tFound a valid Order!\r\n");
             directptr_t Address = Buddy->List[Order - MIN_ORDER];
             Buddy->List[Order - MIN_ORDER] = PEEK(directptr_t, Address);
             TicketUnlock(&Buddy->Lock);
 
             size_t FoundSize = 1ull << Order;
             
-            SerialPrintf("\tAdding area - Address 0x%p, Size 0x%x\r\n\n", Address, FoundSize);
+            //SerialPrintf("\tAdding area - Address 0x%p, Size 0x%x\r\n\n", Address, FoundSize);
 
             AddRangeToBuddy(Buddy, (void*)((size_t)Address + WantedSize), FoundSize - WantedSize);
 
-            SerialPrintf("\tArea added!\r\n\n");
+            //SerialPrintf("\tArea added!\r\n");
             return Address;
         }
     }
 
-    SerialPrintf("BuddyAllocate: Unable to find a valid order to allocate!\r\nInitial Order: %d, WantedSize: 0x%x\r\n\r\n", InitialOrder, WantedSize);
+    //SerialPrintf("BuddyAllocate: Unable to find a valid order to allocate!\r\nInitial Order: %d, WantedSize: 0x%x\r\n\r\n", InitialOrder, WantedSize);
 
     TicketUnlock(&Buddy->Lock);
     return NULL;
@@ -164,16 +164,14 @@ static directptr_t BuddyAllocate(buddy_t* Buddy, size_t Size) {
 
 void InitMemoryManager() {
 
-    size_t BootstructSize = bootldr.size;
-    size_t BootstructLoc = (size_t) &bootldr;
+    SerialPrintf("[  Mem] Counting memory..\r\n");
 
-    size_t BootstructEnd = BootstructLoc + BootstructSize;
     MemorySize = 0;
     size_t MemMapEntryCount = 0;
 
     MMapEnt* MemMap = &bootldr.mmap;
 
-    while((size_t) MemMap < BootstructEnd) {
+    while((size_t) MemMap < ((size_t) &bootldr) + bootldr.size) {
         if(MMapEnt_IsFree(MemMap)) {
             MemorySize += MMapEnt_Size(MemMap);
         }
@@ -181,38 +179,20 @@ void InitMemoryManager() {
         MemMap++;
     }
 
+    SerialPrintf("[  Mem] Counted %d entries in the memory map..\r\n", MemMapEntryCount);
 
     MemoryPages = MemorySize / PAGE_SIZE;
-    MemoryBuckets = MemoryPages / PAGES_PER_BUCKET;
 
-    if(MemoryBuckets * PAGES_PER_BUCKET < MemoryPages)
-        MemoryBuckets++; // Always round up
-    
-
-    memset(Memory, 0, MemoryBuckets);
-
-    MemoryStart = (uint8_t*) PAGE_ALIGN((size_t)(Memory + MemoryBuckets));
-
-
-    SerialPrintf("Initializing Memory.\r\n");
-
-    SerialPrintf("%u MB of memory detected.\r\n", (MemorySize / 1024) / 1024);
-
-    for(size_t i = 0; i < MemoryBuckets; i++) {
-        if(Memory[i] != 0)
-            SerialPrintf("Memory at 0x%p is not empty!", Memory + i);
-    }
-
+    SerialPrintf("[  Mem] %u MB of memory detected.\r\n", (MemorySize / 1024) / 1024);
 }
 
 
 void ListMemoryMap() {
 
-    SerialPrintf("BIOS-Provided memory map:\r\n");
+    SerialPrintf("[  Mem] BIOS-Provided memory map:\r\n");
 
 
-
-    for(MMapEnt* MapEntry = &bootldr.mmap; (size_t)MapEntry < (size_t)&bootldr + bootldr.size; MapEntry++) {
+    for(MMapEnt* MapEntry = &bootldr.mmap; (size_t)MapEntry < (size_t) &bootldr + bootldr.size; MapEntry++) {
         char EntryType[8] = {0};
         switch(MMapEnt_Type(MapEntry)) {
             case MMAP_FREE:
@@ -234,10 +214,10 @@ void ListMemoryMap() {
 
 
         if(entry_from != 0 && entry_to != 0)
-            SerialPrintf("[ mem 0x%p-0x%p] %s\r\n", entry_from, entry_to, EntryType);
+            SerialPrintf("[  Mem]   0x%p-0x%p %s\r\n", entry_from, entry_to, EntryType);
 
         if(MMapEnt_Type(MapEntry) == MMAP_FREE) {
-            SerialPrintf("\tAdding this entry to the physical memory manager!\r\n");
+            SerialPrintf("[  Mem]      Adding this entry to the physical memory manager!\r\n");
             AddRangeToPhysMem((void*)((char*)(MMapEnt_Ptr(MapEntry) /* + DIRECT_REGION*/ )), MMapEnt_Size(MapEntry));
 
         }
@@ -247,7 +227,7 @@ void ListMemoryMap() {
 
 void AddRangeToPhysMem(directptr_t Base, size_t Size) {
     if(Base < (void*)(LOWER_REGION + DIRECT_REGION)) {
-        SerialPrintf("New range in lower memory: 0x%p, size 0x%x\r\n", Base, Size);
+        SerialPrintf("[  Mem]      New range in lower memory: 0x%p, size 0x%x\r\n", Base, Size);
         AddRangeToBuddy(&LowBuddy, Base, Size);
     } else {
         if(HighBuddy.Base == NULL) {
@@ -273,12 +253,12 @@ directptr_t PhysAllocateMem(size_t Size) {
     directptr_t Pointer = NULL;
 
     if(HighBuddy.Base == 0) {
-        SerialPrintf("Attempting allocation into high memory.\n");
+        //SerialPrintf("Attempting allocation into high memory.\n");
         Pointer = BuddyAllocate(&HighBuddy, Size);
     }
 
     if(Pointer == NULL) {
-        SerialPrintf("Attempting allocation into low memory.\n");
+        //SerialPrintf("Attempting allocation into low memory.\n");
         Pointer = BuddyAllocate(&LowBuddy, Size);
     }
     
