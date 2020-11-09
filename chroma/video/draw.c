@@ -63,8 +63,8 @@ void InitPrint() {
 
     PrintInfo.charsPerRow = bootldr.fb_width / (PrintInfo.charScale * PrintInfo.charWidth) - 5;
     PrintInfo.rowsPerScrn = bootldr.fb_height / (PrintInfo.charScale * PrintInfo.charHeight);
-    SerialPrintf("A single character is %ux%u pixels.\r\n", PrintInfo.charScale * PrintInfo.charWidth, PrintInfo.charScale * PrintInfo.charHeight);
-    SerialPrintf("The screen is %ux%u, meaning you can fit %ux%u characters on screen.\r\n", bootldr.fb_width, bootldr.fb_height, PrintInfo.charsPerRow, PrintInfo.rowsPerScrn);
+    SerialPrintf("[Print] A single character is %ux%u pixels.\r\n", PrintInfo.charScale * PrintInfo.charWidth, PrintInfo.charScale * PrintInfo.charHeight);
+    SerialPrintf("[Print] The screen is %ux%u, meaning you can fit %ux%u characters on screen.\r\n", bootldr.fb_width, bootldr.fb_height, PrintInfo.charsPerRow, PrintInfo.rowsPerScrn);
 
 }
 

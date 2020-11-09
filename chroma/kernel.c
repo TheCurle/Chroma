@@ -21,10 +21,10 @@ address_space_t KernelAddressSpace;
 int Main(void) {
     KernelAddressSpace = (address_space_t) {0};
 
-    SerialPrintf("\r\nBooting Chroma..\r\n");
-    SerialPrintf("Kernel loaded at 0x%p, ends at 0x%p, is %d bytes long.\r\n", KernelAddr, KernelEnd, KernelEnd - KernelAddr);
+    SerialPrintf("\r\n[ boot] Booting Chroma..\r\n");
+    SerialPrintf("[ boot] Kernel loaded at 0x%p, ends at 0x%p, is %d bytes long.\r\n", KernelAddr, KernelEnd, KernelEnd - KernelAddr);
 
-    SerialPrintf("The bootloader has put the paging tables at 0x%p.\r\n", ReadControlRegister(3));
+    SerialPrintf("[ boot] The bootloader has put the paging tables at 0x%p.\r\n", ReadControlRegister(3));
 
     //TraversePageTables();
 

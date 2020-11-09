@@ -31,9 +31,9 @@ void PCIEnumerate() {
 
     uint8_t class_code, subclass_code;
 
-    SerialPrintf("Started PCI Enumeration.");
-
-    SerialPrintf("\nPCI Scan result:\n");
+    SerialPrintf("[  PCI] Started PCI Enumeration.");
+ 
+    SerialPrintf("\n[  PCI] PCI Scan result:\n[  PCI]");
     do {
         for (device = 0; device <= 31; device++) {
             for(function = 0; function <= 7; function++) {
@@ -56,8 +56,8 @@ void PCIEnumerate() {
                  * If this check is true, then nothing is logged and we continue for the next loop.
                  */
                 if(vendor_id != 0xFFFF) {
-                    SerialPrintf("\n\t%x:%x:\n\t\tVendor: %x\n\t\tDevice: %x", bus, device, vendor_id, device_id);
-                    SerialPrintf("\n\t\tClass: %s\n\t\tDevice Type: %s\n\t\tRevision: %d\n", PCIGetClassName(class_code), PCIGetDeviceName_Subclass(class_code, subclass_code, device_progif), device_revision);
+                    SerialPrintf("[  PCI]\n[  PCI]\t%x:%x:\n[  PCI]\t\tVendor: %x\n[  PCI]\t\tDevice: %x", bus, device, vendor_id, device_id);
+                    SerialPrintf("\n[  PCI]\t\tClass: %s\n[  PCI]\t\tDevice Type: %s\n[  PCI]\t\tRevision: %d\n", PCIGetClassName(class_code), PCIGetDeviceName_Subclass(class_code, subclass_code, device_progif), device_revision);
                 }
 
                 /* If the PCI Device header tells us that this is not a multifunction device,

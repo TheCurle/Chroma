@@ -97,7 +97,7 @@ void ISR_Common(INTERRUPT_FRAME* Frame, size_t Exception) {
 		FillScreen(0x0000FF00);
 		/* ExceptionStrings is an array of c-strings defined in kernel.h */
 		
-		SerialPrintf("%s exception!\r\n", ExceptionStrings[Exception]);
+		SerialPrintf("[  ISR] %s exception!\r\n", ExceptionStrings[Exception]);
 		//printf("%s exception!", ExceptionStrings[Exception]);
 		//panic();
 	}
@@ -113,8 +113,8 @@ void ISR_Error_Common(INTERRUPT_FRAME* Frame, size_t ErrorCode, size_t Exception
 
 		FillScreen(0x0000FF00);
 		
-		SerialPrintf("ISR Error %d raised, EC %d!\r\n", Exception, ErrorCode);
-		SerialPrintf("%s exception!\r\n", ExceptionStrings[Exception]);
+		SerialPrintf("[  ISR] ISR Error %d raised, EC %d!\r\n", Exception, ErrorCode);
+		SerialPrintf("[  ISR] %s exception!\r\n", ExceptionStrings[Exception]);
 		while(true) {}
 		//serialPrint(ExceptionStrings[Exception]);
 		//serialPrintf(" Exception. Context given: %d\r\n", Frame->ErrorCode);
@@ -140,7 +140,7 @@ void IRQ_Common(INTERRUPT_FRAME* Frame, size_t Interrupt) {
 	Handler = IRQ_Handlers[Interrupt];
 	// If there's something there,
 	if(Handler) {
-		SerialPrintf("IRQ %d raised!\r\n", Interrupt);
+		SerialPrintf("[  IRQ] IRQ %d raised!\r\n", Interrupt);
 		// Call the handler.
 		Handler(Frame);
 	}
@@ -150,6 +150,7 @@ void IRQ_Common(INTERRUPT_FRAME* Frame, size_t Interrupt) {
 	
 	/* In either case, we tell the Master PIC it's been read to receive any IRQ. */
 	WritePort(0x20, 0x20, 1);
+
 }
 
 /* However, in order to actually be able to receive IRQs, we need to remap the PICs. */
@@ -302,13 +303,14 @@ __attribute__((interrupt)) void ISR6Handler(INTERRUPT_FRAME* Frame) {
 	
 	__asm__ __volatile__("sti");
 	
-	SerialPrintf("Invalid Opcode!\n");
+	SerialPrintf("[FAULT] Invalid Opcode!\n");
 	size_t retAddr = 0;
 	size_t opcodeAddr = Frame->rip;
 
 	__asm__ __volatile__("popq %%rax\n\t" "pushq %%rax": "=a" (retAddr) : :);
-	SerialPrintf("Opcode is at 0x%x, called from 0x%p\r\n", opcodeAddr, retAddr);
-
+	SerialPrintf("[FAULT] Opcode is at 0x%x, called from 0x%p\r\n", opcodeAddr, retAddr);
+	
+	StackTrace(15);
 	
 	for(;;) {}
 }
@@ -331,12 +333,17 @@ __attribute__((interrupt)) void ISR12Handler(INTERRUPT_FRAME* Frame, size_t Erro
 	ISR_Error_Common(Frame, ErrorCode, 12);
 }
 __attribute__((interrupt)) void ISR13Handler(INTERRUPT_FRAME* Frame, size_t ErrorCode) {
+
+	SerialPrintf("\r\n\n[  GPF] 0x%p\r\n", Frame->rip);
+
+	StackTrace(6);
+
 	ISR_Error_Common(Frame, ErrorCode, 13); // General Protection
 }
 __attribute__((interrupt)) void ISR14Handler(INTERRUPT_FRAME* Frame, size_t ErrorCode) {
 	__asm__ __volatile__("sti");
 
-	SerialPrintf("Page fault! Caused by: [\r\n");
+	SerialPrintf("\r\n\n\n[FAULT] Page fault! Caused by {\r\n");
 
 	//size_t FaultAddr = ReadControlRegister(2);
 	uint8_t FaultPres     = ErrorCode & 0x1;
@@ -345,14 +352,14 @@ __attribute__((interrupt)) void ISR14Handler(INTERRUPT_FRAME* Frame, size_t Erro
 	uint8_t FaultReserved = ErrorCode & 0x8;
 	uint8_t FaultInst     = ErrorCode & 0x10;
 
-	if(!FaultPres) SerialPrintf("Accessed a page that isn't present.\r\n");
-	if(FaultRW || FaultUser) SerialPrintf("Accessed a Read-Only page.\r\n");
-	if(FaultReserved) SerialPrintf("Overwrote reserved bits.\r\n");
-	if(FaultInst) SerialPrintf("\"Instruction Fetch\"");
+	if(!FaultPres) SerialPrintf("[FAULT] Accessed a page that isn't present.\r\n");
+	if(FaultRW || FaultUser) SerialPrintf("[FAULT] Accessed a Read-Only page.\r\n");
+	if(FaultReserved) SerialPrintf("[FAULT] Overwrote reserved bits.\r\n");
+	if(FaultInst) SerialPrintf("[FAULT] \"Instruction Fetch\"");
 
-	SerialPrintf("];");	
+	SerialPrintf("[FAULT] } at address\n[FAULT] 0x%p\r\n\n", ReadControlRegister(2));	
 
-	
+	StackTrace(15);
 	ISR_Error_Common(Frame, ErrorCode, 14); // Page Fault
 }
 __attribute__((interrupt)) void ISR15Handler(INTERRUPT_FRAME* Frame) {
