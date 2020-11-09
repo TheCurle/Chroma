@@ -118,7 +118,7 @@ void InitPaging() {
     Allocator = PhysAllocateZeroMem(Size);
     Allocator = CreateAllocatorWithPool(Allocator, Size);
 
-    SerialPrintf("Everything preallocated. Setting up paging.\n");
+    SerialPrintf("[  Mem] Everything preallocated for paging.\n");
 
     KernelAddressSpace = (address_space_t) {
         .Lock = {0},
@@ -127,26 +127,27 @@ void InitPaging() {
 
     size_t* Pagetable = KernelAddressSpace.PML4;
 
-    SerialPrintf("About to identity map the higher half.\n");
+    //SerialPrintf("[  Mem] About to identity map the higher half.\n");
     // Identity map the higher half
     for(int i = 256; i < 512; i++) {
         Pagetable[i] = (size_t)PhysAllocateZeroMem(PAGE_SIZE);
         Pagetable[i] = (size_t)(((char*)Pagetable[i]) - DIRECT_REGION);
         Pagetable[i] |= (PAGE_PRESENT | PAGE_RW);
+        //SerialPrintf("%d", i - 256);
     }
 
-    SerialPrintf("Identity mapping complete.\n");
+    SerialPrintf("[  Mem] Identity mapping higher half complete.\n");
 
     MMapEnt* TopEntry = (MMapEnt*)(((&bootldr) + bootldr.size) - sizeof(MMapEnt));
     size_t LargestAddress = TopEntry->ptr + TopEntry->size;
 
-    SerialPrintf("About to map lower memory into the Direct Region.\n");
+    SerialPrintf("[  Mem] About to map lower memory into the Direct Region.\n");
     for(size_t Address = 0; Address < AlignUpwards(LargestAddress, PAGE_SIZE); Address += PAGE_SIZE) {
         MapVirtualMemory(&KernelAddressSpace, (size_t*)(((char*)Address) + DIRECT_REGION), Address, MAP_WRITE);
     }
-    SerialPrintf("Lower half mapping complete.\n");
+    SerialPrintf("[  Mem] Lower half mapping complete.\n");
 
-    SerialPrintf("Mapping kernel into new memory map.\r\n");
+    SerialPrintf("[  Mem] Mapping kernel into new memory map.\r\n");
 
     //TODO: Disallow execution of rodata and data, and bootldr/environment
     for(void* Address = CAST(void*, KERNEL_REGION);
@@ -167,7 +168,7 @@ void InitPaging() {
                 MapVirtualMemory(&KernelAddressSpace, Address, (CAST(size_t, Address) - FB_REGION) + FB_PHYSICAL, MAP_WRITE);
     }
 
-    SerialPrintf("Kernel mapped into pagetables. New PML4 at 0x%p\r\n", KernelAddressSpace.PML4);
+    SerialPrintf("[  Mem] Kernel mapped into pagetables. New PML4 at 0x%p\r\n", KernelAddressSpace.PML4);
     //ASSERT(Allocator != NULL);
 }
 
