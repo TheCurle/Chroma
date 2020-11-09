@@ -65,13 +65,13 @@ void PrepareCPU() {
     SetupInitialGDT();
     SetupIDT();
 
-    SetupExtensions();
+    //SetupExtensions();
 
     InitInterrupts();
 
 }
 
-void SetupExtensions() {
+/*void SetupExtensions() {
 
     // Enable SSE
     size_t CR0 = ReadControlRegister(0);
@@ -97,14 +97,14 @@ void SetupExtensions() {
     CR0 |= (1 << 1);
     CR0 |= (1 << 2);
 
-    /*CR0 |= (1 << 5);
+    CR0 |= (1 << 5);
     CR0 |= (1 << 6);
-    CR0 |= (1 << 7);*/
+    CR0 |= (1 << 7);
 
     SerialPrintf("About to write xcr0: %x\n", CR0);
     WriteExtendedControlRegister(0, CR0);
 }
-
+*/
 
 void SetupInitialGDT() {
     DESC_TBL GDTData = {0};

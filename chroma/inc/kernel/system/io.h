@@ -55,7 +55,7 @@ uint32_t    WriteMXCSR(uint32_t Data);
 size_t      ReadControlRegister(int CRX);
 size_t      WriteControlRegister(int CRX, size_t Data);
 
-size_t      ReadExtendedControlRegister(size_t XCRX);
+//size_t      ReadExtendedControlRegister(size_t XCRX);
 size_t      WriteExtendedControlRegister(size_t XCRX, size_t Data);
 
 void        InvalidatePage(size_t Page);
