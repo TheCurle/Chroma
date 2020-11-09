@@ -18,6 +18,7 @@
 #include <kernel/system/io.h>
 #include <kernel/system/memory.h>
 #include <kernel/system/pci.h>
+#include <kernel/system/stack.h>
 
 //Removed cause "wacky copyrighted stuff"
 //#include <kernel/system/screen.h>
