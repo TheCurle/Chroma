@@ -1,6 +1,7 @@
 
-mmio = 0xfffffffff8000000;
-fb   = 0xfffffffffc000000;
+memstart = 0x14400;
+mmio     = 0xfffffffff8000000;
+fb       = 0xfffffffffc000000;
 
 PHDRS
 {

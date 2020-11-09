@@ -199,6 +199,8 @@ void* AlignPointer(const void* Pointer, size_t Alignment);
 *      C h r o m a    M e m o r y   M a n a g e m e n t
 *************************************************************/
 
+extern size_t memstart;
+
 extern size_t end;
 
 void        ListMemoryMap();
