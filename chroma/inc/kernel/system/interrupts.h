@@ -10,11 +10,11 @@ extern const char* ExceptionStrings[];
 
 
 typedef struct __attribute__((packed)) {
-    size_t  ss;
-    size_t  rsp;
-    size_t  rflags;
-    size_t  cs;
     size_t  rip;
+    size_t  cs;
+    size_t  rflags;
+    size_t  rsp;
+    size_t  ss;
 } INTERRUPT_FRAME;
 
 typedef struct __attribute__((packed)) {
