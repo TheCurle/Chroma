@@ -334,7 +334,7 @@ __attribute__((interrupt)) void ISR12Handler(INTERRUPT_FRAME* Frame, size_t Erro
 }
 __attribute__((interrupt)) void ISR13Handler(INTERRUPT_FRAME* Frame, size_t ErrorCode) {
 
-	SerialPrintf("\r\n\n[  GPF] 0x%p\r\n", Frame->rip);
+	SerialPrintf("\r\n\n[  GPF] RIP: 0x%p, CS: 0x%x, FLAGS: 0x%p, RSP: 0x%x, SS: 0x%x\r\n", Frame->rip, Frame->cs, Frame->rflags, Frame->rsp, Frame->ss);
 
 	StackTrace(6);
 
@@ -359,7 +359,7 @@ __attribute__((interrupt)) void ISR14Handler(INTERRUPT_FRAME* Frame, size_t Erro
 
 	SerialPrintf("[FAULT] } at address\n[FAULT] 0x%p\r\n\n", ReadControlRegister(2));	
 
-	StackTrace(15);
+	StackTrace(6);
 	ISR_Error_Common(Frame, ErrorCode, 14); // Page Fault
 }
 __attribute__((interrupt)) void ISR15Handler(INTERRUPT_FRAME* Frame) {
