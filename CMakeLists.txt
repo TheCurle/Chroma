@@ -54,5 +54,5 @@ set_property(SOURCE ${src_no_sse} PROPERTY COMPILE_FLAGS -mgeneral-regs-only)
 add_executable(kernel)
 
 target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_files} PUBLIC ${src_no_sse} PUBLIC ${lib_files} PUBLIC ${CMAKE_SOURCE_DIR}/font.o PUBLIC ${src_epilogue})
-target_compile_options(kernel PRIVATE -ffreestanding -O0 -Wall -Wextra -Wall -Werror -pedantic -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector )
+target_compile_options(kernel PRIVATE -ffreestanding -O0 -Wall -Wextra -Wall -Werror -pedantic -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -g)
 target_link_options(kernel PRIVATE -T linker.ld -ffreestanding -O2 -nostdlib -nostartfiles -lgcc)
