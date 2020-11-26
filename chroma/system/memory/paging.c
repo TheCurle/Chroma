@@ -239,7 +239,7 @@ void MapVirtualMemory(address_space_t* AddressSpace, void* VirtualAddress, size_
 
         if(!(*Entry & PAGE_PRESENT)) {
             directptr_t Pointer = PhysAllocateZeroMem(PAGE_SIZE);
-            *Entry = (size_t)(((char*)Pointer) + DIRECT_REGION);
+            *Entry = (size_t)(((char*)Pointer) - DIRECT_REGION);
         }
 
         *Entry |= Flags;
