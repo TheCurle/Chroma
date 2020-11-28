@@ -14,7 +14,8 @@ extern "C" {
 #define BOOT_MAGIC "BOOT"
 
 /* minimum protocol level:
- *  hardcoded kernel name, static kernel memory addresses */
+ *  hardcoded kernel name, static kernel memory addresses 
+ * this is the default */
 #define PROTOCOL_MINIMAL 0
 /* static protocol level:
  *  kernel name parsed from environment, static kernel memory addresses */
@@ -27,6 +28,7 @@ extern "C" {
 
 /* loader types, just informational */
 #define LOADER_BIOS (0<<2)
+/* unless we get to a weird stage, these should never be used. */
 #define LOADER_UEFI (1<<2)
 #define LOADER_RPI  (2<<2)
 
@@ -104,6 +106,31 @@ typedef struct {
    * MMapEnt *mmap_ent = &bootboot.mmap; mmap_ent++;
    * until you reach bootboot->size */
 } __attribute__((packed)) bootinfo;
+
+
+typedef struct {
+  uint32_t Magic;
+  uint8_t Class;
+  uint8_t Endianness;
+  uint8_t Version;
+  uint8_t ABI;
+  uint8_t ABIVersion;
+  uint8_t Unused[7];
+  uint16_t Type;
+  uint16_t TargetArchitecture;
+  uint32_t ELFVersion;
+  size_t EntryPoint;
+  size_t ProgramHeadersTable;
+  size_t SectionHeadersTable;
+  uint32_t Flags;
+  uint16_t ELFHeaderSize;
+  uint16_t ProgramHeadersEntrySize;
+  uint16_t ProgramHeaderEntries;
+  uint16_t SectionHeadersEntrySize;
+  uint16_t SectionHeaderEntries;
+  uint16_t SectionHeaderNameEntry;
+  uint8_t End;
+} __attribute__((packed)) ELF64Header_t;
 
 
 #ifdef  __cplusplus

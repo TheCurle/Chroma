@@ -8,6 +8,8 @@
  ***     Chroma       ***
  ***********************/
 
+size_t KernelLocation;
+
 
 /************************************************
 *    C O N S T A N T S   A N D   M A C R O S
@@ -51,6 +53,8 @@
 #define ERR_USER     0x4
 #define ERR_RESERVED 0x8
 #define ERR_INST     0x10
+
+#define ELF64MAGIC 0x7F454c46
 
 
 /*
@@ -104,8 +108,6 @@
 #define FB_REGION           0xFFFFFFFFFC000000ull // Cannot move!
 #define FB_PHYSICAL         0x00000000E0000000ull // Physical location of the Framebuffer
 #define KERNEL_REGION       0xFFFFFFFFFFE00000ull // -2MiB, from bootloader
-#define KERNEL_PHYSICAL     0x0000000000008000ull // Physical location of the kernel
-#define KERNEL_PHYSICAL_2   0x000000000011C000ull // For some reason the kernel is split in half
 
 #define USER_REGION         0x00007FFFFFFFFFFFull // Not needed yet, but we're higher half so we might as well be thorough
 

@@ -28,6 +28,7 @@ extern bootinfo bootldr;
 extern unsigned char* environment;
 extern uint8_t fb;
 extern volatile unsigned char _binary_font_psf_start;
+extern volatile size_t* _kernel_text_start;
 
 extern address_space_t KernelAddressSpace;
 
