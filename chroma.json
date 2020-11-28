@@ -3,12 +3,13 @@
     "config": "img/boot/config",
     "initrd": {
         "type": "tar",
-        "directory": "img/boot"
+        "file": "img/boot/exe"
     },
     "partitions": [
         {
             "type": "boot",
-            "size": 4
+            "size": 4,
+            "directory": "img/boot/loader"
         },
         {
             "type": "Microsoft basic data",
