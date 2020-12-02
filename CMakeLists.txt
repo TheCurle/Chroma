@@ -24,6 +24,7 @@ SET(src_files
     ${CMAKE_SOURCE_DIR}/chroma/system/memory/abstract_allocator.c
     ${CMAKE_SOURCE_DIR}/chroma/system/memory/physmem.c
     ${CMAKE_SOURCE_DIR}/chroma/system/drivers/keyboard.c
+    ${CMAKE_SOURCE_DIR}/chroma/system/drivers/elf.c
 )
 
 SET(lib_files

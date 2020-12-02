@@ -11,6 +11,30 @@
 extern "C" {
 #endif
 
+/* ELF headers hate me.
+ * Let's do this the hard way. */
+
+#define ELF_IDENT_MAGIC_OFF       0x0
+#define ELF_IDENT_CLASS_OFF       0x4
+#define ELF_IDENT_DATA_OFF        0x5
+#define ELF_IDENT_VERSION_OFF     0x6
+#define ELF_IDENT_OSABI_OFF       0x7
+#define ELF_IDENT_ABI_VERSION_OFF 0x8
+#define ELF_IDENT_PAD_OFF         0x9
+#define ELFTYPE_OFF               0x10
+#define ELFMACHINE_OFF            0x12
+#define ELFVERSION_OFF            0x14
+#define ELFENTRY_OFF              0x18
+#define ELFPHOFF_OFF              0x20
+#define ELFSHOFF_OFF              0x28 
+#define ELFFLAGS_OFF              0x30
+#define ELFEHSIZE_OFF             0x34
+#define ELFPHENTSIZE_OFF          0x36
+#define ELFPHNUM_OFF              0x38
+#define ELFSHENTSIZE_OFF          0x3A
+#define ELFSHNUM_OFF              0x3C
+#define ELFSHSTRNDX_OFF           0x40
+
 #define BOOT_MAGIC "BOOT"
 
 /* minimum protocol level:
@@ -107,30 +131,6 @@ typedef struct {
    * until you reach bootboot->size */
 } __attribute__((packed)) bootinfo;
 
-
-typedef struct {
-  uint32_t Magic;
-  uint8_t Class;
-  uint8_t Endianness;
-  uint8_t Version;
-  uint8_t ABI;
-  uint8_t ABIVersion;
-  uint8_t Unused[7];
-  uint16_t Type;
-  uint16_t TargetArchitecture;
-  uint32_t ELFVersion;
-  size_t EntryPoint;
-  size_t ProgramHeadersTable;
-  size_t SectionHeadersTable;
-  uint32_t Flags;
-  uint16_t ELFHeaderSize;
-  uint16_t ProgramHeadersEntrySize;
-  uint16_t ProgramHeaderEntries;
-  uint16_t SectionHeadersEntrySize;
-  uint16_t SectionHeaderEntries;
-  uint16_t SectionHeaderNameEntry;
-  uint8_t End;
-} __attribute__((packed)) ELF64Header_t;
 
 
 #ifdef  __cplusplus
