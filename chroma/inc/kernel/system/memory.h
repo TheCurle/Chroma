@@ -8,8 +8,6 @@
  ***     Chroma       ***
  ***********************/
 
-size_t KernelLocation;
-
 
 /************************************************
 *    C O N S T A N T S   A N D   M A C R O S
@@ -29,6 +27,11 @@ size_t KernelLocation;
 #define MAX(a, b)   ((a) > (b) ? (a) : (b))
 
 #define REINTERPRET_CAST(target, intermediate, value) ((target*)((intermediate*)value))
+
+#define FIXENDIAN64(x) __builtin_bswap64(x)
+#define FIXENDIAN32(x) __builtin_bswap32(x)
+#define FIXENDIAN16(x) __builtin_bswap16(x)
+
 
 #define CONCAT(x, y) x ## y
 #define CONCAT2(x, y) CONCAT(x, y)
@@ -54,7 +57,8 @@ size_t KernelLocation;
 #define ERR_RESERVED 0x8
 #define ERR_INST     0x10
 
-#define ELF64MAGIC 0x7F454c46
+#define ELF64MAGIC   0x7F454c46
+#define ELF64MAGICBE 0x464c457F
 
 
 /*
@@ -106,7 +110,7 @@ size_t KernelLocation;
 
 #define MMIO_REGION         0xFFFFFFFFF8000000ull // Cannot move!
 #define FB_REGION           0xFFFFFFFFFC000000ull // Cannot move!
-#define FB_PHYSICAL         0x00000000E0000000ull // Physical location of the Framebuffer
+#define FB_PHYSICAL         0x00000000FD000000ull // Physical location of the Framebuffer
 #define KERNEL_REGION       0xFFFFFFFFFFE00000ull // -2MiB, from bootloader
 
 #define USER_REGION         0x00007FFFFFFFFFFFull // Not needed yet, but we're higher half so we might as well be thorough

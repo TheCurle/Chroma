@@ -48,11 +48,9 @@
  * 
  */ 
 
-//extern size_t _kernel_text_start;
+extern size_t _kernel_text_start;
 extern size_t _kernel_rodata_start;
 extern size_t _kernel_data_start;
-
-size_t KernelLocation;
 
 //__attribute__((aligned(4096))) static size_t Pagetable[512] = {0};
 
@@ -140,10 +138,10 @@ void InitPaging() {
 
     SerialPrintf("[  Mem] Identity mapping higher half complete.\n");
 
-    MMapEnt* TopEntry = (MMapEnt*)(((size_t) (&bootldr) + bootldr.size) - sizeof(MMapEnt));
+    MMapEnt* TopEntry = (MMapEnt*)(((&bootldr) + bootldr.size) - sizeof(MMapEnt));
     size_t LargestAddress = TopEntry->ptr + TopEntry->size;
 
-    SerialPrintf("[  Mem] About to map lower memory into the Direct Region. Highest address = 0x%p\n", AlignUpwards(LargestAddress, PAGE_SIZE));
+    SerialPrintf("[  Mem] About to map lower memory into the Direct Region.\n");
     for(size_t Address = 0; Address < AlignUpwards(LargestAddress, PAGE_SIZE); Address += PAGE_SIZE) {
         MapVirtualMemory(&KernelAddressSpace, (size_t*)(((char*)Address) + DIRECT_REGION), Address, MAP_WRITE);
     }
@@ -153,28 +151,24 @@ void InitPaging() {
 
     //TODO: Disallow execution of rodata and data, and bootldr/environment
     for(void* Address = CAST(void*, KERNEL_REGION);
-            Address < CAST(void*, KERNEL_REGION + (KernelEnd - KernelAddr));
+            Address < CAST(void*, KERNEL_REGION + 0x2000); // Lower half of Kernel
             Address = CAST(void*, CAST(char*, Address) + PAGE_SIZE)) {
-                SerialPrintf("[  mem] Mapping 0x%p to 0x%p, relative to kernel at 0x%p\r\n", (CAST(size_t, Address) - KERNEL_REGION) + KernelLocation, Address, (CAST(size_t, Address) - KERNEL_REGION));
-                MapVirtualMemory(&KernelAddressSpace, Address, (CAST(size_t, Address) - KERNEL_REGION) + KernelLocation, MAP_EXEC);
+                MapVirtualMemory(&KernelAddressSpace, Address, (CAST(size_t, Address) - KERNEL_REGION) + KERNEL_PHYSICAL, MAP_EXEC);
     }
 
-    /*for(void* Address = CAST(void*, KERNEL_REGION + 0x2000);
+    for(void* Address = CAST(void*, KERNEL_REGION + 0x2000);
             Address < CAST(void*, KERNEL_REGION + 0x12000); // Higher half of kernel
             Address = CAST(void*, CAST(char*, Address) + PAGE_SIZE)) {
                 MapVirtualMemory(&KernelAddressSpace, Address, (CAST(size_t, Address) - KERNEL_REGION) + KERNEL_PHYSICAL_2, MAP_EXEC);
-    }*/
-    SerialPrintf("[  mem] Framebuffer at 0x%p, is 0x%p long. Mapping to 0x%p.\r\n", bootldr.fb_ptr, bootldr.fb_size, FB_REGION);
+    }
+
     for(void* Address = CAST(void*, FB_REGION);
-            Address < CAST(void*, bootldr.fb_size + FB_REGION);
+            Address < CAST(void*, 0x200000);     // TODO: Turn this into a calculation with bootldr.fb_size
             Address = CAST(void*, CAST(char*, Address) + PAGE_SIZE)) {
                 MapVirtualMemory(&KernelAddressSpace, Address, (CAST(size_t, Address) - FB_REGION) + FB_PHYSICAL, MAP_WRITE);
     }
 
     SerialPrintf("[  Mem] Kernel mapped into pagetables. New PML4 at 0x%p\r\n", KernelAddressSpace.PML4);
-    SerialPrintf("[  Mem] About to move into our own pagetables.\r\n");
-    WriteControlRegister(3, (size_t) KernelAddressSpace.PML4);
-    SerialPrintf("[  Mem] We survived!\r\n");
     //ASSERT(Allocator != NULL);
 }
 
@@ -245,7 +239,7 @@ void MapVirtualMemory(address_space_t* AddressSpace, void* VirtualAddress, size_
 
         if(!(*Entry & PAGE_PRESENT)) {
             directptr_t Pointer = PhysAllocateZeroMem(PAGE_SIZE);
-            *Entry = (size_t)(((char*)Pointer) - DIRECT_REGION);
+            *Entry = (size_t)(((char*)Pointer) + DIRECT_REGION);
         }
 
         *Entry |= Flags;

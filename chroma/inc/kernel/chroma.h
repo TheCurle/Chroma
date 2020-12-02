@@ -69,6 +69,8 @@ void InitPrint();
 void SetupInitialGDT();
 void SetupIDT();
 
+int ParseKernelHeader(size_t InitrdPtr);
+
 int Main();
 
 void Exit();
