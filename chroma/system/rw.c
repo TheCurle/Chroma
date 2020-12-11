@@ -151,22 +151,22 @@ size_t ReadControlRegister(int CRX) {
 size_t WriteControlRegister(int CRX, size_t Data) {
     switch(CRX) {
         case 0:
-            __asm__ __volatile__ ("mov %[dest], %%cr0" : : [dest] "r" (Data) : );
+            __asm__ __volatile__ ("movq %[dest], %%cr0" : : [dest] "r" (Data) : );
             break;
         case 1:
-            __asm__ __volatile__ ("mov %[dest], %%cr1" : : [dest] "r" (Data) : );
+            __asm__ __volatile__ ("movq %[dest], %%cr1" : : [dest] "r" (Data) : );
             break;
         case 2:
-            __asm__ __volatile__ ("mov %[dest], %%cr2" : : [dest] "r" (Data) : );
+            __asm__ __volatile__ ("movq %[dest], %%cr2" : : [dest] "r" (Data) : );
             break;
         case 3:
-            __asm__ __volatile__ ("mov %[dest], %%cr3" : : [dest] "r" (Data) : );
+            __asm__ __volatile__ ("movq %[dest], %%cr3" : : [dest] "r" (Data) : );
             break;
         case 4:
-            __asm__ __volatile__ ("mov %[dest], %%cr4" : : [dest] "r" (Data) : );
+            __asm__ __volatile__ ("movq %[dest], %%cr4" : : [dest] "r" (Data) : );
             break;
         case 8:
-            __asm__ __volatile__ ("mov %[dest], %%cr8" : : [dest] "r" (Data) : );
+            __asm__ __volatile__ ("movq %[dest], %%cr8" : : [dest] "r" (Data) : );
             break;
         case 'f':
             __asm__ __volatile__ ("pushq %[dest]\n\t" "popfq" : : [dest] "r" (Data) : "cc");
