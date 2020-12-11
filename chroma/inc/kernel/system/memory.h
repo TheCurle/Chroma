@@ -112,6 +112,17 @@
 #define FB_REGION           0xFFFFFFFFFC000000ull // Cannot move!
 #define FB_PHYSICAL         0x00000000FD000000ull // Physical location of the Framebuffer
 #define KERNEL_REGION       0xFFFFFFFFFFE00000ull // -2MiB, from bootloader
+#define KERNEL_TEXT         0x0000000000002000ull // Offset of symbols from the kernel text
+
+#define KERNEL_PHYSICAL     KernelLocation        // The located kernel from the bootstrap process
+#define KERNEL_END          KernelLocation + (KernelEnd - KernelAddr)
+
+#define CODE_STACK_PHYSICAL 0x0000000000006C00ull // The base of the stack running the C code we enter with
+#define CODE_STACK_END      0x0000000000007C00ull 
+#define CORE_STACK_PHYSICAL 0x0000000000014000ull // The first CPU core's stack
+#define CORE_STACK_END      0x0000000000015000ull
+#define STACK_TOP           0xFFFFFFFFFFFFF000ull // The start of the highest stack
+#define MEM_CEILING         0xFFFFFFFFFFFFFFFFull // The top of the stack in the map
 
 #define USER_REGION         0x00007FFFFFFFFFFFull // Not needed yet, but we're higher half so we might as well be thorough
 

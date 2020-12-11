@@ -112,6 +112,26 @@ const char* IntToAscii(int In) {
 
 }
 
+static void GetPageFromTables(address_space_t* AddressSpace, size_t VirtualAddress, size_t** Page) {
+
+    //ASSERT(Page != NULL);
+    //ASSERT(AddressSpace != NULL);
+
+    size_t* Pagetable = AddressSpace->PML4;
+    for(int Level = 4; Level > 1; Level--) {
+        size_t* Entry = &Pagetable[(VirtualAddress >> (12u + 9u * (Level - 1))) & 0x1FFU];
+
+        ASSERT(*Entry & PAGE_PRESENT, "Page not present during retrieval");
+        SerialPrintf("[  mem] Retrieval of level %d:%d of 0x%p is 0x%p\r\n", Level, (12u + 9u * (Level - 1)),  VirtualAddress, (size_t) Entry);
+
+        Pagetable = (size_t*)((char*)(*Entry & 0x7ffffffffffff000ull) + DIRECT_REGION);
+    }
+
+    ASSERT(Pagetable[(VirtualAddress >> 12U) & 0x1FFU] & PAGE_PRESENT, "PDPE not present during retrieval");
+    *Page = &Pagetable[(VirtualAddress >> 12U) & 0x1FFU];
+
+}
+
 
 void InitPaging() {
     StackFreeList = (list_entry_t) { &StackFreeList, &StackFreeList };
@@ -127,8 +147,12 @@ void InitPaging() {
         .PML4 = PhysAllocateZeroMem(PAGE_SIZE)
     };
 
-    size_t* Pagetable = KernelAddressSpace.PML4;
+    //address_space_t InitialPaging = (address_space_t) {
+    //    .Lock = {0},
+    //    .PML4 = (size_t*) ReadControlRegister(3)
+    //};
 
+    size_t* Pagetable = KernelAddressSpace.PML4;
     //SerialPrintf("[  Mem] About to identity map the higher half.\n");
     // Identity map the higher half
     for(int i = 256; i < 512; i++) {
@@ -152,11 +176,11 @@ void InitPaging() {
     SerialPrintf("[  Mem] Mapping kernel into new memory map.\r\n");
 
     //TODO: Disallow execution of rodata and data, and bootldr/environment
-    for(void* Address = CAST(void*, KERNEL_REGION);
-            Address < CAST(void*, KERNEL_REGION + (KernelEnd - KernelAddr));
+    for(void* Address = CAST(void*, KERNEL_PHYSICAL + KERNEL_TEXT);
+            Address < CAST(void*, KERNEL_END);
             Address = CAST(void*, CAST(char*, Address) + PAGE_SIZE)) {
-                SerialPrintf("[  mem] Mapping 0x%p to 0x%p, relative to kernel at 0x%p\r\n", (CAST(size_t, Address) - KERNEL_REGION) + KernelLocation, Address, (CAST(size_t, Address) - KERNEL_REGION));
-                MapVirtualMemory(&KernelAddressSpace, Address, (CAST(size_t, Address) - KERNEL_REGION) + KernelLocation, MAP_EXEC);
+                SerialPrintf("[  mem] Mapping 0x%p to 0x%p, relative to kernel at 0x%p\r\n", CAST(size_t, Address), CAST(size_t, (CAST(size_t, Address) - KERNEL_PHYSICAL) + KERNEL_REGION), CAST(size_t, Address) - KERNEL_PHYSICAL);
+                MapVirtualMemory(&KernelAddressSpace, CAST(void*, (CAST(size_t, Address) - KERNEL_PHYSICAL) + KERNEL_REGION), CAST(size_t, Address), MAP_EXEC);
     }
 
     /*for(void* Address = CAST(void*, KERNEL_REGION + 0x2000);
@@ -165,14 +189,38 @@ void InitPaging() {
                 MapVirtualMemory(&KernelAddressSpace, Address, (CAST(size_t, Address) - KERNEL_REGION) + KERNEL_PHYSICAL_2, MAP_EXEC);
     }*/
     SerialPrintf("[  mem] Framebuffer at 0x%p, is 0x%p long. Mapping to 0x%p.\r\n", bootldr.fb_ptr, bootldr.fb_size, FB_REGION);
-    for(void* Address = CAST(void*, FB_REGION);
-            Address < CAST(void*, bootldr.fb_size + FB_REGION);
+    for(void* Address = CAST(void*, FB_PHYSICAL);
+            Address < CAST(void*, bootldr.fb_size + FB_PHYSICAL);
             Address = CAST(void*, CAST(char*, Address) + PAGE_SIZE)) {
-                MapVirtualMemory(&KernelAddressSpace, Address, (CAST(size_t, Address) - FB_REGION) + FB_PHYSICAL, MAP_WRITE);
+                MapVirtualMemory(&KernelAddressSpace, CAST(void*, (CAST(size_t, Address) - FB_PHYSICAL) + FB_REGION), CAST(size_t, Address), MAP_WRITE);
     }
 
-    SerialPrintf("[  Mem] Kernel mapped into pagetables. New PML4 at 0x%p\r\n", KernelAddressSpace.PML4);
+    SerialPrintf("[  mem] Stack at 0x%p, mapping to UNKNOWN, top reaching UNKNOWN\r\n", CODE_STACK_PHYSICAL);
+    SerialPrintf("[  mem] Core 1 stack at 0x%p, mapping to 0x%p : 0x%p\r\n", CORE_STACK_PHYSICAL, STACK_TOP, MEM_CEILING);
+    for(void* Address = CAST(void*, CORE_STACK_PHYSICAL);
+            Address < CAST(void*, CORE_STACK_END);
+            Address = CAST(void*, CAST(char*, Address) + PAGE_SIZE)) {
+                MapVirtualMemory(&KernelAddressSpace, CAST(void*, STACK_TOP + (CAST(size_t, Address) - CORE_STACK_PHYSICAL)), CAST(size_t, Address), MAP_WRITE);
+    }
+
+    SerialPrintf("[  Mem] Kernel mapped into pagetables. New PML4 at 0x%p / 0x%p\r\n", (size_t) KernelAddressSpace.PML4, (size_t) Pagetable);
     SerialPrintf("[  Mem] About to move into our own pagetables.\r\n");
+
+    /*size_t pml4e = (0xffffffffffe021ba >> 39) & 0b111111111;
+    size_t pdpte = (0xffffffffffe021ba >> 30) & 0b111111111;
+    size_t pde   = (0xffffffffffe021ba >> 21) & 0b111111111;
+    size_t pte   = (0xffffffffffe021ba >> 12) & 0b111111111;
+    size_t offset = (0xffffffffffe021ba & 0b111111111111);*/
+    size_t* selfQuery;
+    GetPageFromTables(&KernelAddressSpace, 0xffffffffffe021ba, &selfQuery);
+    // This ^ returns the start of the page where the address is located, which includes flags.
+    // So we mask them off and add the offset later to retrieve the physical address V
+    size_t selfQueryRes = *((volatile size_t*)(selfQuery)) & 0x7ffffffffffff000ull;
+    size_t* initialQueryRes = 0; // TODO: Unstable!
+    //GetPageFromTables(&InitialPaging, 0xffffffffffe021ba, &initialQueryRes);
+
+    size_t targetAddr = 0xffffffffffe021ba;
+    SerialPrintf("[  Mem] Sanity check: Virtual Addr 0x%p maps to physical addr 0x%po vs 0x%pb\r\n", targetAddr, (size_t) selfQueryRes + (targetAddr & 0x1FF), (size_t) initialQueryRes);
     WriteControlRegister(3, (size_t) KernelAddressSpace.PML4);
     SerialPrintf("[  Mem] We survived!\r\n");
     //ASSERT(Allocator != NULL);
@@ -195,24 +243,6 @@ static bool ExpandAllocator(size_t NewSize) {
     return AddPoolToAllocator(Allocator, Pool, AllocSize) != NULL;
 } 
 
-static void GetPageFromTables(address_space_t* AddressSpace, size_t VirtualAddress, size_t** Page) {
-
-    //ASSERT(Page != NULL);
-    //ASSERT(AddressSpace != NULL);
-
-    size_t* Pagetable = AddressSpace->PML4;
-    for(int Level = 4; Level > 1; Level--) {
-        size_t* Entry = &Pagetable[(VirtualAddress >> (12u + 9u * (Level - 1))) & 0x1FFU];
-
-        ASSERT(*Entry & PAGE_PRESENT, "Page not present during retrieval");
-
-        Pagetable = (size_t*)((char*)(*Entry & 0x7ffffffffffff000ull) + DIRECT_REGION);
-    }
-
-    ASSERT(Pagetable[(VirtualAddress >> 12U) & 0x1FFU] & PAGE_PRESENT, "PDPE not present during retrieval");
-    *Page = &Pagetable[(VirtualAddress >> 12U) & 0x1FFU];
-
-}
 
 void SetAddressSpace(address_space_t* AddressSpace) {
     //ASSERT(AddressSpace != NULL);
