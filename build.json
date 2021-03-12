@@ -1,0 +1,82 @@
+{
+    "name": "Chroma",
+    "target": "x86_64-elf-gcc",
+
+    "author": "Curle",
+
+    "source": {
+        "inc": [
+            "$root/chroma/inc/"
+        ],
+
+        "font": [
+            "$root/font.o"
+        ],
+
+        "linkerscript": [
+            "$root/linker.ld"
+        ],
+
+        "preamble": [
+            "$root/global/crt0.o",
+            "$root/global/crti.o",
+            "$root/global/crtbegin.o"
+        ],
+
+        "main": [
+            "$root/chroma/kernel.c",
+            "$root/chroma/video/draw.c",
+            "$root/chroma/video/print.c",
+            "$root/chroma/system/cpu.c",
+            "$root/chroma/system/rw.c",
+            "$root/chroma/system/serial.c",
+            "$root/chroma/system/pci.c",
+            "$root/chroma/system/memory/stack.c",
+            "$root/chroma/system/memory/paging.c",
+            "$root/chroma/system/memory/abstract_allocator.c",
+            "$root/chroma/system/memory/physmem.c",
+            "$root/chroma/system/drivers/keyboard.c",
+            "$root/chroma/system/drivers/elf.c"
+        ],
+
+        "no-sse": [
+            "$root/chroma/system/interrupts.c"
+        ],
+
+        "lib": [
+            "$root/chroma/lainlib/list/basic_list.c",
+            "$root/chroma/lainlib/mutex/ticketlock.c",
+            "$root/chroma/lainlib/compression/lzgmini.c"
+        ],
+
+        "epilogue": [
+            "$root/global/crtend.o",
+            "$root/global/crtn.o" 
+        ]
+    },
+
+    "build": {
+        "compile-no-sse": [
+            "-I$inc -ffreestanding -O0 -Wall -Wextra -Wall -Werror -pedantic -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -ggdb3 -mgeneral-regs-only",
+            "$no-sse"
+        ],
+
+        "compile-main": [
+            "-I$inc -ffreestanding -O0 -Wall -Wextra -Wall -Werror -pedantic -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -ggdb3",
+            "$preamble",
+            "$main",
+            "$lib",
+            "$font",
+            "$epilogue"
+        ],
+
+        "link": [
+            "-T $linkerscript -ffreestanding -O2 -nostdlib -nostartfiles -lgcc",
+            "%.o"
+        ],
+
+        "output": [
+            "Chroma.elf"
+        ]
+    }
+}
