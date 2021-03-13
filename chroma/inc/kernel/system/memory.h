@@ -116,6 +116,7 @@
 
 #define KERNEL_PHYSICAL     KernelLocation        // The located kernel from the bootstrap process
 #define KERNEL_END          KernelLocation + (KernelEnd - KernelAddr)
+#define KERNEL_OFFSET       0x0000000000039000ull // KERNEL_PHYSICAL -> KERNEL_PHYSICAL + KERNEL_OFFSET + KERNEL_REGION
 
 #define CODE_STACK_PHYSICAL 0x0000000000006C00ull // The base of the stack running the C code we enter with
 #define CODE_STACK_END      0x0000000000007C00ull 

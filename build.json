@@ -32,7 +32,6 @@
             "$root/chroma/system/serial.c",
             "$root/chroma/system/pci.c",
             "$root/chroma/system/memory/stack.c",
-            "$root/chroma/system/memory/paging.c",
             "$root/chroma/system/memory/abstract_allocator.c",
             "$root/chroma/system/memory/physmem.c",
             "$root/chroma/system/drivers/keyboard.c",
@@ -56,17 +55,21 @@
     },
 
     "build": {
-        "compile-no-sse": [
-            "-I$inc -ffreestanding -O0 -Wall -Wextra -Wall -Werror -pedantic -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -ggdb3 -mgeneral-regs-only",
-            "$no-sse"
-        ],
 
         "compile-main": [
             "-I$inc -ffreestanding -O0 -Wall -Wextra -Wall -Werror -pedantic -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -ggdb3",
             "$preamble",
             "$main",
             "$lib",
-            "$font",
+            "$font"
+        ],
+        
+        "compile-no-sse": [
+            "-I$inc -ffreestanding -O0 -Wall -Wextra -Wall -Werror -pedantic -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -ggdb3 -mgeneral-regs-only",
+            "$no-sse"
+        ],
+
+        "compile-last": [
             "$epilogue"
         ],
 
@@ -76,7 +79,7 @@
         ],
 
         "output": [
-            "Chroma.elf"
+            "kernel"
         ]
     }
 }
