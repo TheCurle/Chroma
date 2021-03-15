@@ -18,8 +18,6 @@ size_t KernelEnd = (size_t) &end;
 
 address_space_t KernelAddressSpace;
 
-size_t KernelLocation;
-
 int Main(void) {
     KernelAddressSpace = (address_space_t) {0};
 
@@ -48,7 +46,7 @@ int Main(void) {
 
     //DrawSplash();
 
-    //InitPaging();
+    InitPaging();
 
 
     for(;;) { }

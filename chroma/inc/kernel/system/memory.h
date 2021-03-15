@@ -139,6 +139,9 @@
 
 #define PAGE_SHIFT 12
 
+#define TO_DIRECT(addr) ((size_t)(addr) + DIRECT_REGION)
+#define FROM_DIRECT(addr) ((size_t)(addr) - DIRECT_REGION)
+
 /*********************************************
 *      T Y P E   D E F I N I T I O N S
 **********************************************/
@@ -148,7 +151,7 @@ typedef void* directptr_t;
 typedef struct {
     ticketlock_t Lock;
 
-    directptr_t  PML4;
+    size_t*  PML4;
 } address_space_t;
 
 typedef enum {
@@ -258,12 +261,14 @@ void*       memcpy(void* dest, void const* src, size_t len);
 *      C h r o m a     A l l o c a t o r
 **********************************************/
 
-void  SetAddressSpace(address_space_t* Space);
 //TODO: Copy to/from Userspace
-void  MapVirtualMemory(address_space_t* Space, void* VirtualAddress, size_t PhysicalAddress, mapflags_t Flags);
-void  UnmapVirtualMemory(address_space_t* Space, void* VirtualAddress);
+void MapVirtualPage(address_space_t* AddressSpace, size_t Physical, size_t Virtual, size_t PageFlags);
+void MapVirtualPageNoDirect(address_space_t* AddressSpace, size_t Physical, size_t Virtual, size_t PageFlags);
 
-void  CacheVirtualMemory(address_space_t* Space, void* VirtualAddress, pagecache_t CacheType);
+size_t DecodeVirtualAddress(address_space_t* AddressSpace, size_t VirtualAddress);
+size_t DecodeVirtualAddressNoDirect(address_space_t* AddressSpace, size_t VirtualAddress);
+
+size_t* CreateNewPageTable(address_space_t* AddressSpace);
 
 void* AllocateMemory(size_t Bits);
 
