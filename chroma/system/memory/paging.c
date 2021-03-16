@@ -60,7 +60,7 @@ void InitPaging() {
         .PML4 = (size_t*) ReadControlRegister(3)
     };
 
-    size_t AddressToFind = 0xffffffffffe021ba;
+    size_t AddressToFind = 0xffffffffffffff58;
     size_t BootloaderAddress = DecodeVirtualAddressNoDirect(&BootloaderAddressSpace, AddressToFind);
     size_t KernelDisoveredAddress = DecodeVirtualAddressNoDirect(&KernelAddressSpace, AddressToFind);
     SerialPrintf("[  Mem] Diagnostic: Existing pagetables put 0x%p at 0x%p.\r\n", AddressToFind, BootloaderAddress);
@@ -70,8 +70,8 @@ void InitPaging() {
     //if(BootloaderAddress != KernelDisoveredAddress)
         //for(;;) {}
 
-    SerialPrintf("[  Mem] Attempting to jump into our new pagetables.\r\n");
-    WriteControlRegister(3, (size_t) KernelAddressSpace.PML4);
+    SerialPrintf("[  Mem] Attempting to jump into our new pagetables: %d\r\n", (size_t) KernelAddressSpace.PML4);
+    WriteControlRegister(3, (size_t) KernelAddressSpace.PML4 & STACK_TOP);
     SerialPrintf("[  Mem] Worked\r\n");
     for(;;) {}
 }

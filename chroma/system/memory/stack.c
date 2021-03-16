@@ -22,7 +22,7 @@ void StackTrace(size_t cycles) {
     __asm__ __volatile__ ("mov %%rbp, %[dest]" : [dest] "=r" (stack) : :);
     SerialPrintf("[Trace] Beginning stack trace. RBP is currently 0x%p\r\n", stack);
     for(size_t frame = 0; stack != 0 && frame < cycles; ++frame) {
-        SerialPrintf("[Trace]   0x%p \r\n", stack->rip);
+        SerialPrintf("[Trace] (%d) 0x%p:  0x%p \r\n", frame, stack->rbp, stack->rip);
         stack = stack->rbp;
     }
     SerialPrintf("[Trace] Stack trace over.\r\n");
