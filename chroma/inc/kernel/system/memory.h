@@ -142,6 +142,8 @@
 #define TO_DIRECT(addr) ((size_t)(addr) + DIRECT_REGION)
 #define FROM_DIRECT(addr) ((size_t)(addr) - DIRECT_REGION)
 
+#define PREFIX(func)		k ## func
+
 /*********************************************
 *      T Y P E   D E F I N I T I O N S
 **********************************************/
@@ -244,7 +246,7 @@ void        PhysRefPage(directptr_t Page);
 
 void        PhysFreePage(directptr_t Page);
 
-void        FreePhysMem(directptr_t Phys);
+void        PhysFreeMem(directptr_t Phys, size_t count);
 
 size_t      SeekFrame();
 
@@ -281,3 +283,8 @@ void* AllocateKernelStack();
 void  FreeKernelStack(void* StackAddress);
 
 void  PageFaultHandler(INTERRUPT_FRAME Frame);
+
+extern void    *PREFIX(malloc)(size_t);				///< The standard function.
+extern void    *PREFIX(realloc)(void *, size_t);	///< The standard function.
+extern void    *PREFIX(calloc)(size_t, size_t);		///< The standard function.
+extern void     PREFIX(free)(void *);				///< The standard function.

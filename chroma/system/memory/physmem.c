@@ -281,11 +281,11 @@ directptr_t PhysAllocateLowZeroMem(size_t Size) {
 }
 
 void PhysFreeMem(directptr_t Pointer, size_t Size) {
-    ASSERT(Pointer >= (directptr_t) DIRECT_REGION, "PhysFreeMem: Attempting to free memory not in the direct mapping region.");
+    //ASSERT(Pointer >= (directptr_t) DIRECT_REGION, "PhysFreeMem: Attempting to free memory not in the direct mapping region.");
 
     buddy_t* Buddy;
 
-    if(Pointer < (void*)(LOWER_REGION + DIRECT_REGION)) 
+    if(Pointer < (void*)(LOWER_REGION /* + DIRECT_REGION */)) 
         Buddy = &LowBuddy;
     else
         Buddy = &HighBuddy;
