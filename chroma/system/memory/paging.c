@@ -34,6 +34,14 @@ void InitPaging() {
         .PML4 = PhysAllocateZeroMem(4096)
     };
 
+    address_space_t BootloaderAddressSpace = (address_space_t) {
+        .Lock = {0},
+        .PML4 = (size_t*) ReadControlRegister(3)
+    };
+
+    size_t AddressToFind = (size_t) &fb;
+    size_t BootldrAddress = 0x8000;
+    
     SerialPrintf("[  Mem] Identity mapping the entirety of physical memory\r\n");
 
     for(size_t i = 0; i < MemorySize / PAGE_SIZE; i++) {
@@ -43,15 +51,21 @@ void InitPaging() {
         // TODO: Map kernel mem
     }
 
+    SerialPrintf("[  Mem] Mapping 0x%x bytes of bootloader structure, starting at 0x%p\r\n", bootldr.size, BootldrAddress);
+    for(size_t i = BootldrAddress; i < (BootldrAddress + bootldr.size); i += PAGE_SIZE)
+        MapVirtualPageNoDirect(&KernelAddressSpace, i, KERNEL_REGION + (i - BootldrAddress), 0x3);
+
     // This allows the code to actually run
-    SerialPrintf("[  Mem] Mapping kernel\r\n");
-    for(size_t i = KERNEL_PHYSICAL + KERNEL_TEXT; i < KERNEL_END; i += PAGE_SIZE) 
+    SerialPrintf("[  Mem] Mapping 0x%x bytes of kernel, starting at 0x%p\r\n", KernelEnd - KernelAddr, KERNEL_PHYSICAL + KERNEL_TEXT);
+    for(size_t i = KERNEL_PHYSICAL + KERNEL_TEXT; i < (KernelEnd - KernelAddr) + KERNEL_PHYSICAL; i += PAGE_SIZE) 
         MapVirtualPageNoDirect(&KernelAddressSpace, i, (i - KERNEL_PHYSICAL) + KERNEL_REGION, 0x3);
 
     // This allows us to write to the screen
-    SerialPrintf("[  Mem] Mapping framebuffer\r\n");
-    for(size_t i = FB_PHYSICAL; i < bootldr.fb_size + FB_PHYSICAL; i += PAGE_SIZE)
-        MapVirtualPageNoDirect(&KernelAddressSpace, i, (i - FB_PHYSICAL) + FB_REGION, 0x3);
+    SerialPrintf("[  Mem] Mapping 0x%x bytes of framebuffer, starting at 0x%p\r\n", bootldr.fb_size, FB_PHYSICAL);
+    for(size_t i = FB_PHYSICAL; i < bootldr.fb_size + FB_PHYSICAL; i += PAGE_SIZE) {
+        MapVirtualPageNoDirect(&KernelAddressSpace, i, i, 0x3); // FD000000 + (page)
+        MapVirtualPageNoDirect(&KernelAddressSpace, i, (i - FB_PHYSICAL) + FB_REGION, 0x3); // FFFFFFFFFC000000 + (page)
+    }
     
     // This allows us to call functions
     SerialPrintf("[  Mem] Mapping stack\r\n");
@@ -59,16 +73,12 @@ void InitPaging() {
 
     // Make sure everything is sane
     SerialPrintf("[  Mem] Diagnostic: Querying existing page tables\r\n");
-    address_space_t BootloaderAddressSpace = (address_space_t) {
-        .Lock = {0},
-        .PML4 = (size_t*) ReadControlRegister(3)
-    };
 
-    size_t AddressToFind = 0xffffffffffffff58;
+    AddressToFind = (size_t) &(bootldr);
     size_t BootloaderAddress = DecodeVirtualAddressNoDirect(&BootloaderAddressSpace, AddressToFind);
     size_t KernelDisoveredAddress = DecodeVirtualAddressNoDirect(&KernelAddressSpace, AddressToFind);
-    SerialPrintf("[  Mem] Diagnostic: Existing pagetables put 0x%p at 0x%p.\r\n", AddressToFind, BootloaderAddress);
-    SerialPrintf("[  Mem] Diagnostic: Our pagetables put 0x%p at 0x%p.\r\n", AddressToFind, KernelDisoveredAddress);
+    SerialPrintf("[  Mem] Diagnostic: Existing pagetables put 0x%p at 0x%p + 0x%p.\r\n", AddressToFind, BootloaderAddress, AddressToFind & ~STACK_TOP);
+    SerialPrintf("[  Mem] Diagnostic: Our pagetables put 0x%p at 0x%p + 0x%p.\r\n", AddressToFind, KernelDisoveredAddress, AddressToFind & ~STACK_TOP);
     SerialPrintf("[  Mem] %s\r\n", BootloaderAddress == KernelDisoveredAddress ? "These match. Continuing." : "These do not match. Continuing with caution..");
     
     //if(BootloaderAddress != KernelDisoveredAddress)
@@ -77,7 +87,6 @@ void InitPaging() {
     SerialPrintf("[  Mem] Attempting to jump into our new pagetables: 0x%p\r\n", (size_t) KernelAddressSpace.PML4);
     WriteControlRegister(3, (size_t) KernelAddressSpace.PML4 & STACK_TOP);
     SerialPrintf("[  Mem] Worked\r\n");
-    for(;;) {}
 }
 
 

@@ -45,7 +45,7 @@ typedef struct {
     uint32_t    scrlMode;
 } PRINTINFO;
 
-PRINTINFO PrintInfo = {0};
+static PRINTINFO PrintInfo = {0};
 
 void InitPrint() {
     PrintInfo.charHeight = 8;

@@ -35,6 +35,7 @@
             "$root/chroma/system/memory/abstract_allocator.c",
             "$root/chroma/system/memory/physmem.c",
             "$root/chroma/system/memory/paging.c",
+            "$root/chroma/system/memory/liballoc.c",
             "$root/chroma/system/drivers/keyboard.c",
             "$root/chroma/system/drivers/elf.c"
         ],

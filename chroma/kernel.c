@@ -20,9 +20,11 @@ address_space_t KernelAddressSpace;
 
 int Main(void) {
     KernelAddressSpace = (address_space_t) {0};
-
+    
     SerialPrintf("\r\n[ boot] Booting Chroma..\r\n");
+    SerialPrintf("[ boot] Bootloader data structure at 0x%p\r\n", (size_t) &bootldr);
     SerialPrintf("[ boot] Kernel loaded at 0x%p, ends at 0x%p, is %d bytes long.\r\n", KernelAddr, KernelEnd, KernelEnd - KernelAddr);
+    SerialPrintf("[ boot] Framebuffer at 0x%p / 0x%p, is %dx%d, 0x%x bytes long.\r\n", bootldr.fb_ptr, (size_t) &fb, bootldr.fb_width, bootldr.fb_height, bootldr.fb_size);
     SerialPrintf("[ boot] Initrd is physically at 0x%p, and is %d bytes long.\r\n", bootldr.initrd_ptr, bootldr.initrd_size);
     SerialPrintf("[ boot] Initrd's header is 0x%p\r\n", FIXENDIAN32(*((volatile uint32_t*)(bootldr.initrd_ptr))));
    
@@ -47,6 +49,10 @@ int Main(void) {
     //DrawSplash();
 
     InitPaging();
+
+    InitPrint();
+
+    WriteString("Paging complete. System initialized.");
 
 
     for(;;) { }
