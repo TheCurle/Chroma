@@ -31,6 +31,8 @@ typedef void (*IRQHandler)(INTERRUPT_FRAME* Frame);
 
 extern IRQHandler IRQ_Handlers[16];
 
+void InstallIRQ(int IRQ, void (*Handler)(INTERRUPT_FRAME* Frame));
+
 void IRQ_Common(INTERRUPT_FRAME* Frame, size_t Interupt);
 void ISR_Common(INTERRUPT_FRAME* Frame, size_t Interrupt);
 void ISR_Error_Common(INTERRUPT_FRAME* Frame, size_t ErrorCode, size_t Exception);

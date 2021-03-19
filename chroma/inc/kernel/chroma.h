@@ -20,6 +20,8 @@
 #include <kernel/system/pci.h>
 #include <kernel/system/stack.h>
 
+#include <lainlib/ethernet/e1000/e1000.h>
+
 //Removed cause "wacky copyrighted stuff"
 //#include <kernel/system/screen.h>
 
@@ -31,6 +33,8 @@ extern volatile unsigned char _binary_font_psf_start;
 extern volatile size_t* _kernel_text_start;
 
 extern address_space_t KernelAddressSpace;
+
+extern e1000_device_t* E1000NIC;
 
 typedef struct {
     uint32_t magic;

@@ -178,7 +178,7 @@ void InstallIRQ(int IRQ, void (*Handler)(INTERRUPT_FRAME* Frame)) {
 /* A simple wrapper that unlinks a function pointer, rendering the IRQ unused. */
 void UninstallIRQHandler(int IRQ) {
 	IRQ_Handlers[IRQ] = NULL; // 0 is used in the common check to make sure that the function is callable.
-	// This removes this irq from that check, ergo the function will no longer be called.
+	// This removes this IRQ from that check, ergo the function will no longer be called.
 }
 
 void EmptyIRQ(INTERRUPT_FRAME* frame) {

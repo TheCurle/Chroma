@@ -12,14 +12,14 @@
  * 
  */
 
-pci_dev_t** pci_root_devices = NULL;
+pci_device_t** pci_root_devices = NULL;
 pci_entry_t* pci_map = NULL;
 
 //static uint32_t PCIReadConfig(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset);
 
-//static const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_t progif);
+//static const char* PCIGetDeviceName_Subclass(uint8_t DeviceClass, uint8_t Subclass, uint8_t ProgrammableInterface);
 
-//static const char* PCIGetClassName(uint8_t devclass);
+//static const char* PCIGetClassName(uint8_t DeviceClass);
 
 void PCIEnumerate() {
 
@@ -27,9 +27,9 @@ void PCIEnumerate() {
 
     uint32_t registerData;
 
-    uint16_t device_id, vendor_id;
+    uint16_t DeviceID, VendorID;
 
-    uint8_t class_code, subclass_code;
+    uint8_t ClassCode, subclass_code;
 
     SerialPrintf("[  PCI] Started PCI Enumeration.");
  
@@ -42,11 +42,11 @@ void PCIEnumerate() {
                 uint8_t multifunction_bit = header & 0x80;                              // The multifunction bit is the highest bit of the header
                 
                 registerData = PCIReadConfig(bus, device, function, 0);                 // Read the Vendor/Device ID register
-                vendor_id = (uint16_t) (registerData & 0x0000FFFF);                     // Vendor ID is bottom word
-                device_id = (uint16_t) (registerData >> 16);                            // Device ID is top word
+                VendorID = (uint16_t) (registerData & 0x0000FFFF);                     // Vendor ID is bottom word
+                DeviceID = (uint16_t) (registerData >> 16);                            // Device ID is top word
 
                 registerData = PCIReadConfig(bus, device, function, 8);                 // Read the Device Info register
-                class_code = (uint16_t)( registerData >> 24);                           // Device class is top byte, so shift them down
+                ClassCode = (uint16_t)( registerData >> 24);                           // Device class is top byte, so shift them down
                 subclass_code = (uint16_t) ((registerData >> 16) & 0x00FF);             // Device subclass is same as header - lower byte of higher word. Shift down and mask just like before.
                 uint8_t device_progif = (uint16_t) ((registerData & 0x0000FF00) >> 8);  // Device Programming Interface is higher byte of lower word, so mask and shift
                 uint8_t device_revision = (uint16_t) (registerData & 0x000000FF);       // Device revision is lower byte of whole double word. Just mask it.
@@ -55,9 +55,9 @@ void PCIEnumerate() {
                 /* 0xFFFF is not a valid Vendor ID. This serves as a sanity check.
                  * If this check is true, then nothing is logged and we continue for the next loop.
                  */
-                if(vendor_id != 0xFFFF) {
-                    SerialPrintf("[  PCI]\n[  PCI]\t%x:%x:\n[  PCI]\t\tVendor: %x\n[  PCI]\t\tDevice: %x", bus, device, vendor_id, device_id);
-                    SerialPrintf("\n[  PCI]\t\tClass: %s\n[  PCI]\t\tDevice Type: %s\n[  PCI]\t\tRevision: %d\n", PCIGetClassName(class_code), PCIGetDeviceName_Subclass(class_code, subclass_code, device_progif), device_revision);
+                if(VendorID != 0xFFFF) {
+                    SerialPrintf("[  PCI]\n[  PCI]\t%x:%x:\n[  PCI]\t\tVendor: %x\n[  PCI]\t\tDevice: %x", bus, device, VendorID, DeviceID);
+                    SerialPrintf("\n[  PCI]\t\tClass: %s\n[  PCI]\t\tDevice Type: %s\n[  PCI]\t\tRevision: %d\n", PCIGetClassName(ClassCode), PCIGetDeviceName_Subclass(ClassCode, subclass_code, device_progif), device_revision);
                 }
 
                 /* If the PCI Device header tells us that this is not a multifunction device,
@@ -102,11 +102,11 @@ uint32_t PCIReadConfig(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offs
     return ReadPort(0xCFC, 4);
 }
 
-const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_t progif) {
-    switch(devclass) {
+const char* PCIGetDeviceName_Subclass(uint8_t DeviceClass, uint8_t Subclass, uint8_t ProgrammableInterface) {
+    switch(DeviceClass) {
 
         case 0x00: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: return "Non-VGA-Compatible device";
                 case 0x01: return "VGA-Compatible device";
                 default: return "Unknown Unclassified";
@@ -114,10 +114,10 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x01: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: return "SCSI Bus Controller";
                 case 0x01: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "ISA Compatibility Mode-only IDE Controller";
                         case 0x05: return "PCI Native Mode-only IDE Controller";
                         case 0x0A: return "ISA Compatibility Mode IDE Controller (supports PCI Native Mode)";
@@ -133,7 +133,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                 case 0x03: return "IPI Bus Controller";
                 case 0x04: return "RAID Controller";
                 case 0x05: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x20: return "Single-DMA ATA Controller";
                         case 0x30: return "Chained-DMA ATA Controller";
                         default: return "ATA Controller";
@@ -142,7 +142,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
 
 
                 case 0x06: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "Vendor-Specific Interface SATA Controller";
                         case 0x01: return "AHCI 1.0 SATA Controller";
                         case 0x02: return "Serial Storage Bus SATA Controller";
@@ -152,7 +152,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                 case 0x07: return "Serial Attached SCSI (SAS)";
 
                 case 0x08:{
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x01: return "NVMHCI Memory Controller";
                         case 0x02: return "NVMe Memory Controller";
                         default: return "Non-Volatile Memory Controller";
@@ -166,7 +166,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x02: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: return "Ethernet Controller";
                 case 0x01: return "Token Ring Controller";
                 case 0x02: return "FDDI Controller";
@@ -182,9 +182,9 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x03: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "VGA Controller";
                         case 0x01: return "8514 VGA Controller";
                         default: return "VGA Compatible Controller";
@@ -199,7 +199,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x04: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: return "Multimedia Video Controller";
                 case 0x01: return "Multimedia Audio Controller";
                 case 0x02: return "Computer Telephony Device";
@@ -210,7 +210,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x05: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: return "RAM Controller";
                 case 0x01: return "Flash Controller";
                 case 0x80: return "Other";
@@ -219,7 +219,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x06: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: return "Host Bridge";
                 case 0x01: return "ISA Bridge";
                 case 0x02: return "EISA Bridge";
@@ -238,10 +238,10 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x07: {
-            switch(subclass) {
+            switch(Subclass) {
 
                 case 0x00: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "Serial Controller <8250>";
                         case 0x01: return "Serial controller <16450>";
                         case 0x02: return "Serial controller <16550>";
@@ -255,7 +255,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                 }
 
                 case 0x01: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "Standard Parallel Port";
                         case 0x01: return "Bi-Directional Parallel Port";
                         case 0x02: return "ECP 1.X Compliant Parallel Port";
@@ -267,7 +267,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                 case 0x02: return "Multiport Serial Controller";
 
                 case 0x03: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "Generic Modem";
                         case 0x01: return "Hayes 16450 Compatible Modem";
                         case 0x02: return "Hayes 16550 Compatible Modem";
@@ -285,9 +285,9 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x08: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "Generic 8259-Compatible PIC";
                         case 0x01: return "ISA-Compatible PIC";
                         case 0x02: return "EISA-Compatible PIC";
@@ -298,7 +298,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                 }
                 
                 case 0x01: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "Generic 8237-Compatible DMA Controller";
                         case 0x01: return "ISA-Compatible DMA Controller";
                         case 0x02: return "EISA-Compatible DMA Controller";
@@ -307,7 +307,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                 }
 
                 case 0x02: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "Generic 8254-Compatible Timer";
                         case 0x01: return "ISA-Compatible Timer";
                         case 0x02: return "EISA-Compatible Timer";
@@ -317,7 +317,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                 }
 
                 case 0x03: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "Generic RTC Controller";
                         case 0x01: return "ISA-Compatible RTC Controller";
                         default: return "RTC Controller";
@@ -334,14 +334,14 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x09: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: return "Keyboard Controller";
                 case 0x01: return "Digitiser Pen";
                 case 0x02: return "Mouse Controller";
                 case 0x03: return "Scanner Controller";
                 
                 case 0x04: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "Generic Gameport Controller";
                         case 0x10: return "Extended Gameport Controller";
                         default: return "Gameport Controller";
@@ -355,7 +355,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x0A: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: return "Generic Docking Station";
                 case 0x80: return "Other";
                 default: return "Unknown Docking Station";
@@ -363,7 +363,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x0B: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: return "386 Processor";
                 case 0x01: return "486 Processor";
                 case 0x02: return "Pentium Processor";
@@ -378,9 +378,9 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x0C: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "Generic Firewire Controller";
                         case 0x10: return "OHCI Firewire Controller";
                         default: return "FireWire (IEEE 1394) Controller";
@@ -391,7 +391,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                 case 0x02: return "SSA";
 
                 case 0x03: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "UHCI USB Controller";
                         case 0x10: return "OHCI USB Controller";
                         case 0x20: return "EHCI USB (2.0) Controller";
@@ -407,7 +407,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
                 case 0x06: return "InfiniBand";
 
                 case 0x07: {
-                    switch(progif) {
+                    switch(ProgrammableInterface) {
                         case 0x00: return "SMIC IPMI Interface";
                         case 0x01: return "Keyboard Controller-Style IPMI Interface";
                         case 0x02: return "Block Transfer IPMI Interface";
@@ -423,7 +423,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x0D: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: return "IRDA Compatible Controller";
                 case 0x01: return "Consumer IR Controller";
                 case 0x10: return "RF Controller";
@@ -437,14 +437,14 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x0E: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: return "I20";
                 default: return "Unknown Intelligent Controller";
             }
         }
 
         case 0x0F: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x01: return "Satellite TV Controller";
                 case 0x02: return "Satellite Audio Controller";
                 case 0x03: return "Satellite Voice Controller";
@@ -454,7 +454,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x10: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: return "Network & Computing Codec";
                 case 0x10: return "Entertainment Codec";
                 case 0x80: return "Other Codec";
@@ -463,7 +463,7 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
         }
 
         case 0x11: {
-            switch(subclass) {
+            switch(Subclass) {
                 case 0x00: return "DPIO Modules";
                 case 0x01: return "Performance Counters";
                 case 0x10: return "Communication Synchronizer";
@@ -489,9 +489,9 @@ const char* PCIGetDeviceName_Subclass(uint8_t devclass, uint8_t subclass, uint8_
     return "Invalid Device!";
 }
 
-const char* PCIGetClassName(uint8_t devclass) {
+const char* PCIGetClassName(uint8_t DeviceClass) {
 
-    switch(devclass) {
+    switch(DeviceClass) {
         case 0x00: return "Unclassified";
         case 0x01: return "Mass Storage Controller";
         case 0x02: return "Network Controller";
