@@ -1,3 +1,5 @@
+#pragma once
+
 #include <kernel/system/descriptors.h>
 
 /************************
