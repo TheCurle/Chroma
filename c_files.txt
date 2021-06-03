@@ -1,0 +1,14 @@
+kernel\kernel.c
+kernel\bootstrap.c
+kernel\serial.c
+kernel\syscalls.c
+kernel\utils.c
+kernel\graphics.c
+kernel\print.c
+kernel\interrupts.c
+kernel\ports.c
+kernel\memory.c
+kernel\memory\memmove.c
+kernel\memory\memcmp.c
+kernel\memory\memcpy.c
+kernel\memory\memset.c
