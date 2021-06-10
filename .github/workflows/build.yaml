@@ -12,13 +12,6 @@ jobs:
       steps:
       - uses: actions/checkout@v2
 
-      #- name: Extract elf url
-      #  run: |
-      #    mkdir ${GITHUB_WORKSPACE}/tools/x86_64-elf-tools
-      #    echo "$ELFTOOLS"
-      #    echo "$ELFTOOLS" > ./tools/elf_url
-      #    echo ${{ hashFiles('tools/elf_url') }}
-
       - id: cache-elf-tools
         uses: actions/cache@v2
         with:
@@ -26,7 +19,7 @@ jobs:
           key: ${{ runner.os }}-elf_test12-${{ hashFiles('tools/elf_url.txt') }}
 
       - name: Get elf tools 🧝‍♀️
-        #if: steps.cache-elf-tools.outputs.cache-hit != 'true'
+        if: steps.cache-elf-tools.outputs.cache-hit != 'true'
         id: elf_tools
         run: |
           mkdir ${GITHUB_WORKSPACE}/tools/x86_64-elf-tools
