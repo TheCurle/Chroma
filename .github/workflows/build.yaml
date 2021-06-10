@@ -5,9 +5,6 @@ on:
     branches: 
       - master
 
-env:
-  ELFTOOLS: https://github.com/lordmilko/i686-elf-tools/releases/download/7.1.0/x86_64-elf-tools-linux.zip
-
 jobs:
     build:
       runs-on: ubuntu-latest
@@ -26,7 +23,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ./tools/x86_64-elf-tools/
-          key: ${{ runner.os }}-elf_test11
+          key: ${{ runner.os }}-elf_test12-${{ hashFiles('tools/elf_url.txt') }}
 
       - name: Get elf tools 🧝‍♀️
         #if: steps.cache-elf-tools.outputs.cache-hit != 'true'
@@ -34,6 +31,7 @@ jobs:
         run: |
           mkdir ${GITHUB_WORKSPACE}/tools/x86_64-elf-tools
           cd ${GITHUB_WORKSPACE}/tools/x86_64-elf-tools
+          ELFTOOLS=`cat ${GITHUB_WORKSPACE}/tools/elf_url.txt`
           wget ${ELFTOOLS}
           unzip x86_64-elf-tools-linux.zip
           export PATH=${GITHUB_WORKSPACE}/tools/x86_64-elf-tools/bin:$PATH
