@@ -33,10 +33,6 @@ jobs:
 
       - name: Setup
         run: |
-          ls -l ${GITHUB_WORKSPACE}/
-          ls -l ${GITHUB_WORKSPACE}/tools/
-          ls -l ${GITHUB_WORKSPACE}/tools/x86_64-elf-tools
-          ls -l ${GITHUB_WORKSPACE}/tools/x86_64-elf-tools/bin
           export PATH=${GITHUB_WORKSPACE}/tools/x86_64-elf-tools/bin:$PATH
           chmod +x "${GITHUB_WORKSPACE}/pre.sh"
           ./pre.sh
