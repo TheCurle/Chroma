@@ -9,3 +9,10 @@ Makefile
 CMakeFiles
 CMakeCache.txt
 .idea/
+
+cmake_install.cmake
+
+temp/
+bin/
+
+!src/global/*.o

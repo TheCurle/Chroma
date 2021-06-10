@@ -3,7 +3,7 @@
     "config": "img/boot/config",
     "initrd": {
         "type": "tar",
-        "file": "img/boot/exe"
+        "file": "bin/kernel"
     },
     "partitions": [
         {
