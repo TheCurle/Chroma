@@ -25,7 +25,7 @@ size_t KernelLocation;
 /**
  * Bootstrap the paging process.
  * Seeds the page tables, maps the kernel and framebuffer, etc.
- * 
+ *
  */
 void InitPaging() {
 
@@ -39,16 +39,17 @@ void InitPaging() {
         .PML4 = (size_t*) ReadControlRegister(3)
     };
 
-    size_t AddressToFind = (size_t) &fb;
+    size_t AddressToFind = KernelAddr + 0x2000;
     size_t BootldrAddress = 0x8000;
-    
+    KernelLocation = DecodeVirtualAddressNoDirect(&BootloaderAddressSpace, AddressToFind);
+    SerialPrintf("[  Mem] Double check: Kernel physically starts at 0x%p (0x%p), ends at 0x%p.\r\n", KernelLocation, AddressToFind, KERNEL_END);
+
     SerialPrintf("[  Mem] Identity mapping the entirety of physical memory\r\n");
 
     for(size_t i = 0; i < MemorySize / PAGE_SIZE; i++) {
         size_t Addr = i * 4096;
         MapVirtualPageNoDirect(&KernelAddressSpace, Addr, Addr, DEFAULT_PAGE_FLAGS);
         MapVirtualPageNoDirect(&KernelAddressSpace, Addr, TO_DIRECT(Addr), DEFAULT_PAGE_FLAGS);
-        // TODO: Map kernel mem
     }
 
     SerialPrintf("[  Mem] Mapping 0x%x bytes of bootloader structure, starting at 0x%p\r\n", bootldr.size, BootldrAddress);
@@ -56,9 +57,11 @@ void InitPaging() {
         MapVirtualPageNoDirect(&KernelAddressSpace, i, KERNEL_REGION + (i - BootldrAddress), 0x3);
 
     // This allows the code to actually run
-    SerialPrintf("[  Mem] Mapping 0x%x bytes of kernel, starting at 0x%p\r\n", KernelEnd - KernelAddr, KERNEL_PHYSICAL + KERNEL_TEXT);
-    for(size_t i = KERNEL_PHYSICAL + KERNEL_TEXT; i < (KernelEnd - KernelAddr) + KERNEL_PHYSICAL; i += PAGE_SIZE) 
-        MapVirtualPageNoDirect(&KernelAddressSpace, i, (i - KERNEL_PHYSICAL) + KERNEL_REGION, 0x3);
+    SerialPrintf("[  Mem] Mapping 0x%x bytes of kernel, starting at 0x%p\r\n", KERNEL_END - KERNEL_PHYSICAL, KERNEL_PHYSICAL);
+    for(size_t i = KERNEL_PHYSICAL; i < KERNEL_END; i += PAGE_SIZE)
+        MapVirtualPageNoDirect(&KernelAddressSpace, i, (i - KERNEL_PHYSICAL) + KERNEL_REGION + KERNEL_TEXT, 0x3);
+
+    // TODO: The above mapping loses the ELF header.
 
     // This allows us to write to the screen
     SerialPrintf("[  Mem] Mapping 0x%x bytes of framebuffer, starting at 0x%p\r\n", bootldr.fb_size, FB_PHYSICAL);
@@ -66,7 +69,7 @@ void InitPaging() {
         MapVirtualPageNoDirect(&KernelAddressSpace, i, i, 0x3); // FD000000 + (page)
         MapVirtualPageNoDirect(&KernelAddressSpace, i, (i - FB_PHYSICAL) + FB_REGION, 0x3); // FFFFFFFFFC000000 + (page)
     }
-    
+
     // This allows us to call functions
     SerialPrintf("[  Mem] Mapping stack\r\n");
     MapVirtualPageNoDirect(&KernelAddressSpace, CORE_STACK_PHYSICAL, STACK_TOP, 0x3);
@@ -74,13 +77,11 @@ void InitPaging() {
     // Make sure everything is sane
     SerialPrintf("[  Mem] Diagnostic: Querying existing page tables\r\n");
 
-    AddressToFind = (size_t) &(bootldr);
-    size_t BootloaderAddress = DecodeVirtualAddressNoDirect(&BootloaderAddressSpace, AddressToFind);
-    size_t KernelDisoveredAddress = DecodeVirtualAddressNoDirect(&KernelAddressSpace, AddressToFind);
-    SerialPrintf("[  Mem] Diagnostic: Existing pagetables put 0x%p at 0x%p + 0x%p.\r\n", AddressToFind, BootloaderAddress, AddressToFind & ~STACK_TOP);
-    SerialPrintf("[  Mem] Diagnostic: Our pagetables put 0x%p at 0x%p + 0x%p.\r\n", AddressToFind, KernelDisoveredAddress, AddressToFind & ~STACK_TOP);
-    SerialPrintf("[  Mem] %s\r\n", BootloaderAddress == KernelDisoveredAddress ? "These match. Continuing." : "These do not match. Continuing with caution..");
-    
+    size_t KernelAddress = DecodeVirtualAddressNoDirect(&KernelAddressSpace, AddressToFind);
+    SerialPrintf("[  Mem] Diagnostic: Our pagetables put 0x%p at 0x%p + 0x%p.\r\n", AddressToFind, KernelAddress, AddressToFind & ~STACK_TOP);
+    SerialPrintf("[  Mem] Diagnostic: Existing pagetables put 0x%p at 0x%p + 0x%p.\r\n", AddressToFind, KERNEL_PHYSICAL, AddressToFind & ~STACK_TOP);
+    SerialPrintf("[  Mem] %s\r\n", KernelAddress == KERNEL_PHYSICAL ? "These match. Continuing." : "These do not match. Continuing with caution..");
+
     //if(BootloaderAddress != KernelDisoveredAddress)
         //for(;;) {}
 
@@ -92,14 +93,14 @@ void InitPaging() {
 
 /**
  * Given the offsets in the page tables, construct a virtual address.
- * 
+ *
  * Bits 0 to 16 reflect the first digit of the PDPT.
  * @param pdpt Page Directory Pointer Table - Bits 16 to 25
  * @param pdp  Page Directory Pointer -       Bits 26 to 34
  * @param pde  Page Directory Entry -         Bits 35 to 43
  * @param pt   Page Table -                   Bits 44 to 52
  * Bits 52 to 64 are the Page Offset.
- * 
+ *
  * @return size_t The corresponding virtual address
  */
 size_t ConstructVirtualAddress(size_t pdpt, size_t pdp, size_t pde, size_t pt) {
@@ -109,13 +110,13 @@ size_t ConstructVirtualAddress(size_t pdpt, size_t pdp, size_t pde, size_t pt) {
 /**
  * Given a virtual address, walk the page tables to retrieve the physical frame.
  * Note that the lowest 12 bits are CLEARED.
- * 
+ *
  * The page tables are a 4 (5) dimensional array, so this function
  * walks the tables, checking that each step is present, before moving onto the next.
  * NOTE: this can be replaced with a loop.
  * WARNING: this leads to instability.
  * TODO: figure out if we can fix that?
- * 
+ *
  * @param AddressSpace The address space of the process to walk
  * @param VirtualAddress The address to decode
  * @return size_t The physical frame that the virtual address encodes
@@ -126,17 +127,17 @@ size_t DecodeVirtualAddress(address_space_t* AddressSpace, size_t VirtualAddress
     size_t PDE = PAGE_TABLES_GET_PDE(VirtualAddress);
     size_t PT = PAGE_TABLES_GET_PT(VirtualAddress);
     size_t* PDPT_T, *PDE_T, *PT_T;
-    
+
     if(AddressSpace->PML4[PDPT] & PRESENT_BIT)
         PDPT_T = (size_t*) TO_DIRECT(AddressSpace->PML4[PDPT] & STACK_TOP);
     else
         return VirtualAddress;
-    
+
     if(PDPT_T[PDP] & PRESENT_BIT)
         PDE_T = (size_t*) TO_DIRECT(PDPT_T[PDP] & STACK_TOP);
     else
         return VirtualAddress;
-    
+
     if(PDE_T[PDE] & PRESENT_BIT)
         PT_T = (size_t*) TO_DIRECT(PDE_T[PDE] & STACK_TOP);
     else
@@ -149,7 +150,7 @@ size_t DecodeVirtualAddress(address_space_t* AddressSpace, size_t VirtualAddress
  * Walk the tables, generating the structures required to map the specified Physical address to the specified Virtual Address.
  * It generates new intermediary pages as required.
  * The page table entry's flags are set to the specified PageFlags.
- * 
+ *
  * @param AddressSpace The address space to map this page into
  * @param Physical The physical address to map
  * @param Virtual The virtual address to map into the physical address
@@ -195,16 +196,16 @@ void MapVirtualPage(address_space_t* AddressSpace, size_t Physical, size_t Virtu
 /**
  * Given a virtual address, walk the page tables to retrieve the physical frame.
  * Note that the lowest 12 bits are CLEARED.
- * 
+ *
  * This function does not touch the Direct Region, ergo making it suitable for querying
  * the initial memory maps.
- * 
+ *
  * The page tables are a 4 (5) dimensional array, so this function
  * walks the tables, checking that each step is present, before moving onto the next.
  * NOTE: this can be replaced with a loop.
  * WARNING: this leads to instability.
  * TODO: figure out if we can fix that?
- * 
+ *
  * @param AddressSpace The address space of the process to walk
  * @param VirtualAddress The address to decode
  * @return size_t The physical frame that the virtual address encodes
@@ -215,17 +216,17 @@ size_t DecodeVirtualAddressNoDirect(address_space_t* AddressSpace, size_t Virtua
     size_t PDE = PAGE_TABLES_GET_PDE(VirtualAddress);
     size_t PT = PAGE_TABLES_GET_PT(VirtualAddress);
     size_t* PDPT_T, *PDE_T, *PT_T;
-    
+
     if(AddressSpace->PML4[PDPT] & PRESENT_BIT)
         PDPT_T = (size_t*) (AddressSpace->PML4[PDPT] & STACK_TOP);
     else
         return VirtualAddress;
-    
+
     if(PDPT_T[PDP] & PRESENT_BIT)
         PDE_T = (size_t*) (PDPT_T[PDP] & STACK_TOP);
     else
         return VirtualAddress;
-    
+
     if(PDE_T[PDE] & PRESENT_BIT)
         PT_T = (size_t*) (PDE_T[PDE] & STACK_TOP);
     else
@@ -238,10 +239,10 @@ size_t DecodeVirtualAddressNoDirect(address_space_t* AddressSpace, size_t Virtua
  * Walk the tables, generating the structures required to map the specified Physical address to the specified Virtual Address.
  * It generates new intermediary pages as required.
  * The page table entry's flags are set to the specified PageFlags.
- * 
+ *
  * This function does not reference the Direct region.
  * Ergo, it is suitable for initializing the first memory map the kernel needs to use.
- * 
+ *
  * @param AddressSpace The address space to map this page into
  * @param Physical The physical address to map
  * @param Virtual The virtual address to map into the physical address
@@ -289,7 +290,7 @@ void MapVirtualPageNoDirect(address_space_t* AddressSpace, size_t Physical, size
  * The higher half of the current page table will be copied into the new one.
  * The lower 4GB will be identity mapped onto itself.
  * Therefore, it will be ready for population for a new process immediately.
- * 
+ *
  * @param AddressSpace The currently loaded AddressSpace, to seed the higher half
  * @return size_t* The location of the fresh PML4
  */
@@ -302,13 +303,13 @@ size_t* CreateNewPageTable(address_space_t* AddressSpace) {
     };
 
     // Initialize to zeros
-    for(size_t i = 0; i < 512; i++) 
+    for(size_t i = 0; i < 512; i++)
         NewPML4[i] = 0;
-    
+
     // Copy the current Address Space's higher half
     for(size_t i = 255; i < 512; i++)
         NewPML4[i] = AddressSpace->PML4[i];
-    
+
     // Identity map the bottom two megabytes into the higher half
     for(size_t i = 0; i < 8192; i++) {
         // Get page offset
