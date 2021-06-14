@@ -291,18 +291,18 @@ void WriteString(const char* string) {
 
 void WriteStringWithFont(const char *inChar)
 {
-    psf_t *font = (psf_t*) &_binary_font_psf_start;
+    psf_t *font = (psf_t*) &_binary_src_assets_font_psf_start;
 
     unsigned int drawX, drawY, kx = 0, fontLine, bitMask, offset;
 
     const unsigned int bytesPerLine = ( font -> glyphWidth + 7 ) / 8;
 
     while(*inChar) {
-        unsigned char *glyph =
-            (unsigned char*) &_binary_font_psf_start
-            + font->headerSize
-            + (*inChar > 0 && *inChar < (int)font->numGlyphs ? *inChar : 0)
-            * font->glyphSize;
+        unsigned char *glyph = 
+            (unsigned char*) &_binary_src_assets_font_psf_start
+            + font->headerSize 
+            + (*inChar > 0 && *inChar < (int)font->numGlyphs ? *inChar : 0) *
+            font->glyphSize;
 
 
         offset = (kx * (font->glyphWidth + 1) * 4);

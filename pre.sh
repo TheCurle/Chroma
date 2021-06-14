@@ -1,3 +1,5 @@
 #!/bin/sh
-x86_64-elf-ld -r -b binary -o font.o font.psf
+mkdir -p obj/assets
+x86_64-elf-ld -r -b binary -o src/assets/font.o src/assets/font.psf
+
 cmake -G"Unix Makefiles" .

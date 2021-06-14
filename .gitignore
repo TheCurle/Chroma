@@ -8,3 +8,14 @@
 Makefile
 CMakeFiles
 CMakeCache.txt
+.idea/
+
+cmake_install.cmake
+
+temp/
+/bin/
+/img/boot/exe
+tools/x86_64-elf-tools
+
+
+!src/global/*.o

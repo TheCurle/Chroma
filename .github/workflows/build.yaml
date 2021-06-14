@@ -1,0 +1,61 @@
+name: Build Chroma
+
+on: 
+  push:
+    branches: 
+      - master
+
+jobs:
+    build:
+      runs-on: ubuntu-latest
+      
+      steps:
+      - uses: actions/checkout@v2
+
+      - id: cache-elf-tools
+        uses: actions/cache@v2
+        with:
+          path: ./tools/x86_64-elf-tools/
+          key: ${{ runner.os }}-elf_test12-${{ hashFiles('tools/elf_url.txt') }}
+
+      - name: Get elf tools 🧝‍♀️
+        if: steps.cache-elf-tools.outputs.cache-hit != 'true'
+        id: elf_tools
+        run: |
+          mkdir ${GITHUB_WORKSPACE}/tools/x86_64-elf-tools
+          cd ${GITHUB_WORKSPACE}/tools/x86_64-elf-tools
+          ELFTOOLS=`cat ${GITHUB_WORKSPACE}/tools/elf_url.txt`
+          wget ${ELFTOOLS}
+          unzip x86_64-elf-tools-linux.zip
+          export PATH=${GITHUB_WORKSPACE}/tools/x86_64-elf-tools/bin:$PATH
+
+
+
+      - name: Setup
+        run: |
+          export PATH=${GITHUB_WORKSPACE}/tools/x86_64-elf-tools/bin:$PATH
+          chmod +x "${GITHUB_WORKSPACE}/pre.sh"
+          ./pre.sh
+
+      - name: Build
+        run: |
+          export PATH=${GITHUB_WORKSPACE}/tools/x86_64-elf-tools/bin:$PATH
+          make kernel
+
+      - name: Make img
+        run: |
+          mkdir -p bin/img
+          chmod +x "${GITHUB_WORKSPACE}/tools/mkbootimg/mkbootimg"
+          ./tools/mkbootimg/mkbootimg chroma.json bin/img/chroma.img
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: kernel
+          path: |
+            bin/kernel
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: img
+          path: |
+            bin/img/chroma.img
