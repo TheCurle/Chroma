@@ -1,4 +1,4 @@
-#cp bin/kernel img/boot/exe
+cp bin/kernel img/boot/exe
 echo "Performing post-build actions:"
 echo "Creating raw img file for writing to a drive:"
 mkdir -p bin/img

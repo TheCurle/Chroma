@@ -14,6 +14,7 @@ cmake_install.cmake
 
 temp/
 /bin/
+/img/boot/exe
 tools/x86_64-elf-tools
 
 
