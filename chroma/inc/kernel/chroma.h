@@ -52,7 +52,8 @@ typedef struct {
 size_t KernelAddr;
 size_t KernelEnd;
 size_t MemoryPages;
-size_t MemorySize;
+size_t FreeMemorySize;
+size_t FullMemorySize;
 
 
 void DrawPixel(uint32_t x, uint32_t y, uint32_t color);

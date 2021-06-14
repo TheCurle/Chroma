@@ -11,16 +11,16 @@
  *
  * This is also called blocking, or block memory allocation.
  * It mostly deals with the memory map handed to us by the bootloader.
- * 
+ *
  * It is useful in virtual memory management, because it allows us to map one block of physical memory to one page of virtual memory.
- * 
+ *
  * Most of the processing here is done with a bitwise mapping of blocks to allocations, normally called a memory bitmap.
  * See heap.h for the implementation.
- * 
+ *
  * This file also contains memory manipulation functions, like memset and memcpy.
  * //TODO: replace these functions with SSE2 equivalent.
- * 
- */ 
+ *
+ */
 
 
 #define MIN_ORDER 3 
@@ -77,7 +77,7 @@ static void AddToBuddyList(buddy_t* Buddy, directptr_t Address, size_t Order, bo
             if(CheckBuddies(Buddy, ListHead, Address, Size)) {
                 if(ListPrevious != 0) {
                     PEEK(directptr_t, ListPrevious) = PEEK(directptr_t, ListHead);
-                } else 
+                } else
                     Buddy->List[Order - MIN_ORDER] = PEEK(directptr_t, ListHead);
 
                 AddToBuddyList(Buddy, MIN(ListHead, Address), Order + 1, false);
@@ -136,7 +136,7 @@ static directptr_t BuddyAllocate(buddy_t* Buddy, size_t Size) {
     TicketAttemptLock(&Buddy->Lock);
 
     //SerialPrintf("Searching for a valid order to allocate into. Condition: {\r\n\tOrder: %d,\r\n\tSize: 0x%x\r\n}\r\n\n", InitialOrder, WantedSize);
-    
+
     for(int Order = InitialOrder; Order < Buddy->MaxOrder; Order++) {
         //SerialPrintf("\tCurrent Order: %d, Buddy entry: %x\r\n", Order, Buddy->List[Order - MIN_ORDER]);
         if(Buddy->List[Order - MIN_ORDER] != 0) {
@@ -146,7 +146,7 @@ static directptr_t BuddyAllocate(buddy_t* Buddy, size_t Size) {
             TicketUnlock(&Buddy->Lock);
 
             size_t FoundSize = 1ull << Order;
-            
+
             //SerialPrintf("\tAdding area - Address 0x%p, Size 0x%x\r\n\n", Address, FoundSize);
 
             AddRangeToBuddy(Buddy, (void*)((size_t)Address + WantedSize), FoundSize - WantedSize);
@@ -166,24 +166,26 @@ void InitMemoryManager() {
 
     SerialPrintf("[  Mem] Counting memory..\r\n");
 
-    MemorySize = 0;
+    FreeMemorySize = 0;
+    FullMemorySize = 0;
     size_t MemMapEntryCount = 0;
 
     MMapEnt* MemMap = &bootldr.mmap;
 
     while((size_t) MemMap < ((size_t) &bootldr) + bootldr.size) {
         if(MMapEnt_IsFree(MemMap)) {
-            MemorySize += MMapEnt_Size(MemMap);
+            FreeMemorySize += MMapEnt_Size(MemMap);
         }
+        FullMemorySize += MMapEnt_Size(MemMap);
         MemMapEntryCount++;
         MemMap++;
     }
 
     SerialPrintf("[  Mem] Counted %d entries in the memory map..\r\n", MemMapEntryCount);
 
-    MemoryPages = MemorySize / PAGE_SIZE;
+    MemoryPages = FreeMemorySize / PAGE_SIZE;
 
-    SerialPrintf("[  Mem] %u MB of memory detected.\r\n", (MemorySize / 1024) / 1024);
+    SerialPrintf("[  Mem] %u MB of memory detected.\r\n", (FreeMemorySize / 1024) / 1024);
 }
 
 
@@ -217,8 +219,14 @@ void ListMemoryMap() {
             SerialPrintf("[  Mem]   0x%p-0x%p %s\r\n", entry_from, entry_to, EntryType);
 
         if(MMapEnt_Type(MapEntry) == MMAP_FREE) {
-            SerialPrintf("[  Mem]      Adding this entry to the physical memory manager!\r\n");
-            AddRangeToPhysMem((void*)((char*)(MMapEnt_Ptr(MapEntry) /* + DIRECT_REGION*/ )), MMapEnt_Size(MapEntry));
+            // We need to page align the inputs to the buddy lists.
+            size_t page_from = AlignUpwards(entry_from, 0x1000);
+            size_t page_to = AlignDownwards(entry_to, 0x1000);
+
+            if(page_from != 0 && page_to != 0) {
+                SerialPrintf("[  Mem]      Adding the range 0x%p-0x%p to the physical memory manager!\r\n", page_from, page_to);
+                AddRangeToPhysMem((void*)((char*)(page_from)), page_to - page_from);
+            }
 
         }
     }
@@ -261,7 +269,7 @@ directptr_t PhysAllocateMem(size_t Size) {
         //SerialPrintf("Attempting allocation into low memory.\n");
         Pointer = BuddyAllocate(&LowBuddy, Size);
     }
-    
+
     ASSERT(Pointer != NULL, "PhysAllocateMem: Unable to allocate memory!");
 
     return Pointer;
@@ -289,7 +297,7 @@ void PhysFreeMem(directptr_t Pointer, size_t Size) {
         Buddy = &LowBuddy;
     else
         Buddy = &HighBuddy;
-    
+
     int Order = MAX(64 - CLZ(Size - 1), MIN_ORDER);
     AddToBuddyList(Buddy, Pointer, Order, false);
 }

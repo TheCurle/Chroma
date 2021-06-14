@@ -54,17 +54,19 @@ void InitPrint() {
     PrintInfo.charHLColor = 0x00000000;
     PrintInfo.charBGColor = 0x00000000;
 
-    PrintInfo.charScale = 2;
+    PrintInfo.charScale = 1;
 
-    PrintInfo.charPosX = 0;
-    PrintInfo.charPosY = 1;
+    PrintInfo.charPosX = 1;
+    PrintInfo.charPosY = 2;
 
     PrintInfo.scrlMode = 0;
 
-    PrintInfo.charsPerRow = bootldr.fb_width / (PrintInfo.charScale * PrintInfo.charWidth) - 5;
+    PrintInfo.charsPerRow = bootldr.fb_width / (PrintInfo.charScale * PrintInfo.charWidth) - 4;
     PrintInfo.rowsPerScrn = bootldr.fb_height / (PrintInfo.charScale * PrintInfo.charHeight);
     SerialPrintf("[Print] A single character is %ux%u pixels.\r\n", PrintInfo.charScale * PrintInfo.charWidth, PrintInfo.charScale * PrintInfo.charHeight);
     SerialPrintf("[Print] The screen is %ux%u, meaning you can fit %ux%u characters on screen.\r\n", bootldr.fb_width, bootldr.fb_height, PrintInfo.charsPerRow, PrintInfo.rowsPerScrn);
+
+    WriteString("Testing print\n");
 
 }
 
@@ -91,12 +93,10 @@ static void DrawChar(const char character, size_t x, size_t y) {
             if((FONT[(int)character][Row * Y + X] >> (Bit & 0x7)) & 1) { // Check the bit in the bitmap, if it's solid..
                 for(uint32_t ScaleY = 0; ScaleY < PrintInfo.charScale; ScaleY++) { // Take care of the scale height
                     for(uint32_t ScaleX = 0; ScaleX < PrintInfo.charScale; ScaleX++) { // And the scale width
-                    
                         size_t offset = ((y * bootldr.fb_width + x) +  // Calculate the offset from the framebuffer
                                 PrintInfo.charScale * (Row * bootldr.fb_width + Bit) + // With the appropriate scale
                                 (ScaleY * bootldr.fb_width + ScaleX) +  // In X and Y
                                 PrintInfo.charScale * 1 * PrintInfo.charWidth) - 10;  // With some offset to start at 0
-                        
                         *(uint32_t* )(&fb + offset * 4) // And use it to set the correct pixel on the screen
                                 = PrintInfo.charFGColor; // In the set foreground color
                     }
@@ -277,7 +277,6 @@ void WriteChar(const char character) {
             break;
         default:
             DrawChar(character, PrintInfo.charPosX, PrintInfo.charPosY);
-            
             ProgressCursor();
             break;
     }
@@ -299,11 +298,11 @@ void WriteStringWithFont(const char *inChar)
     const unsigned int bytesPerLine = ( font -> glyphWidth + 7 ) / 8;
 
     while(*inChar) {
-        unsigned char *glyph = 
+        unsigned char *glyph =
             (unsigned char*) &_binary_font_psf_start
-            + font->headerSize 
-            + (*inChar > 0 && *inChar < (int)font->numGlyphs ? *inChar : 0) *
-            font->glyphSize;
+            + font->headerSize
+            + (*inChar > 0 && *inChar < (int)font->numGlyphs ? *inChar : 0)
+            * font->glyphSize;
 
 
         offset = (kx * (font->glyphWidth + 1) * 4);
@@ -311,7 +310,7 @@ void WriteStringWithFont(const char *inChar)
         for( drawY = 0; drawY < font->glyphHeight ; drawY++) {
             fontLine = offset;
             bitMask = 1 << (font->glyphWidth - 1);
-            
+
             for( drawX = 0; drawX < font->glyphWidth; drawX++) {
 
                 *((uint32_t*)((uint64_t) &fb + fontLine)) =

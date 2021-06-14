@@ -44,9 +44,9 @@ void InitPaging() {
     KernelLocation = DecodeVirtualAddressNoDirect(&BootloaderAddressSpace, AddressToFind);
     SerialPrintf("[  Mem] Double check: Kernel physically starts at 0x%p (0x%p), ends at 0x%p.\r\n", KernelLocation, AddressToFind, KERNEL_END);
 
-    SerialPrintf("[  Mem] Identity mapping the entirety of physical memory\r\n");
+    SerialPrintf("[  Mem] Identity mapping the entire 0x%p bytes of physical memory to 0x%p\r\n", FullMemorySize, (size_t) KernelAddressSpace.PML4);
 
-    for(size_t i = 0; i < MemorySize / PAGE_SIZE; i++) {
+    for(size_t i = 0; i < (FullMemorySize / 4096); i++) {
         size_t Addr = i * 4096;
         MapVirtualPageNoDirect(&KernelAddressSpace, Addr, Addr, DEFAULT_PAGE_FLAGS);
         MapVirtualPageNoDirect(&KernelAddressSpace, Addr, TO_DIRECT(Addr), DEFAULT_PAGE_FLAGS);
@@ -81,9 +81,6 @@ void InitPaging() {
     SerialPrintf("[  Mem] Diagnostic: Our pagetables put 0x%p at 0x%p + 0x%p.\r\n", AddressToFind, KernelAddress, AddressToFind & ~STACK_TOP);
     SerialPrintf("[  Mem] Diagnostic: Existing pagetables put 0x%p at 0x%p + 0x%p.\r\n", AddressToFind, KERNEL_PHYSICAL, AddressToFind & ~STACK_TOP);
     SerialPrintf("[  Mem] %s\r\n", KernelAddress == KERNEL_PHYSICAL ? "These match. Continuing." : "These do not match. Continuing with caution..");
-
-    //if(BootloaderAddress != KernelDisoveredAddress)
-        //for(;;) {}
 
     SerialPrintf("[  Mem] Attempting to jump into our new pagetables: 0x%p\r\n", (size_t) KernelAddressSpace.PML4);
     WriteControlRegister(3, (size_t) KernelAddressSpace.PML4 & STACK_TOP);
@@ -266,6 +263,7 @@ void MapVirtualPageNoDirect(address_space_t* AddressSpace, size_t Physical, size
         AddressSpace->PML4[PDPT] = (size_t) PDPT_T | DEFAULT_PAGE_FLAGS;
     }
 
+
     // The above repeats.
     if(PDPT_T[PDP] & PRESENT_BIT)
         PDE_T = (size_t*) (PDPT_T[PDP] & STACK_TOP);
@@ -274,6 +272,7 @@ void MapVirtualPageNoDirect(address_space_t* AddressSpace, size_t Physical, size
         PDPT_T[PDP] = (size_t) PDE_T | DEFAULT_PAGE_FLAGS;
     }
 
+
     if(PDE_T[PDE] & PRESENT_BIT)
         PT_T = (size_t*) (PDE_T[PDE] & STACK_TOP);
     else {
@@ -281,8 +280,9 @@ void MapVirtualPageNoDirect(address_space_t* AddressSpace, size_t Physical, size
         PDE_T[PDE] = (size_t) PT_T | DEFAULT_PAGE_FLAGS;
     }
 
-    // Finally, set the last page table content to the physical page + the flags we specified.
-    PT_T[PT] = (size_t) (Physical | PageFlags);
+    // Finally, set the last page table content to the physical page + the flags we specified.]
+    *(PT_T + PT) = (size_t) (Physical | PageFlags);
+
 }
 
 /**
@@ -318,7 +318,6 @@ size_t* CreateNewPageTable(address_space_t* AddressSpace) {
         MapVirtualPage(&TempAddressSpace, Addr, Addr, DEFAULT_PAGE_FLAGS);
         // Map higher half
         MapVirtualPage(&TempAddressSpace, Addr, TO_DIRECT(Addr), DEFAULT_PAGE_FLAGS);
-        // TODO: Map into kernel space
     }
 
     // Identity map the next 4gb

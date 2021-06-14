@@ -120,3 +120,82 @@ int SerialPrintf(const char* restrict Format, ...) {
     return CharsWritten;
 }
 
+int Printf(const char* restrict Format, ...) {
+    va_list Parameters;
+    va_start(Parameters, Format);
+
+    int CharsWritten = 0;
+    size_t Base, Num;
+
+    char BufferStr[512] = {0};
+
+    while(*Format != '\0') {
+        size_t Limit = UINT64_MAX - CharsWritten;
+
+        if(*Format == '%') {
+            if(*(++Format) == '%')
+                Format++;
+
+            switch(*Format) {
+                case 'c':
+                    Format++;
+
+                    char c = (char) va_arg(Parameters, int);
+
+                    WriteString(&c);
+
+                    CharsWritten++;
+                    break;
+                case 's':
+                    Format++;
+                    const char* Str = va_arg(Parameters, char*);
+
+                    size_t Len = strlen(Str);
+
+                    if(Limit < Len)
+                        return -1;
+
+                    WriteString(Str);
+
+                    CharsWritten += Len;
+                    break;
+                case 'd':
+                case 'u':
+                case 'p':
+                case 'x':
+
+                    Num = va_arg(Parameters, size_t);
+                    Base = 0;
+
+
+                    if(*Format == 'd' || *Format == 'u') {
+                        Base = 10; // Decimal & Unsigned are base 10
+                    } else {
+                        Base = 16; // Hex and Ptr are base 16
+                    }
+                    Format++;
+
+                    NumToStr(BufferStr, Num, Base);
+                    Len = strlen(BufferStr);
+
+                    WriteString(BufferStr);
+
+                    CharsWritten += Len;
+                    break;
+                //case 'p':
+                    //uint8_t Base = 16;
+                    //size_t Dest = (uintptr_t) va_arg(Parameters, void*);
+                default:
+                    WriteString("%u");
+                    break;
+            }
+
+        } else {
+            WriteChar(*Format);
+            Format++;
+        }
+    }
+
+    va_end(Parameters);
+    return CharsWritten;
+}

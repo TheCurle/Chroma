@@ -206,7 +206,9 @@ void EmptyIRQ(INTERRUPT_FRAME* frame) {
 			DrawPixel(x, y, 0x0000FF00);
 		}
 	}
-	
+
+	for(size_t i = 0; i < 100000; i++) {}
+
 	for(size_t y = 0; y < bootldr.fb_height; y++) {
 		for(size_t x = 0; x < 20; x++) {
 			DrawPixel(x, y, 0x000000FF);
@@ -257,14 +259,14 @@ void InitInterrupts() {
 
 /* The interrupt numbers, their meanings, and
  * special information is laid out below:
- * 
+ *
  * 0 - Divide by Zero
  * 1 - Debug
  * 2 - Non-Maskable
  * 3 - Breakpoint
  * 4 - Into Detected Overflow
  * 5 - Out of Bounds
- * 6 - Invalid Opcode 
+ * 6 - Invalid Opcode
  * 7 - No Coprocessor
  * 8 - Double Fault   *                (With Error)
  * 9 - Coprocessor Segment Overrun
@@ -300,18 +302,19 @@ __attribute__((interrupt)) void ISR5Handler(INTERRUPT_FRAME* Frame) {
 	ISR_Common(Frame, 5);
 }
 __attribute__((interrupt)) void ISR6Handler(INTERRUPT_FRAME* Frame) {
-	
+
 	__asm__ __volatile__("sti");
-	
+
 	SerialPrintf("[FAULT] Invalid Opcode!\n");
 	size_t retAddr = 0;
 	size_t opcodeAddr = Frame->rip;
 
 	__asm__ __volatile__("popq %%rax\n\t" "pushq %%rax": "=a" (retAddr) : :);
 	SerialPrintf("[FAULT] Opcode is at 0x%x, called from 0x%p\r\n", opcodeAddr, retAddr);
-	
+	Printf("Invalid Opcode: 0x%p\n", opcodeAddr);
+
 	StackTrace(15);
-	
+
 	for(;;) {}
 }
 __attribute__((interrupt)) void ISR7Handler(INTERRUPT_FRAME* Frame) {
@@ -357,7 +360,7 @@ __attribute__((interrupt)) void ISR14Handler(INTERRUPT_FRAME* Frame, size_t Erro
 	if(FaultReserved) SerialPrintf("[FAULT] Overwrote reserved bits.\r\n");
 	if(FaultInst) SerialPrintf("[FAULT] \"Instruction Fetch\"");
 
-	SerialPrintf("[FAULT] } at address\n[FAULT] 0x%p\r\n\n", ReadControlRegister(2));	
+	SerialPrintf("[FAULT] } at address\n[FAULT] 0x%p\r\n\n", ReadControlRegister(2));
 
 	StackTrace(6);
 	ISR_Error_Common(Frame, ErrorCode, 14); // Page Fault

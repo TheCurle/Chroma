@@ -43,6 +43,7 @@
 
 #define IS_ALIGNED(addr) (((size_t) addr | 0xFFFFFFFFFFFFF000) == 0)
 #define PAGE_ALIGN(addr) ((((size_t) addr) & 0xFFFFFFFFFFFFF000) + 0x1000)
+#define PAGE_ALIGN_DOWN(addr) ((((size_t) addr) & 0xFFFFFFFFFFFFF000) - 0x1000)
 
 #define SET_PGBIT(cr0) (cr0 = cr0 | 1 << 31)
 #define UNSET_PGBIT(cr0) (cr0 = cr0 ^ 1 << 31)
@@ -215,7 +216,7 @@ size_t      AllocatorAllocateOverhead(void);
 
 size_t AlignUpwards(size_t Pointer, size_t Alignment);
 size_t AlignDownwards(size_t Pointer, size_t Alignment);
-void* AlignPointer(const void* Pointer, size_t Alignment);
+void*  AlignPointer(const void* Pointer, size_t Alignment);
 
 
 /************************************************************
