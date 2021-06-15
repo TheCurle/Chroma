@@ -13,31 +13,31 @@ project(chroma)
 
 
 SET(src_files
-    ${CMAKE_SOURCE_DIR}/src/chroma/kernel.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/video/draw.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/video/print.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/system/cpu.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/system/rw.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/system/serial.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/system/pci.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/system/memory/stack.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/system/memory/paging.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/system/memory/abstract_allocator.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/system/memory/physmem.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/system/drivers/keyboard.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/system/drivers/elf.c
+    ${CMAKE_SOURCE_DIR}/src/kernel.c
+    ${CMAKE_SOURCE_DIR}/src/video/draw.c
+    ${CMAKE_SOURCE_DIR}/src/video/print.c
+    ${CMAKE_SOURCE_DIR}/src/system/cpu.c
+    ${CMAKE_SOURCE_DIR}/src//system/rw.c
+    ${CMAKE_SOURCE_DIR}/src/system/serial.c
+    ${CMAKE_SOURCE_DIR}/src/system/pci.c
+    ${CMAKE_SOURCE_DIR}/src/system/memory/stack.c
+    ${CMAKE_SOURCE_DIR}/src/system/memory/paging.c
+    ${CMAKE_SOURCE_DIR}/src/system/memory/abstract_allocator.c
+    ${CMAKE_SOURCE_DIR}/src/system/memory/physmem.c
+    ${CMAKE_SOURCE_DIR}/src/system/drivers/keyboard.c
+    ${CMAKE_SOURCE_DIR}/src/system/drivers/elf.c
 )
 
 SET(lib_files
-    ${CMAKE_SOURCE_DIR}/src/chroma/lainlib/list/basic_list.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/lainlib/mutex/ticketlock.c
-    ${CMAKE_SOURCE_DIR}/src/chroma/lainlib/compression/lzgmini.c
+    ${CMAKE_SOURCE_DIR}/src/lainlib/list/basic_list.c
+    ${CMAKE_SOURCE_DIR}/src/lainlib/mutex/ticketlock.c
+    ${CMAKE_SOURCE_DIR}/src/lainlib/compression/lzgmini.c
 )
 
-include_directories("src/chroma/inc")
+include_directories("inc")
 
 SET(src_no_sse
-    ${CMAKE_SOURCE_DIR}/src/chroma/system/interrupts.c
+    ${CMAKE_SOURCE_DIR}/src/system/interrupts.c
 )
 
 SET(src_preamble
