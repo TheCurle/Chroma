@@ -148,7 +148,7 @@ void E1000InitRX(e1000_device_t* Device) {
 
     for(size_t i = 0; i < E1000_NUM_RX_DESC; i++) {
         Device->ReceivePackets[i] = (struct e1000_receive_packet*) ((uint8_t*)Packets + i*16);
-        Device->ReceivePackets[i]->address = (size_t) ((uint8_t*) kmalloc((PAGE_SIZE * 2) + 16));
+        Device->ReceivePackets[i]->Address = (size_t) ((uint8_t*) kmalloc((PAGE_SIZE * 2) + 16));
         Device->ReceivePackets[i]->Status = 0;
     }
 
