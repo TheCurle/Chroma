@@ -18,9 +18,6 @@ typedef struct {
     uint8_t     Echo;
     uint8_t     EchoCount;
     uint8_t     Error;
-
-
-
 } KBD_FLAGS;
 
 KBD_FLAGS KbdFlags;
@@ -41,7 +38,7 @@ void        WriteTSR(uint16_t TSRData);
 
 uint32_t    ReadPort(uint16_t Port, int Length);
 uint32_t    WritePort(uint16_t Port, uint32_t Data, int Length);
-      
+
 size_t      ReadMMIO(size_t Address, int Length);
 void        WriteMMIO(size_t Address, size_t Data, int Length);
 

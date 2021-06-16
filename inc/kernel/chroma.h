@@ -9,6 +9,8 @@
  * It also provides the symbols for the framebuffer and configuration file, which are both equually important.
  */
 
+#define UNUSED(x) (void)x
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdarg.h>
@@ -55,9 +57,6 @@ size_t MemoryPages;
 size_t FreeMemorySize;
 size_t FullMemorySize;
 
-
-void DrawPixel(uint32_t x, uint32_t y, uint32_t color);
-void FillScreen(uint32_t color);
 
 void SetupExtensions();
 void PrepareCPU();

@@ -7,9 +7,9 @@
 
 /* This file contains all of the String / Print related functions
  *  that are required by the core of the kernel.
- * 
- * There will be a proper C++ std::string implementation in lainlib. 
- * 
+ *
+ * There will be a proper C++ std::string implementation in lainlib.
+ *
  * This file also provides SerialPrintf.
  */
 
@@ -54,7 +54,7 @@ int SerialPrintf(const char* restrict Format, ...) {
         if(*Format == '%') {
             if(*(++Format) == '%')
                 Format++;
-        
+
 
             switch(*Format) {
                 case 'c':
@@ -87,7 +87,7 @@ int SerialPrintf(const char* restrict Format, ...) {
                     Num = va_arg(Parameters, size_t);
                     Base = 0;
 
-                    
+
                     if(*Format == 'd' || *Format == 'u') {
                         Base = 10; // Decimal & Unsigned are base 10
                     } else {
