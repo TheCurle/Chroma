@@ -8,16 +8,16 @@
  *
  * As they use the GCC interrupt attribute,
  * this file must be compiled without red-
- * zone protection, thus all of these 
+ * zone protection, thus all of these
  * functions are in their own file to
  * accomodate this.
- * 
+ *
  * Additionally, the kernel now has SSE/AVX support.
  * So this file and this file *alone* must be compiled with
  * -mgeneral-regs-only
- * 
+ *
  * Calling a function like so:
- * 
+ *
  * __attribute__((interrupt)) isr1(registers_t* frame) {}
  *
  * allows the function to be used to serve
@@ -33,16 +33,15 @@
  */
 
 #include <kernel/chroma.h>
+#include <kernel/video/draw.h>
 #include <kernel/system/interrupts.h>
 #include <stdbool.h>
-
-#define UNUSED(X) ((void)X)
 
 const char* ExceptionStrings[] = {
 	"Division by Zero",
 	"Debug",
 	"Non Maskable Interrupt",
-	"Breakpoint", 
+	"Breakpoint",
 	"Into Detected Overflow",
 	"Out of Bounds",
 	"Invalid Opcode",
@@ -93,13 +92,10 @@ void ISR_Common(INTERRUPT_FRAME* Frame, size_t Exception) {
 
 	/* Only the first 32 ISR/IRQs are reserved for exceptions by the CPU. We can handle up to 512 interrupts total, though. */
 	if(Exception < 32) {
-
-		FillScreen(0x0000FF00);
+		SetForegroundColor(0x0000FF00);
+		FillScreen();
 		/* ExceptionStrings is an array of c-strings defined in kernel.h */
-		
 		SerialPrintf("[  ISR] %s exception!\r\n", ExceptionStrings[Exception]);
-		//printf("%s exception!", ExceptionStrings[Exception]);
-		//panic();
 	}
 }
 
@@ -110,16 +106,11 @@ void ISR_Error_Common(INTERRUPT_FRAME* Frame, size_t ErrorCode, size_t Exception
 	UNUSED(Frame);
 
 	if(Exception < 32) {
-
-		FillScreen(0x0000FF00);
-		
+		SetForegroundColor(0x0000FF00);
+		FillScreen();
 		SerialPrintf("[  ISR] ISR Error %d raised, EC %d!\r\n", Exception, ErrorCode);
 		SerialPrintf("[  ISR] %s exception!\r\n", ExceptionStrings[Exception]);
 		while(true) {}
-		//serialPrint(ExceptionStrings[Exception]);
-		//serialPrintf(" Exception. Context given: %d\r\n", Frame->ErrorCode);
-		//printf("%s exception. Context: %x", ExceptionStrings[Exception], Frame->ErrorCode);
-		//panic();
 
 	}
 
@@ -130,10 +121,6 @@ void ISR_Error_Common(INTERRUPT_FRAME* Frame, size_t ErrorCode, size_t Exception
 void IRQ_Common(INTERRUPT_FRAME* Frame, size_t Interrupt) {
 	// First we need to define a function pointer..
 	void (*Handler)(INTERRUPT_FRAME* Frame);
-
-	// Tell the user we've got an interrupt in..
-	//serial_print(0x3F8, "[INFO] Received IRQ: " + interrupt);
-	//printf("[INFO] Received IRQ: %x", Interrupt);
 
 	/* We set all uninitialized routines to 0, so the if(handler) check here allows us to
 		safely tell whether we've actually got something for this IRQ. */
@@ -147,7 +134,7 @@ void IRQ_Common(INTERRUPT_FRAME* Frame, size_t Interrupt) {
 	/* The Slave PIC must be told it's been read in order to receive another 8+ IRQ. */
 	if(Interrupt > 7)
 		WritePort(0xA0, 0x20, 1);
-	
+
 	/* In either case, we tell the Master PIC it's been read to receive any IRQ. */
 	WritePort(0x20, 0x20, 1);
 
@@ -186,52 +173,52 @@ void EmptyIRQ(INTERRUPT_FRAME* frame) {
 	UNUSED(frame);
 
 	// Flash the borders green, then back to blue
-
+	SetForegroundColor(0x0000FF00);
 	for(size_t y = 0; y < bootldr.fb_height; y++) {
 		for(size_t x = 0; x < 20; x++) {
-			DrawPixel(x, y, 0x0000FF00);
+			DrawPixel(x, y);
 		}
 
 		for(size_t x = (bootldr.fb_width - 20); x < bootldr.fb_width; x++) {
-			DrawPixel(x, y, 0x0000FF00);
+			DrawPixel(x, y);
 		}
 	}
 
 	for(size_t x = 0; x < bootldr.fb_width; x++) {
 		for(size_t y = 0; y < 20; y++) {
-			DrawPixel(x, y, 0x0000FF00);
+			DrawPixel(x, y);
 		}
 
 		for(size_t y = (bootldr.fb_height - 20); y < bootldr.fb_height; y++) {
-			DrawPixel(x, y, 0x0000FF00);
+			DrawPixel(x, y);
 		}
 	}
 
 	for(size_t i = 0; i < 100000; i++) {}
 
+	SetForegroundColor(0x000000FF);
 	for(size_t y = 0; y < bootldr.fb_height; y++) {
 		for(size_t x = 0; x < 20; x++) {
-			DrawPixel(x, y, 0x000000FF);
+			DrawPixel(x, y);
 		}
 
 		for(size_t x = (bootldr.fb_width - 20); x < bootldr.fb_width; x++) {
-			DrawPixel(x, y, 0x000000FF);
+			DrawPixel(x, y);
 		}
 	}
 
 	for(size_t x = 0; x < bootldr.fb_width; x++) {
 		for(size_t y = 0; y < 20; y++) {
-			DrawPixel(x, y, 0x000000FF);
+			DrawPixel(x, y);
 		}
 
 		for(size_t y = (bootldr.fb_height - 20); y < bootldr.fb_height; y++) {
-			DrawPixel(x, y, 0x000000FF);
+			DrawPixel(x, y);
 		}
 	}
 }
 
 static void KeyboardCallback(INTERRUPT_FRAME* frame) {
-
 	UNUSED(frame);
 
 	uint8_t msg = ReadPort(0x60, 1);

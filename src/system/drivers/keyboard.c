@@ -1,4 +1,5 @@
 #include <kernel/chroma.h>
+#include <kernel/system/driver/keyboard.h>
 
 /************************
  *** Team Kitty, 2020 ***
@@ -6,10 +7,10 @@
  ***********************/
 
 /* This file contains (mostly unused) implementations of a full PS/2 keyboard driver.
- * 
+ *
  * It provides provisions for full 2-way communication, as well as auxiliary key commands.
  * //TODO: Media keys?
- * 
+ *
  * Once this driver is to a workable state, I would like to start adding a proper keyboard buffer,
  *   which will integrate with a window system.
  *
@@ -19,14 +20,14 @@ char keys[128] = {
     0, 27,
     '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',
     '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',
-    0, 
-    'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '#', 
-    0, 
+    0,
+    'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '#',
+    0,
     '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/',
     0,
     '*', 0,
-    ' ', 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 
+    ' ', 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
     0,
     0,
     0,
@@ -49,7 +50,22 @@ char keys[128] = {
     0,
 };
 
+KeyboardCallback KeyboardCallbacks[16] = {
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+};
 
+static int CurrentCallback = 0;
+
+int SetupKBCallback(void (*Handler)(KeyboardData* Frame)) {
+    KeyboardCallbacks[CurrentCallback++] = Handler;
+    return CurrentCallback;
+}
+
+void UninstallKBCallback(int Number) {
+	KeyboardCallbacks[Number] = NULL; // 0 is used in the common check to make sure that the function is callable.
+	// This removes this callback from that check, ergo the function will no longer be called.
+}
 
 void KbdEcho() {
     if(!KbdFlags.EchoCount) {
@@ -101,15 +117,20 @@ void UpdateKeyboard(uint8_t msg) {
             break;
     }
 
+    KeyboardData data = (KeyboardData) {
+        .Scancode = msg,
+        .Pressed = msg > 0x80 && msg < 0xD8 ? true : false,
+        .Char = msg > 0x80 && msg < 0xD8 ? keys[msg - 0x80] : keys[msg]
+    };
 
+    void (*Handler)(KeyboardData* data);
 
-    if(msg & 0x80) {
-
-    } else {
-        SerialPrintf("Key pressed: [\\%c]\r\n", keys[msg]);
-        WriteChar(keys[msg]);
+    for(size_t handlerNum = 0; handlerNum < 16; handlerNum++) {
+	    Handler = KeyboardCallbacks[handlerNum];
+	    if(Handler) {
+	    	Handler(&data);
+	    }
     }
-
 }
 
 void Send8042(size_t info) {

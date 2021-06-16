@@ -1,5 +1,7 @@
 #include <kernel/chroma.h>
-//#include <kernel/system/screen.h>
+#include <kernel/video/draw.h>
+#include <kernel/system/driver/keyboard.h>
+#include <editor/main.h>
 
 /************************
  *** Team Kitty, 2020 ***
@@ -11,12 +13,14 @@
  * If a function isn't fired here, directly or indirectly, it is not run.
  */
 
-
+static bool KernelLoaded = false;
 
 size_t KernelAddr = (size_t) &LoadAddr;
 size_t KernelEnd = (size_t) &end;
 
 address_space_t KernelAddressSpace;
+
+void PrintPressedChar(KeyboardData* data);
 
 int Main(void) {
     KernelAddressSpace = (address_space_t) {0};
@@ -38,25 +42,63 @@ int Main(void) {
 
     InitPrint();
 
-    WriteStringWithFont("Initty Testing");
-
     PrepareCPU();
 
     PCIEnumerate();
 
     InitMemoryManager();
 
-    //DrawSplash();
     InitPrint();
 
     InitPaging();
 
-    Printf("Paging complete. System initialized.\r\n");
+    Printf("Paging complete. System initialized.\n\r");
+    KernelLoaded = true;
+
+    SetForegroundColor(0x00FF0000);
+    WriteChar('C');
+    SetForegroundColor(0x0000FF00);
+    WriteChar('h');
+    SetForegroundColor(0x000000FF);
+    WriteChar('r');
+    SetForegroundColor(0x00FFFF00);
+    WriteChar('o');
+    SetForegroundColor(0x00FF00FF);
+    WriteChar('m');
+    SetForegroundColor(0x0000FFFF);
+    WriteChar('a');
+    WriteChar(' ');
+    SetForegroundColor(0x00FFFFFF);
+    WriteChar('T');
+    SetForegroundColor(0x0000AAAA);
+    WriteChar('i');
+    SetForegroundColor(0x00BBBBBB);
+    WriteChar('m');
+    SetForegroundColor(0x001E2D42);
+    WriteChar('e');
+    SetForegroundColor(0x00E0A969);
+    WriteChar('!');
+    WriteChar('\n');
+
+    SetForegroundColor(0x00FFFFFF);
+
+    int CharPrinterCallbackID = SetupKBCallback(&PrintPressedChar);
+    UNUSED(CharPrinterCallbackID);
 
     for (;;) {}
 
     return 0;
+}
 
+void PrintPressedChar(KeyboardData* data) {
+    if(!KernelLoaded) return;
+
+    if(data->Pressed) {
+        SerialPrintf("Key released: [\\%c]\r\n", data->Char);
+    } else {
+        SerialPrintf("Key pressed: [\\%c (%x)]\r\n", data->Char, data->Scancode);
+        Printf("%c", data->Char);
+    }
 }
 
 void SomethingWentWrong(const char* Message) {
