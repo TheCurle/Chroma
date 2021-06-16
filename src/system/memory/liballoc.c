@@ -46,7 +46,7 @@ static void liballoc_unlock() {
  * \return A pointer to the allocated memory.
  */
 static void* liballoc_alloc(size_t count) {
-    return (void*) PhysAllocateMem(count * PAGE_SIZE);
+    return (void*) PhysAllocateZeroMem(count * PAGE_SIZE);
 }
 
 /** This frees previously allocated memory. The void* parameter passed

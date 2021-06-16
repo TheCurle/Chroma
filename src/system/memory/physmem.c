@@ -26,7 +26,6 @@
 #define MIN_ORDER 3 
 #define PEEK(type, address) (*((volatile type*)(address)))
 
-uint8_t* Memory = ((uint8_t*)(&memstart));
 uint8_t* MemoryStart;
 size_t MemoryBuckets;
 
@@ -58,17 +57,9 @@ static void AddToBuddyList(buddy_t* Buddy, directptr_t Address, size_t Order, bo
 
     //SerialPrintf("Adding new entry to buddy: Address 0x%p with order %d, New Entry is %s\r\n", Address, Order, NewEntry ? "true" : "false");
 
-    /*
-        SerialPrintf("About to poke memory..\r\n");
-        PEEK(directptr_t, Address) = 0;
-        SerialPrintf("Did it work?\r\n");
-    */
-
     size_t Size = 1ull << Order;
 
     TicketAttemptLock(&Buddy->Lock);
-
-    //SerialPrintf("Ticketlock engaged\r\n");
 
     if(!NewEntry && ListHead != 0) {
         directptr_t ListPrevious = 0;
@@ -93,18 +84,14 @@ static void AddToBuddyList(buddy_t* Buddy, directptr_t Address, size_t Order, bo
             ListHead = PEEK(directptr_t, ListHead);
         }
     } else {
-        //SerialPrintf("\tAbout to poke memory 0x%p - current value is 0x%x\r\n", Address, *((size_t*)(Address)));
         *((size_t*)(Address)) = (size_t) ListHead;
         Buddy->List[Order - MIN_ORDER] = Address;
     }
 
     TicketUnlock(&Buddy->Lock);
-
-    //SerialPrintf("Ticketlock Released.\r\n");
 }
 
 static void AddRangeToBuddy(buddy_t* Buddy, directptr_t Base, size_t Size) {
-    //SerialPrintf("Starting a new range addition.\r\n\t");
     while(Size > (1ull << MIN_ORDER)) {
         //SerialPrintf("New iteration. Current Size: 0x%x\r\n\t", Size);
         for(int Order = Buddy->MaxOrder - 1; Order >= MIN_ORDER; Order--) {
@@ -234,14 +221,23 @@ void ListMemoryMap() {
 }
 
 void AddRangeToPhysMem(directptr_t Base, size_t Size) {
-    if(Base < (void*)(LOWER_REGION + DIRECT_REGION)) {
+    if(Base + Size < (void*)(LOWER_REGION)) {
         SerialPrintf("[  Mem]      New range in lower memory: 0x%p, size 0x%x\r\n", Base, Size);
         AddRangeToBuddy(&LowBuddy, Base, Size);
     } else {
+        if(Base < (void*)(LOWER_REGION)) {
+            size_t difference = (size_t) LOWER_REGION - (size_t) Base;
+            SerialPrintf("[  Mem]             Base is 0x%p bytes away from the threshold, allocating 0x%p-0x%p to lower memory..\r\n", difference, Base, Base + difference);
+            AddRangeToBuddy(&LowBuddy, Base, difference);
+            Base = (void*) LOWER_REGION;
+            Size = Size - difference;
+        }
+
         if(HighBuddy.Base == NULL) {
             HighBuddy.Base = Base;
         }
 
+        SerialPrintf("[  Mem]      New range in higher memory: 0x%p, size 0x%x\r\n", Base, Size);
         AddRangeToBuddy(&HighBuddy, Base, Size);
     }
 
