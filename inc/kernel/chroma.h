@@ -22,6 +22,7 @@
 #include <kernel/system/pci.h>
 #include <kernel/system/stack.h>
 
+#include <lainlib/lainlib.h>
 #include <lainlib/ethernet/e1000/e1000.h>
 
 //Removed cause "wacky copyrighted stuff"

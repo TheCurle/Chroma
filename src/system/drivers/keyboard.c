@@ -57,7 +57,7 @@ KeyboardCallback KeyboardCallbacks[16] = {
 
 static int CurrentCallback = 0;
 
-int SetupKBCallback(void (*Handler)(KeyboardData* Frame)) {
+int SetupKBCallback(void (*Handler)(KeyboardData Frame)) {
     KeyboardCallbacks[CurrentCallback++] = Handler;
     return CurrentCallback;
 }
@@ -80,8 +80,6 @@ void KbdEcho() {
 
 
 void UpdateKeyboard(uint8_t msg) {
-
-    InputBuffer[0] = msg;
 
     switch(msg) {
         case 0x0:
@@ -119,16 +117,16 @@ void UpdateKeyboard(uint8_t msg) {
 
     KeyboardData data = (KeyboardData) {
         .Scancode = msg,
-        .Pressed = msg > 0x80 && msg < 0xD8 ? true : false,
+        .Pressed = msg > 0x80 && msg < 0xD8 ? false : true,
         .Char = msg > 0x80 && msg < 0xD8 ? keys[msg - 0x80] : keys[msg]
     };
 
-    void (*Handler)(KeyboardData* data);
+    void (*Handler)(KeyboardData data);
 
     for(size_t handlerNum = 0; handlerNum < 16; handlerNum++) {
 	    Handler = KeyboardCallbacks[handlerNum];
 	    if(Handler) {
-	    	Handler(&data);
+	    	Handler(data);
 	    }
     }
 }

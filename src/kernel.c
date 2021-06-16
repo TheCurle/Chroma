@@ -20,7 +20,13 @@ size_t KernelEnd = (size_t) &end;
 
 address_space_t KernelAddressSpace;
 
-void PrintPressedChar(KeyboardData* data);
+void PrintPressedChar(KeyboardData data);
+int CharPrinterCallbackID;
+void TrackInternalBuffer(KeyboardData data);
+int InternalBufferID;
+
+size_t BufferLength = 0;
+char* InternalBuffer;
 
 int Main(void) {
     KernelAddressSpace = (address_space_t) {0};
@@ -48,12 +54,13 @@ int Main(void) {
 
     InitMemoryManager();
 
-    InitPrint();
-
     InitPaging();
 
     Printf("Paging complete. System initialized.\n\r");
     KernelLoaded = true;
+
+    InternalBuffer = (char*) kmalloc(4098);
+    SerialPrintf("[  Mem] Allocated a text buffer at 0x%p\r\n", (size_t) InternalBuffer);
 
     SetForegroundColor(0x00FF0000);
     WriteChar('C');
@@ -82,22 +89,54 @@ int Main(void) {
 
     SetForegroundColor(0x00FFFFFF);
 
-    int CharPrinterCallbackID = SetupKBCallback(&PrintPressedChar);
-    UNUSED(CharPrinterCallbackID);
+    CharPrinterCallbackID = SetupKBCallback(&PrintPressedChar);
+
+    InternalBufferID = SetupKBCallback(&TrackInternalBuffer);
 
     for (;;) {}
 
     return 0;
 }
 
-void PrintPressedChar(KeyboardData* data) {
+void PrintPressedChar(KeyboardData data) {
     if(!KernelLoaded) return;
 
-    if(data->Pressed) {
-        SerialPrintf("Key released: [\\%c]\r\n", data->Char);
+    if(data.Pressed) {
+        SerialPrintf("Key pressed: [\\%c (%x)]\r\n", data.Char, data.Scancode);
+        Printf("%c", data.Char);
     } else {
-        SerialPrintf("Key pressed: [\\%c (%x)]\r\n", data->Char, data->Scancode);
-        Printf("%c", data->Char);
+        SerialPrintf("Key released: [\\%c]\r\n", data.Char);
+    }
+}
+
+void TrackInternalBuffer(KeyboardData data) {
+    if(!data.Pressed) return;
+
+    bool tentative = false;
+    if(BufferLength > 4097) tentative = true;
+
+    if(data.Char == '\b') {
+        BufferLength--;
+        tentative = false;
+    }
+
+    if(data.Scancode == 0x1C) {
+        InternalBuffer[BufferLength] = '\0'; // Null-terminate to make checking easier
+        SerialPrintf("[  Kbd] Enter pressed.\r\n");
+        if(strcmp(InternalBuffer, "editor")) {
+            UninstallKBCallback(InternalBufferID);
+            StartEditor(CharPrinterCallbackID);
+        } else {
+            SerialPrintf("[  Kbd] No match for %s\r\n", InternalBuffer);
+            memset(InternalBuffer, 0, 4098);
+            BufferLength = 0;
+        }
+    }
+
+    if(!tentative && data.Scancode < 0x27 && data.Scancode != 0x1C) {
+        SerialPrintf("[  Kbd] Adding %c to the buffer.\r\n", data.Char);
+        InternalBuffer[BufferLength] = data.Char;
+        BufferLength++;
     }
 }
 
