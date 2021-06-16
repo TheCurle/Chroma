@@ -12,6 +12,10 @@
  * Set color with PrintInfo.
  */
 
+void _swap_size_t(size_t a, size_t b);
+
+int abs(int x);
+
 typedef struct {
     uint32_t    charHeight;
     uint32_t    charWidth;
@@ -27,6 +31,9 @@ typedef struct {
     size_t      charsPerRow;
     size_t      rowsPerScrn;
     uint32_t    scrlMode;
+
+    size_t      screenWidth;
+    size_t      screenHeight;
 } PRINTINFO;
 
 extern PRINTINFO PrintInfo;
@@ -39,8 +46,13 @@ uint32_t GetForegroundColor();
 void SetBackgroundColor(uint32_t color);
 uint32_t GetBackgroundColor();
 
+void DrawLine(size_t x0, size_t y0, size_t x1, size_t y1);
+
 void DrawFilledRect(size_t x, size_t y, size_t width, size_t height);
 void DrawLineRect(size_t x, size_t y, size_t width, size_t height, size_t thickness);
+void DrawFilledRoundedRect(size_t x, size_t y, size_t width, size_t height, size_t radius);
+void DrawLineRoundedRect(size_t x, size_t y, size_t width, size_t height, size_t radius);
 
-// When height == width, this draws a circle.
-void DrawOval(size_t centerX, size_t centerY, size_t height, size_t width);
+void DrawFilledCircle(size_t centerX, size_t centerY, size_t radius);
+void DrawLineCircle(size_t centerX, size_t centerY, size_t radius);
+void DrawLineCircleCorners(size_t centerX, size_t centerY, size_t radius, char cornerMask);

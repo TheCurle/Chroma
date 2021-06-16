@@ -20,14 +20,6 @@ PRINTINFO PrintInfo = {0};
 
 #define FONT bitfont_latin
 
-static size_t strlen(const char* String) {
-    size_t Len = 0;
-    while(String[Len] != '\0') {
-        Len++;
-    }
-    return Len;
-}
-
 void InitPrint() {
     PrintInfo.charHeight = 8;
     PrintInfo.charWidth = 8;
@@ -42,6 +34,9 @@ void InitPrint() {
     PrintInfo.horizontalOffset = 1;
 
     PrintInfo.scrlMode = 0;
+
+    PrintInfo.screenWidth = bootldr.fb_width;
+    PrintInfo.screenHeight = bootldr.fb_height;
 
     PrintInfo.charsPerRow = bootldr.fb_width / (PrintInfo.charScale * PrintInfo.charWidth) - 4;
     PrintInfo.rowsPerScrn = bootldr.fb_height / (PrintInfo.charScale * PrintInfo.charHeight);
@@ -107,8 +102,8 @@ static void DrawChar(const char character, size_t x, size_t y) {
 }
 
 void DrawPixel(size_t x, size_t y) {
-    if(x > bootldr.fb_width) {
-        DrawPixel(x - bootldr.fb_width, y + (PrintInfo.charHeight * PrintInfo.charScale));
+    if(x > bootldr.fb_scanline) {
+        DrawPixel(x - bootldr.fb_scanline, y + (PrintInfo.charHeight * PrintInfo.charScale));
     } else if(y > bootldr.fb_height) {
         DrawPixel(x, y - bootldr.fb_height);
     } else {
@@ -235,3 +230,248 @@ void WriteStringWithFont(const char *inChar) {
         inChar++; kx++;
     }
 }
+
+/********************************** Geometry Rendering **********************************/
+/**
+ * Implementation borrowed with <3 from Adafruit: https://github.com/adafruit/Adafruit-GFX-Library/blob/master/Adafruit_GFX.cpp
+ * TODO: Reimplement in Helix.
+ *
+ */
+
+/******* Internal *******/
+
+inline void _swap_size_t(size_t a, size_t b) {
+    size_t t = a;
+    a = b;
+    b = t;
+}
+
+inline int abs(int x) {
+    return x < 0 ? -x : x;
+}
+
+void DrawLineInternal(size_t x0, size_t y0, size_t x1, size_t y1) {
+    bool steep = abs(y1 - y0) > abs(x1 - x0);
+
+    if (steep) {
+        _swap_size_t(x0, y0);
+        _swap_size_t(x1, y1);
+    }
+
+    if (x0 > x1) {
+        _swap_size_t(x0, x1);
+        _swap_size_t(y0, y1);
+    }
+
+    size_t dx, dy;
+    dx = x1 - x0;
+    dy = abs(y1 - y0);
+
+    int err = dx / 2;
+    size_t ystep;
+
+    if (y0 < y1)
+        ystep = 1;
+    else
+        ystep = -1;
+
+    for (; x0 <= x1; x0++) {
+        if (steep)
+        DrawPixel(y0, x0);
+        else
+        DrawPixel(x0, y0);
+
+        err -= dy;
+        if (err < 0) {
+        y0 += ystep;
+        err += dx;
+        }
+    }
+}
+
+void DrawHorizontalLine(size_t x, size_t y, size_t w) {
+    DrawLineInternal(x, y, x + w - 1, y);
+}
+
+void DrawVerticalLine(size_t x, size_t y, size_t h) {
+    DrawLineInternal(x, y, x, y + h - 1);
+}
+
+void DrawFilledCircleInternal(size_t centerX, size_t centerY, size_t radius, char cornerMask, size_t offset) {
+    int f = 1 - radius;
+    size_t ddF_x = 1;
+    size_t ddF_y = -2 * radius;
+    size_t x = 0;
+    size_t y = radius;
+    size_t px = x;
+    size_t py = y;
+
+    offset++;
+
+    while (x < y) {
+        if (f >= 0) {
+            y--;
+            ddF_y += 2;
+            f += ddF_y;
+        }
+        x++;
+        ddF_x += 2;
+        f += ddF_x;
+        if (x < (y + 1)) {
+            if (cornerMask & 1)
+                DrawVerticalLine(centerX + x, centerY - y, 2 * y + offset);
+            if (cornerMask & 2)
+                DrawVerticalLine(centerX - x, centerY - y, 2 * y + offset);
+        }
+
+        if (y != py) {
+            if (cornerMask & 1)
+                DrawVerticalLine(centerX + py, centerY - px, 2 * px + offset);
+            if (cornerMask & 2)
+                DrawVerticalLine(centerX - py, centerY - px, 2 * px + offset);
+            py = y;
+        }
+        px = x;
+    }
+}
+
+/******* Public *******/
+
+void DrawFilledRect(size_t x, size_t y, size_t width, size_t height) {
+    for (size_t i = y; i < y + height; i++)
+        DrawHorizontalLine(x, i, width);
+}
+
+void DrawLineRect(size_t x, size_t y, size_t width, size_t height, size_t thickness) {
+    UNUSED(thickness);
+    DrawHorizontalLine(x, y, width);
+    DrawHorizontalLine(x, y + height - 1, width);
+    DrawVerticalLine(x, y, height);
+    DrawVerticalLine(x + width - 1, y, height);
+}
+
+void DrawFilledRoundedRect(size_t x, size_t y, size_t width, size_t height, size_t radius) {
+    size_t max_radius = ((width < height) ? width : height) / 2; // 1/2 minor axis
+    if (radius > max_radius)
+        radius = max_radius;
+    DrawFilledRect(x + radius, y, width - 2 * radius, height);
+    // draw four corners
+    DrawFilledCircleInternal(x + width - radius - 1, y + radius, radius, 1, height - 2 * radius - 1);
+    DrawFilledCircleInternal(x + radius, y + radius, radius, 2, height - 2 * radius - 1);
+}
+
+void DrawLineRoundedRect(size_t x, size_t y, size_t width, size_t height, size_t radius) {
+    size_t max_radius = ((width < height) ? width : height) / 2; // 1/2 minor axis
+    if (radius > max_radius)
+        radius = max_radius;
+    DrawHorizontalLine(x + radius, y, width - 2 * radius);         // Top
+    DrawHorizontalLine(x + radius, y + height - 1, width - 2 * radius); // Bottom
+    DrawVerticalLine(x, y + radius, height - 2 * radius);         // Left
+    DrawVerticalLine(x + width - 1, y + radius, height - 2 * radius); // Right
+    // draw four corners
+    DrawLineCircleCorners(x + radius, y + radius, radius, 1);
+    DrawLineCircleCorners(x + width - radius - 1, y + radius, radius, 2);
+    DrawLineCircleCorners(x + width - radius - 1, y + height - radius - 1, radius, 4);
+    DrawLineCircleCorners(x + radius, y + height - radius - 1, radius, 8);
+}
+
+void DrawLine(size_t x0, size_t y0, size_t x1, size_t y1) {
+    if (x0 == x1) {
+        if (y0 > y1)
+            _swap_size_t(y0, y1);
+
+        DrawVerticalLine(x0, y0, y1 - y0 + 1);
+    } else if (y0 == y1) {
+        if (x0 > x1)
+             _swap_size_t(x0, x1);
+
+        DrawHorizontalLine(x0, y0, x1 - x0 + 1);
+    } else {
+        DrawLineInternal(x0, y0, x1, y1);
+    }
+}
+
+void DrawCircle(size_t centerX, size_t centerY, size_t radius) {
+    int f = 1 - radius;
+    size_t ddF_x = 1;
+    size_t ddF_y = -2 * radius;
+    size_t x = 0;
+    size_t y = radius;
+
+    DrawPixel(centerX, centerY + radius);
+    DrawPixel(centerX, centerY - radius);
+    DrawPixel(centerX + radius, centerY);
+    DrawPixel(centerX - radius, centerY);
+
+    while (x < y) {
+        if (f >= 0) {
+            y--;
+            ddF_y += 2;
+            f += ddF_y;
+        }
+
+        x++;
+        ddF_x += 2;
+        f += ddF_x;
+
+        DrawPixel(centerX + x, centerY + y);
+        DrawPixel(centerX - x, centerY + y);
+        DrawPixel(centerX + x, centerY - y);
+        DrawPixel(centerX - x, centerY - y);
+        DrawPixel(centerX + y, centerY + x);
+        DrawPixel(centerX - y, centerY + x);
+        DrawPixel(centerX + y, centerY - x);
+        DrawPixel(centerX - y, centerY - x);
+    }
+}
+
+void DrawLineCircleCorners(size_t centerX, size_t centerY, size_t radius, char cornerMask) {
+    int f = 1 - radius;
+    size_t ddF_x = 1;
+    size_t ddF_y = -2 * radius;
+    size_t x = 0;
+    size_t y = radius;
+
+    DrawPixel(centerX, centerY + radius);
+    DrawPixel(centerX, centerY - radius);
+    DrawPixel(centerX + radius, centerY);
+    DrawPixel(centerX - radius, centerY);
+
+    while (x < y) {
+        if (f >= 0) {
+            y--;
+            ddF_y += 2;
+            f += ddF_y;
+        }
+
+        x++;
+        ddF_x += 2;
+        f += ddF_x;
+
+        if(cornerMask & 0x4) {
+            DrawPixel(centerX + x, centerY + y);
+            DrawPixel(centerX + y, centerY + x);
+        }
+
+        if(cornerMask & 0x2) {
+            DrawPixel(centerX + x, centerY - y);
+            DrawPixel(centerX - y, centerY - x);
+        }
+
+        if(cornerMask & 0x8) {
+            DrawPixel(centerX - y, centerY + x);
+            DrawPixel(centerX - x, centerY + y);
+        }
+
+        if(cornerMask & 0x1) {
+            DrawPixel(centerX - y, centerY - x);
+            DrawPixel(centerX - x, centerY - y);
+        }
+    }
+}
+
+void DrawFilledCircle(size_t centerX, size_t centerY, size_t radius) {
+    DrawVerticalLine(centerX, centerY - radius, 2 * radius + 1);
+    DrawFilledCircleInternal(centerX, centerY, radius, 3, 0);
+}
+

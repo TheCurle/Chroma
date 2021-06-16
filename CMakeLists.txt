@@ -23,6 +23,7 @@ SET(src_files
     ${CMAKE_SOURCE_DIR}/src/system/memory/stack.c
     ${CMAKE_SOURCE_DIR}/src/system/memory/paging.c
     ${CMAKE_SOURCE_DIR}/src/system/memory/abstract_allocator.c
+    ${CMAKE_SOURCE_DIR}/src/system/memory/liballoc.c
     ${CMAKE_SOURCE_DIR}/src/system/memory/physmem.c
     ${CMAKE_SOURCE_DIR}/src/system/drivers/keyboard.c
     ${CMAKE_SOURCE_DIR}/src/system/drivers/elf.c
@@ -32,6 +33,9 @@ SET(lib_files
     ${CMAKE_SOURCE_DIR}/src/lainlib/list/basic_list.c
     ${CMAKE_SOURCE_DIR}/src/lainlib/mutex/ticketlock.c
     ${CMAKE_SOURCE_DIR}/src/lainlib/compression/lzgmini.c
+    ${CMAKE_SOURCE_DIR}/src/lainlib/string/str.c
+
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorMain.c
 )
 
 include_directories("inc")
@@ -44,7 +48,7 @@ SET(src_preamble
     ${CMAKE_SOURCE_DIR}/src/global/crt0.o
     ${CMAKE_SOURCE_DIR}/src/global/crti.o
     ${CMAKE_SOURCE_DIR}/src/global/crtbegin.o
-) 
+)
 
 set(src_epilogue
     ${CMAKE_SOURCE_DIR}/src/global/crtend.o

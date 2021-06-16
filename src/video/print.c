@@ -13,14 +13,6 @@
  * This file also provides SerialPrintf.
  */
 
-static size_t strlen(const char* String) {
-    size_t Len = 0;
-    while(String[Len] != '\0') {
-        Len++;
-    }
-    return Len;
-}
-
 static void NumToStr(char* Buffer, size_t Num, size_t Base) {
     size_t Temp, i = 0, j = 0;
 
