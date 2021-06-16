@@ -42,8 +42,6 @@ int Main(void) {
 
     SerialPrintf("[ boot] The bootloader has put the paging tables at 0x%p.\r\n", ReadControlRegister(3));
 
-    //TraversePageTables();
-
     ListMemoryMap();
 
     InitPrint();
@@ -59,9 +57,10 @@ int Main(void) {
     Printf("Paging complete. System initialized.\n\r");
     KernelLoaded = true;
 
-    InternalBuffer = (char*) kmalloc(4098);
+    InternalBuffer = (char*) kmalloc(4096);
     SerialPrintf("[  Mem] Allocated a text buffer at 0x%p\r\n", (size_t) InternalBuffer);
 
+    // TODO: WriteString should accept escape color codes!
     SetForegroundColor(0x00FF0000);
     WriteChar('C');
     SetForegroundColor(0x0000FF00);
@@ -122,10 +121,12 @@ void TrackInternalBuffer(KeyboardData data) {
 
     if(data.Scancode == 0x1C) {
         InternalBuffer[BufferLength] = '\0'; // Null-terminate to make checking easier
-        SerialPrintf("[  Kbd] Enter pressed.\r\n");
         if(strcmp(InternalBuffer, "editor")) {
             UninstallKBCallback(InternalBufferID);
             StartEditor(CharPrinterCallbackID);
+        } else if(strcmp(InternalBuffer, "zero")) {
+            /*entry entryPoint = (entry) ((size_t) _binary_zerosharp_obj_start + 0x20);
+            entryPoint();*/ // TODO: Zerosharp integration, maybe?
         } else {
             SerialPrintf("[  Kbd] No match for %s\r\n", InternalBuffer);
             memset(InternalBuffer, 0, 4098);
@@ -133,7 +134,7 @@ void TrackInternalBuffer(KeyboardData data) {
         }
     }
 
-    if(!tentative && data.Scancode < 0x27 && data.Scancode != 0x1C) {
+    if(!tentative && data.Scancode <= 0x2c && data.Scancode != 0x1C) {
         SerialPrintf("[  Kbd] Adding %c to the buffer.\r\n", data.Char);
         InternalBuffer[BufferLength] = data.Char;
         BufferLength++;
