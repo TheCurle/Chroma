@@ -221,11 +221,11 @@ void ListMemoryMap() {
 }
 
 void AddRangeToPhysMem(directptr_t Base, size_t Size) {
-    if(Base + Size < (void*)(LOWER_REGION)) {
+    if((size_t) Base + Size < (size_t) (LOWER_REGION)) {
         SerialPrintf("[  Mem]      New range in lower memory: 0x%p, size 0x%x\r\n", Base, Size);
         AddRangeToBuddy(&LowBuddy, Base, Size);
     } else {
-        if(Base < (void*)(LOWER_REGION)) {
+        if((size_t) Base < (size_t) LOWER_REGION) {
             size_t difference = (size_t) LOWER_REGION - (size_t) Base;
             SerialPrintf("[  Mem]             Base is 0x%p bytes away from the threshold, allocating 0x%p-0x%p to lower memory..\r\n", difference, Base, Base + difference);
             AddRangeToBuddy(&LowBuddy, Base, difference);
@@ -237,7 +237,7 @@ void AddRangeToPhysMem(directptr_t Base, size_t Size) {
             HighBuddy.Base = Base;
         }
 
-        SerialPrintf("[  Mem]      New range in higher memory: 0x%p, size 0x%x\r\n", Base, Size);
+        SerialPrintf("[  Mem]      New range in higher memory: 0x%p, size 0x%x\r\n", (size_t) Base, Size);
         AddRangeToBuddy(&HighBuddy, Base, Size);
     }
 

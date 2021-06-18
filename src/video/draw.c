@@ -29,8 +29,8 @@ void InitPrint() {
 
     PrintInfo.charScale = 1;
 
-    PrintInfo.charPosX = 1;
-    PrintInfo.charPosY = 1;
+    PrintInfo.charPosX = 0;
+    PrintInfo.charPosY = 0;
     PrintInfo.horizontalOffset = 1;
 
     PrintInfo.scrlMode = 0;
@@ -38,7 +38,7 @@ void InitPrint() {
     PrintInfo.screenWidth = bootldr.fb_width;
     PrintInfo.screenHeight = bootldr.fb_height;
 
-    PrintInfo.charsPerRow = bootldr.fb_width / (PrintInfo.charScale * PrintInfo.charWidth) - 4;
+    PrintInfo.charsPerRow = bootldr.fb_width / (PrintInfo.charScale * PrintInfo.charWidth);
     PrintInfo.rowsPerScrn = bootldr.fb_height / (PrintInfo.charScale * PrintInfo.charHeight);
     SerialPrintf("[Print] A single character is %ux%u pixels.\r\n", PrintInfo.charScale * PrintInfo.charWidth, PrintInfo.charScale * PrintInfo.charHeight);
     SerialPrintf("[Print] The screen is %ux%u, meaning you can fit %ux%u characters on screen.\r\n", bootldr.fb_width, bootldr.fb_height, PrintInfo.charsPerRow, PrintInfo.rowsPerScrn);
@@ -92,8 +92,8 @@ static void DrawChar(const char character, size_t x, size_t y) {
                         *(uint32_t* )(&fb + offset * 4) //use it to set the correct pixel on the screen
                             = PrintInfo.charFGColor; // In the set foreground color
                     } else { // otherwise,
-                        *(uint32_t*)(&fb + offset *4)
-                                = PrintInfo.charBGColor; // set the background color.
+                        *(uint32_t* )(&fb + offset * 4)
+                            = PrintInfo.charBGColor; // set the background color.
                     }
                 }
             }
@@ -101,23 +101,14 @@ static void DrawChar(const char character, size_t x, size_t y) {
     }
 }
 
-void DrawPixel(size_t x, size_t y) {
-    if(x > bootldr.fb_scanline) {
-        DrawPixel(x - bootldr.fb_scanline, y + (PrintInfo.charHeight * PrintInfo.charScale));
-    } else if(y > bootldr.fb_height) {
-        DrawPixel(x, y - bootldr.fb_height);
-    } else {
-        *((uint32_t*) (&fb + (y * bootldr.fb_width + x) * 4)) = PrintInfo.charFGColor;
-    }
+inline void DrawPixel(size_t x, size_t y) {
+    *((uint32_t*) (&fb + (y * bootldr.fb_width + x) * 4)) = PrintInfo.charFGColor;
 }
 
 void FillScreen(uint32_t color) {
     uint32_t currentColor = GetForegroundColor();
-    SetForegroundColor(color);
-    for(size_t y = 0; y < bootldr.fb_height; y++) {
-        for(size_t x = 0; x < bootldr.fb_width; x++) {
-            DrawPixel(x, y);
-        }
+    for(uint32_t pixel = 0; pixel < bootldr.fb_width * bootldr.fb_height; pixel++) {
+        ((uint32_t*)fb)[pixel] = color;
     }
     SetForegroundColor(currentColor);
 }
@@ -128,9 +119,10 @@ static void ProgressCursorS(size_t Steps) {
         size_t Rows = Steps / PrintInfo.charsPerRow;
         if(PrintInfo.charPosY + Rows > PrintInfo.rowsPerScrn) {
             size_t RowsLeft = PrintInfo.rowsPerScrn - PrintInfo.charPosY;
-            ProgressCursorS((Rows - RowsLeft) * PrintInfo.charsPerRow);
+            ProgressCursorS(RowsLeft + 1);
+            NewLine();
         } else {
-            PrintInfo.charPosY++;
+            PrintInfo.charPosY += Rows;
         }
     } else {
         PrintInfo.charPosX += Steps;
@@ -138,7 +130,8 @@ static void ProgressCursorS(size_t Steps) {
 }
 
 static void Newline() {
-    ProgressCursorS(PrintInfo.charsPerRow);
+    // One row down, unless it goes off the screen, in which case start from the top.
+    PrintInfo.charPosY = PrintInfo.charPosY + 1 > PrintInfo.rowsPerScrn ? 0 : PrintInfo.charPosY + 1;
 }
 
 static void ProgressCursor() {
