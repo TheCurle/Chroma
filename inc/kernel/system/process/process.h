@@ -14,17 +14,11 @@
 #define MAX_PROCESSES 128
 #define PROCESS_STACK 65535
 
-static size_t strlen(const char* String) {
-    size_t Len = 0;
-    while(String[Len] != '\0') {
-        Len++;
-    }
-    return Len;
-};
+static size_t
 
 /**
  * @brief All the data a process needs.
- * 
+ *
  * Contains all the process-specific structs.
  * Lots of private members, out of necessity
  */
