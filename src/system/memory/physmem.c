@@ -227,7 +227,7 @@ void AddRangeToPhysMem(directptr_t Base, size_t Size) {
     } else {
         if((size_t) Base < (size_t) LOWER_REGION) {
             size_t difference = (size_t) LOWER_REGION - (size_t) Base;
-            SerialPrintf("[  Mem]             Base is 0x%p bytes away from the threshold, allocating 0x%p-0x%p to lower memory..\r\n", difference, Base, Base + difference);
+            SerialPrintf("[  Mem]             Base is 0x%p bytes away from the threshold, allocating 0x%p-0x%p to lower memory..\r\n", difference, (size_t) Base, (size_t) Base + difference);
             AddRangeToBuddy(&LowBuddy, Base, difference);
             Base = (void*) LOWER_REGION;
             Size = Size - difference;
