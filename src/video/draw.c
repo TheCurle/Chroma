@@ -108,9 +108,14 @@ inline void DrawPixel(size_t x, size_t y) {
 void FillScreen(uint32_t color) {
     uint32_t currentColor = GetForegroundColor();
     for(uint32_t pixel = 0; pixel < bootldr.fb_width * bootldr.fb_height; pixel++) {
-        ((uint32_t*)fb)[pixel] = color;
+        ((uint32_t*)&fb)[pixel] = color;
     }
     SetForegroundColor(currentColor);
+}
+
+static void Newline() {
+    // One row down, unless it goes off the screen, in which case start from the top.
+    PrintInfo.charPosY = PrintInfo.charPosY + 1 > PrintInfo.rowsPerScrn ? 0 : PrintInfo.charPosY + 1;
 }
 
 static void ProgressCursorS(size_t Steps) {
@@ -120,7 +125,7 @@ static void ProgressCursorS(size_t Steps) {
         if(PrintInfo.charPosY + Rows > PrintInfo.rowsPerScrn) {
             size_t RowsLeft = PrintInfo.rowsPerScrn - PrintInfo.charPosY;
             ProgressCursorS(RowsLeft + 1);
-            NewLine();
+            Newline();
         } else {
             PrintInfo.charPosY += Rows;
         }
@@ -129,10 +134,6 @@ static void ProgressCursorS(size_t Steps) {
     }
 }
 
-static void Newline() {
-    // One row down, unless it goes off the screen, in which case start from the top.
-    PrintInfo.charPosY = PrintInfo.charPosY + 1 > PrintInfo.rowsPerScrn ? 0 : PrintInfo.charPosY + 1;
-}
 
 static void ProgressCursor() {
     ProgressCursorS(1);
