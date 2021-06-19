@@ -129,9 +129,10 @@ void TrackInternalBuffer(KeyboardData data) {
             SerialPrintf("Sharp returned %d\r\n", returnVal);
         } else {
             SerialPrintf("[  Kbd] No match for %s\r\n", InternalBuffer);
-            memset(InternalBuffer, 0, 4098);
-            BufferLength = 0;
         }
+
+        memset(InternalBuffer, 0, 4098);
+        BufferLength = 0;
     }
 
     if(!tentative && data.Scancode <= 0x2c && data.Scancode != 0x1C) {
