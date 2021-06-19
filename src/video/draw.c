@@ -165,6 +165,7 @@ void WriteChar(const char character) {
             PrintInfo.charPosX = 0;
             break;
         case '\n':
+            PrintInfo.charPosX = 0;
             Newline();
             break;
         case '\t':
