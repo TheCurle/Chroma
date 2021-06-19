@@ -1,4 +1,5 @@
 #include <kernel/chroma.h>
+#include <kernel/system/driver/keyboard.h>
 #include <kernel/video/draw.h>
 #include <editor/main.h>
 
@@ -10,10 +11,10 @@
 /**
  * Contains startup and setup routines for the Chroma Editor.
  */
-static int KernelID;
+static KeyboardCallback KernelHandler;
 
 void StartEditor(int callbackID) {
-    KernelID = callbackID;
+    KernelHandler = KeyboardCallbacks[callbackID];
 
     struct EditorLayout layout = (struct EditorLayout) {0};
     layout.ScreenHeight = PrintInfo.screenHeight;
@@ -21,7 +22,7 @@ void StartEditor(int callbackID) {
     layout.HeaderHeight = layout.ScreenHeight / 100 * 3;
 
     layout.TextBoxHeight = (layout.ScreenHeight - layout.HeaderHeight) / 100 * 95;
-    layout.TextBoxY = ((layout.ScreenHeight + - layout.HeaderHeight) - layout.TextBoxHeight) / 2;
+    layout.TextBoxY = ((layout.ScreenHeight + layout.HeaderHeight) - layout.TextBoxHeight) / 2;
 
     layout.TextBoxWidth = layout.ScreenWidth / 100 * 95;
     layout.TextBoxX = (layout.ScreenWidth - layout.TextBoxWidth) / 2;
