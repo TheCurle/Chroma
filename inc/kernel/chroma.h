@@ -35,6 +35,8 @@ extern uint8_t fb;
 extern volatile unsigned char _binary_src_assets_font_psf_start;
 extern volatile size_t* _kernel_text_start;
 
+extern int sharp_entryPoint();
+
 extern address_space_t KernelAddressSpace;
 
 extern e1000_device_t* E1000NIC;

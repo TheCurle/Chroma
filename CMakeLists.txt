@@ -10,8 +10,6 @@ SET(CMAKE_CROSSCOMPILING 1)
 
 project(chroma)
 
-
-
 SET(src_files
     ${CMAKE_SOURCE_DIR}/src/kernel.c
     ${CMAKE_SOURCE_DIR}/src/video/draw.c
@@ -53,6 +51,8 @@ SET(src_preamble
 set(src_epilogue
     ${CMAKE_SOURCE_DIR}/src/global/crtend.o
     ${CMAKE_SOURCE_DIR}/src/global/crtn.o
+    ${CMAKE_SOURCE_DIR}/src/assets/font.o
+    ${CMAKE_SOURCE_DIR}/src/assets/zerosharp.o
 )
 
 set_property(SOURCE ${src_no_sse} PROPERTY COMPILE_FLAGS -mgeneral-regs-only)
@@ -61,6 +61,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(kernel)
 
-target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_files} PUBLIC ${src_no_sse} PUBLIC ${lib_files} PUBLIC ${CMAKE_SOURCE_DIR}/src/assets/font.o PUBLIC ${src_epilogue})
-target_compile_options(kernel PRIVATE -ffreestanding -O0 -Wall -Wextra -Wall -Werror -pedantic -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -ggdb3)
+target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_files} PUBLIC ${src_no_sse} PUBLIC ${lib_files} PUBLIC ${src_epilogue})
+target_compile_options(kernel PRIVATE -ffreestanding -O0 -Wall -Wextra -Wall -Werror -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -ggdb3)
 target_link_options(kernel PRIVATE -T linker.ld -ffreestanding -O2 -nostdlib -nostartfiles -lgcc)

@@ -125,8 +125,8 @@ void TrackInternalBuffer(KeyboardData data) {
             UninstallKBCallback(InternalBufferID);
             StartEditor(CharPrinterCallbackID);
         } else if(strcmp(InternalBuffer, "zero")) {
-            /*entry entryPoint = (entry) ((size_t) _binary_zerosharp_obj_start + 0x20);
-            entryPoint();*/ // TODO: Zerosharp integration, maybe?
+            int returnVal = sharp_entryPoint();
+            SerialPrintf("Sharp returned %d\r\n", returnVal);
         } else {
             SerialPrintf("[  Kbd] No match for %s\r\n", InternalBuffer);
             memset(InternalBuffer, 0, 4098);
