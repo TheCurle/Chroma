@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <kernel/system/descriptors.h>
 
 /************************
@@ -74,3 +78,7 @@ int         Printf(const char* restrict Format, ...);
 
 void*       memcpy(void* dest, void const* src, size_t len);
 void*       memset(void* dst, int src, size_t len);
+
+#ifdef  __cplusplus
+}
+#endif

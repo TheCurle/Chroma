@@ -3,6 +3,10 @@
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <kernel/system/pci.h>
@@ -179,3 +183,7 @@ void E1000InterruptFired(INTERRUPT_FRAME* InterruptContext);
 uint8_t* E1000GetMAC(e1000_device_t* Device);
 // Send a packet
 int E1000Send(e1000_device_t* Device, const void* Data, uint16_t Length);
+
+#ifdef  __cplusplus
+}
+#endif

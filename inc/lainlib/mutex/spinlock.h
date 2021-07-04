@@ -5,6 +5,9 @@
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef volatile int spinlock_t;
 
@@ -20,3 +23,6 @@ typedef volatile int spinlock_t;
     __sync_synchronize(); \
     name = 0;
 
+#ifdef  __cplusplus
+}
+#endif

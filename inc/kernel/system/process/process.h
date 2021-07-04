@@ -14,8 +14,6 @@
 #define MAX_PROCESSES 128
 #define PROCESS_STACK 65535
 
-static size_t
-
 /**
  * @brief All the data a process needs.
  *
@@ -73,6 +71,7 @@ class Process {
         ProcessState State;
 
         bool User;        // Is this process originated in userspace?
+        bool System;      // Was this process started by the system (ie. not user interaction)
 
         size_t UniquePID; // Globally Unique ID.
         size_t KernelPID; // If in kernel space, the PID.
@@ -85,14 +84,14 @@ class Process {
         bool ORS = false;
         bool IsActive = false;
         bool IsInterrupted = false; // True if an interrupt was fired while this process is active
-        
+
         uint8_t Signals[8]; // Interrupt / IRQ / Signal handlers.
         uint8_t Sleeping;   // 0 if active, else the process is waiting for something. TODO: remove this, use State?
 
         ProcessMessage* Messages; // A queue of IPC messages.
         size_t LastMessage; // The index of the current message.
 
-        uint8_t* ProcessMemory; 
+        uint8_t* ProcessMemory;
         size_t ProcessMemorySize;
 
         // TODO: Stack Trace & MFS
@@ -101,10 +100,10 @@ class Process {
 
         Process(size_t KPID) : State(PROCESS_AVAILABLE), UniquePID(-1), KernelPID(KPID) {
         };
-        
+
         Process(const char* ProcessName, size_t KPID, size_t UPID, size_t EntryPoint, bool Userspace)
             : UniquePID(UPID), KernelPID(KPID), Entry(EntryPoint), ORS(false), LastMessage(0), User(Userspace), Sleeping(0) {
-            
+
             memcpy((void*) ProcessName, Name, strlen(Name) + 1);
         };
 
@@ -120,11 +119,40 @@ class Process {
         /*************************************************************/
 
         void InitMemory();
-        
+
         void InitMessages();
 
+        void Kill() {
+            State = ProcessState::PROCESS_REAP;
+            Sleeping = -1;
+        };
+
+        void Destroy();
+
+        void Rename(const char* NewName) {
+            memcpy(Name, NewName, strlen(Name) > strlen(NewName) ? strlen(Name) : strlen(NewName));
+        }
+
+        size_t* AllocateProcessSpace(size_t Bytes);
+        size_t FreeProcessSpace(size_t* Address, size_t Bytes);
+
+        bool OwnsAddress(size_t* Address, size_t Bytes);
+
         /*************************************************************/
-        
+
+        void SetParent(size_t PID) { ParentPID = PID; };
+
+        void SetSystem(bool Status) {
+            System = Status;
+            if(System && User) {
+                // TODO: Log error.
+            }
+        };
+
+        void SetState(ProcessState NewState) { State = NewState; };
+
+        void SetActive(bool NewState) { IsActive = NewState; };
+
         void SetCore(size_t CoreID) { Core = CoreID; };
 
         void IncreaseSleep(size_t Interval) { Sleeping += Interval; };
@@ -134,7 +162,14 @@ class Process {
 
         ProcessHeader* GetHeader() { return &Header; };
 
+        const char* GetName() const { return Name; };
+
+        size_t GetPID() const { return UniquePID; };
+        size_t GetKPID() const { return KernelPID; };
+
         size_t GetParent() const { return ParentPID; };
+
+        ProcessState GetState() const { return State; };
 
         bool IsValid() const { return KernelPID != 0; };
 
@@ -148,10 +183,21 @@ class Process {
             bool flag = !(ORS && !IsActive);
 
             return State == ProcessState::PROCESS_WAITING && Core == CPU && KernelPID != 0 && flag && !IsSleeping();
-        }
+        };
 
         size_t GetCore() const { return Core; };
 
+        bool IsUserspace() { return User; };
+        bool IsSystem() { return System; };
+
+
+        /*************************************************************/
+
+        static Process* FromName(const char* name);
+        static Process* FromPID(size_t PID);
+        static Process* Current();
+
+        static void SetCurrent(Process* Target);
 
 };
 
@@ -166,17 +212,17 @@ class ProcessManagement {
         void Wait();
         void Initialize();
         void InitialiseCore(int APIC, int ID);
-        
+
         void NotifyAllCores();
 
         // TODO: Process*
         size_t SwitchContext(INTERRUPT_FRAME* CurrentFrame);
         void MapThreadMemory(size_t from, size_t to, size_t length);
-        
+
         void InitProcess(/*func EntryPoint*/ int argc, char** argv);
         void InitProcessPagetable(bool Userspace);
         void InitProcessArch();
-        
+
         size_t HandleRequest(size_t CPU);
 
 

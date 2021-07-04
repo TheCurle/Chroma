@@ -1,9 +1,10 @@
 #project config
 cmake_minimum_required(VERSION 3.10)
 
+set(CMAKE_CXX_COMPILER x86_64-elf-g++)
 set(CMAKE_C_COMPILER x86_64-elf-gcc)
 
-# cheat the compile test 
+# cheat the compile test
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 SET(CMAKE_SYSTEM_NAME Generic)
 SET(CMAKE_CROSSCOMPILING 1)
@@ -63,4 +64,4 @@ add_executable(kernel)
 
 target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_files} PUBLIC ${src_no_sse} PUBLIC ${lib_files} PUBLIC ${src_epilogue})
 target_compile_options(kernel PRIVATE -ffreestanding -O0 -Wall -Wextra -Wall -Werror -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -ggdb3)
-target_link_options(kernel PRIVATE -T linker.ld -ffreestanding -O2 -nostdlib -nostartfiles -lgcc)
+target_link_options(kernel PRIVATE -T ${CMAKE_SOURCE_DIR}/linker.ld -ffreestanding -O2 -nostdlib -nostartfiles -lgcc)

@@ -5,6 +5,10 @@
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PAGE_TABLES_GET_PDPT(address) \
     (address & ((size_t) 0x1FF << 39)) >> 39
 #define PAGE_TABLES_GET_PDP(address) \
@@ -328,3 +332,7 @@ size_t* CreateNewPageTable(address_space_t* AddressSpace) {
 
     return NewPML4;
 }
+
+#ifdef  __cplusplus
+}
+#endif

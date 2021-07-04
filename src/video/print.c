@@ -5,6 +5,10 @@
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* This file contains all of the String / Print related functions
  *  that are required by the core of the kernel.
  *
@@ -191,3 +195,7 @@ int Printf(const char* restrict Format, ...) {
     va_end(Parameters);
     return CharsWritten;
 }
+
+#ifdef  __cplusplus
+}
+#endif

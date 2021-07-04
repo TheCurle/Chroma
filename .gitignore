@@ -19,3 +19,4 @@ tools/x86_64-elf-tools
 
 
 !src/global/*.o
+!src/assets/z*.o

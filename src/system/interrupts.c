@@ -1,7 +1,16 @@
+#include <kernel/chroma.h>
+#include <kernel/video/draw.h>
+#include <kernel/system/interrupts.h>
+#include <stdbool.h>
+
 /************************
  *** Team Kitty, 2020 ***
  ***     Chroma       ***
  ***********************/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* This file contains all of the ISR and IRQ
  * (Interrupt Service Request) functions.
@@ -31,11 +40,6 @@
  * attribute which allows for error handlers,
  * these having a size_t input as an error code.
  */
-
-#include <kernel/chroma.h>
-#include <kernel/video/draw.h>
-#include <kernel/system/interrupts.h>
-#include <stdbool.h>
 
 const char* ExceptionStrings[] = {
 	"Division by Zero",
@@ -458,3 +462,7 @@ __attribute__((interrupt)) void IRQ14Handler(INTERRUPT_FRAME* Frame) {
 __attribute__((interrupt)) void IRQ15Handler(INTERRUPT_FRAME* Frame) {
 	IRQ_Common(Frame, 15);
 }
+
+#ifdef  __cplusplus
+}
+#endif

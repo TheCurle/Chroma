@@ -4,12 +4,14 @@
 #include <kernel/system/memory.h>
 #include <kernel/system/io.h>
 
-
 /************************
  *** Team Kitty, 2020 ***
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /************************************************
 *    C O N S T A N T S   A N D   M A C R O S
@@ -66,12 +68,12 @@ alloc_decl int Alloc_FindLastOne_64(size_t size) {
 
     int high = (int)(size >> 32);
     int bits = 0;
-    
-    if(high) 
+
+    if(high)
         bits = 32 + Alloc_FindLastOne(high);
-    else 
+    else
         bits = Alloc_FindLastOne((int)size & 0xFFFFFFFF);
-    
+
     return bits;
 }
 
@@ -796,3 +798,7 @@ void* AllocatorRealloc(allocator_t Allocator, void* Address, size_t NewSize) {
 
     return Pointer;
 }
+
+#ifdef  __cplusplus
+}
+#endif

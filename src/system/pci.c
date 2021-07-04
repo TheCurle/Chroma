@@ -5,11 +5,15 @@
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* This file contains functions for accessing the PCI bus,
  *   and devices contained wherein.
- * 
+ *
  * It allows you to query the bus, as well as communicate with individual devices.
- * 
+ *
  */
 
 pci_device_t** pci_root_devices = NULL;
@@ -521,3 +525,7 @@ const char* PCIGetClassName(uint8_t DeviceClass) {
 
     return "Invalid device!";
 }
+
+#ifdef  __cplusplus
+}
+#endif

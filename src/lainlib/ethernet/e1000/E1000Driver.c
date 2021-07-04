@@ -1,27 +1,32 @@
-/*************************
- *** Team Kitty,  2021 ***
- ***     Lainlib       ***
- ************************/
 #include <lainlib/ethernet/e1000/e1000.h>
 #include <kernel/chroma.h>
 #include <kernel/system/memory.h>
 #include <kernel/system/interrupts.h>
 
+/*************************
+ *** Team Kitty,  2021 ***
+ ***     Lainlib       ***
+ ************************/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * This file handles all the logic for interfacing with the E1000 networking device.
  * This card is labelled either the Intel I217, or Intel Gigabit 82577LM.
  * These cards are identical, and this driver will work identically for both of them.
- * 
+ *
  * To use this driver, allocate an e1000_device struct and pass it to the E1000Init() function,
  *  along with its' PCI device header.
- * 
+ *
  * TODO: usage information
  */
 
 /**
  * Write data to the device's command registers.
  * If we use BAR type 0, we use MMIO, otherwise ports.
- * 
+ *
  * @param Device The device to which we write the data.
  * @param Address The address to write the data at. For MMIO, the offset from base.
  * @param Data The data to write into the register.
@@ -350,3 +355,7 @@ int E1000Send(e1000_device_t* Device, const void* Data, uint16_t Length) {
 
     return 0;
 }
+
+#ifdef  __cplusplus
+}
+#endif

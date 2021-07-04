@@ -1,3 +1,9 @@
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 #include <kernel/system/interrupts.h>
@@ -289,3 +295,7 @@ extern void    *PREFIX(malloc)(size_t);				///< The standard function.
 extern void    *PREFIX(realloc)(void *, size_t);	///< The standard function.
 extern void    *PREFIX(calloc)(size_t, size_t);		///< The standard function.
 extern void     PREFIX(free)(void *);				///< The standard function.
+
+#ifdef  __cplusplus
+}
+#endif

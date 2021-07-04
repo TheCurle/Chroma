@@ -4,15 +4,19 @@
  ***     Chroma       ***
  ***********************/
 
-/* 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
  * This file aims to implement stack unwinding
  * to trace faulty functions.
- * 
+ *
  * I was in the middle of debugging a jump to null
  * when i started creating this, so there will be a
  * lot of functionality here left over from that
  * initial goal, probably...
- * 
+ *
  * //TODO: Rework this to allow unwinding function parameters on call.
  */
 
@@ -27,3 +31,7 @@ void StackTrace(size_t cycles) {
     }
     SerialPrintf("[Trace] Stack trace over.\r\n");
 }
+
+#ifdef  __cplusplus
+}
+#endif

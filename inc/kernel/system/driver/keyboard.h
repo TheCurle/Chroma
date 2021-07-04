@@ -5,6 +5,10 @@
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     char Char;
     char Scancode;
@@ -18,3 +22,7 @@ extern KeyboardCallback KeyboardCallbacks[16];
 int SetupKBCallback(void (*Handler)(KeyboardData Frame));
 
 void UninstallKBCallback(int Index);
+
+#ifdef  __cplusplus
+}
+#endif

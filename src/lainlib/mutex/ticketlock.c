@@ -1,6 +1,10 @@
 #include <kernel/chroma.h>
 #include <lainlib/lainlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void TicketLock(ticketlock_t* Lock) {
     size_t Ticket = atomic_fetch_add_explicit(&Lock->NextTicket, 1, memory_order_relaxed);
 
@@ -19,3 +23,7 @@ void TicketUnlock(ticketlock_t* Lock) {
     size_t NextTicket = atomic_load_explicit(&Lock->NowServing, memory_order_relaxed) + 1;
     atomic_store_explicit(&Lock->NowServing, NextTicket, memory_order_release);
 }
+
+#ifdef  __cplusplus
+}
+#endif

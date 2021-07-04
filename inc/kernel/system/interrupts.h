@@ -6,6 +6,10 @@
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern const char* ExceptionStrings[];
 
 
@@ -89,3 +93,7 @@ void IRQ12Handler(INTERRUPT_FRAME* Frame);
 void IRQ13Handler(INTERRUPT_FRAME* Frame);
 void IRQ14Handler(INTERRUPT_FRAME* Frame);
 void IRQ15Handler(INTERRUPT_FRAME* Frame);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif

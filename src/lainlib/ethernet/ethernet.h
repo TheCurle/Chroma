@@ -1,9 +1,13 @@
+#include <stdint.h>
+
 /************************
  *** Team Kitty, 2021 ***
- ***     Chroma       ***
+ ***    Lainlib       ***
  ***********************/
 
-#include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct mac_address {
     uint8_t MAC[6];
@@ -21,3 +25,7 @@ struct ethernet_packet {
     uint16_t Type;
     uint8_t Payload[];
 };
+
+#ifdef  __cplusplus
+}
+#endif

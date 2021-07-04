@@ -6,6 +6,10 @@
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* This file contains (mostly unused) implementations of a full PS/2 keyboard driver.
  *
  * It provides provisions for full 2-way communication, as well as auxiliary key commands.
@@ -148,3 +152,7 @@ void WaitFor8042() {
 		full = ReadPort(0x64, 1) & 1;
 	}
 }
+
+#ifdef  __cplusplus
+}
+#endif

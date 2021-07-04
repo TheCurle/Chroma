@@ -5,6 +5,10 @@
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * This file contains most of the symbols required to start and run the Chroma Editor.
  *
@@ -117,3 +121,7 @@ void SetLine(EditorState* state, struct EditorLine* line);
 void AppendLine(EditorState* state, struct EditorLine* line);
 void AppendToLine(EditorState* state, struct EditorLine* line, size_t textLength, char* text);
 void RemoveLine(EditorState* state, size_t line);
+
+#ifdef  __cplusplus
+}
+#endif

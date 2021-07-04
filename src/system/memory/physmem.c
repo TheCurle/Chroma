@@ -1,11 +1,14 @@
 #include <kernel/chroma.h>
-#include <kernel/system/heap.h>
 #include <lainlib/lainlib.h>
 
 /************************
  *** Team Kitty, 2020 ***
  ***     Chroma       ***
  ***********************/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* This file contains functions for physical memory management.
  *
@@ -341,4 +344,6 @@ void* memset(void* dst, int src, size_t len) {
     return dst;
 }
 
-
+#ifdef  __cplusplus
+}
+#endif

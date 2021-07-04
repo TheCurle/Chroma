@@ -3,6 +3,10 @@
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // This file contains all of the bitmap fonts made by me (Curle) and taken from the public domain
 // eg. http://dimensionalrift.homelinux.net/combuster/mos3/?p=viewsource&file=/modules/gfx/font8_8.asm
 
@@ -464,3 +468,7 @@ const unsigned char bitfont_block[32][8] = {
     { 0xF0, 0xF0, 0xF0, 0xF0, 0x0F, 0x0F, 0x0F, 0x0F},   // U+259E (boxes top right and bottom left)
     { 0xF0, 0xF0, 0xF0, 0xF0, 0xFF, 0xFF, 0xFF, 0xFF},   // U+259F (boxes right and bottom)
 };
+
+#ifdef  __cplusplus
+}
+#endif

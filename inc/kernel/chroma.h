@@ -9,6 +9,10 @@
  * It also provides the symbols for the framebuffer and configuration file, which are both equually important.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define UNUSED(x) (void)x
 
 #include <stdint.h>
@@ -24,9 +28,6 @@
 
 #include <lainlib/lainlib.h>
 #include <lainlib/ethernet/e1000/e1000.h>
-
-//Removed cause "wacky copyrighted stuff"
-//#include <kernel/system/screen.h>
 
 extern size_t LoadAddr;
 extern bootinfo bootldr;
@@ -83,3 +84,7 @@ int Main();
 void Exit();
 
 void SomethingWentWrong(const char* Message);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif

@@ -8,6 +8,10 @@
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* This file is the entry point to the system.
  * It dictates the order of operations of everything the kernel actually does.
  * If a function isn't fired here, directly or indirectly, it is not run.
@@ -151,3 +155,7 @@ void Exit(int ExitCode) {
     SerialPrintf("Kernel stopped with code %x\r\n", ExitCode);
 
 }
+
+#ifdef  __cplusplus
+}
+#endif

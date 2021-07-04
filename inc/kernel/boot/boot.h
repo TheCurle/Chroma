@@ -1,7 +1,4 @@
-
-#ifndef _BOOTLOADER_H_
-#define _BOOTLOADER_H_
-
+#pragma once
 /************************
  *** Team Kitty, 2020 ***
  ***     Chroma       ***
@@ -160,6 +157,4 @@ typedef struct {
 
 #ifdef  __cplusplus
 }
-#endif
-
 #endif

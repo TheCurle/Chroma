@@ -6,6 +6,10 @@
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* This class provides functions for setting up and preparing the CPU for the things the kernel will do.
  * Mainly, it allows you to:
  * 
@@ -265,5 +269,6 @@ void SetupIDT() {
 
 }
 
-
-
+#ifdef  __cplusplus
+}
+#endif

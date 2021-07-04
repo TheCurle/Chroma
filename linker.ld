@@ -1,5 +1,3 @@
-
-memstart = 0x14400;
 mmio     = 0xfffffffff8000000;
 fb       = 0xfffffffffc000000;
 
@@ -16,7 +14,7 @@ SECTIONS
 	environment = .; . += 4096;
 
 	.text : {
-		
+
 		_kernel_text_start = .;
 		KEEP(*(.text.boot)) *(.text .text.*)
 		_kernel_rodata_start = .;

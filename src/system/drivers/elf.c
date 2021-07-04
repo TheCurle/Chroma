@@ -4,9 +4,13 @@
  ***     Chroma       ***
  ***********************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * This file provides utility functions for parsing ELF headers.
- *  This exists so that the kernel can find itself for remapping, 
+ *  This exists so that the kernel can find itself for remapping,
  *   but I may end up using ELF as the kernel's executable format.
  *  Writing an ELF loader is on the to-do list, after all.
  ! This needs to be cleaned up.
@@ -17,10 +21,10 @@ extern size_t KernelLocation;
 
 int ParseKernelHeader(size_t InitrdPtr) {
     int flag = 0;
-    
+
     SerialPrintf("[ boot] Searching for kernel... Constants start at 0x%p / 0x%p\r\n", ((size_t) (&_kernel_text_start) - KernelAddr) + InitrdPtr, (size_t) (&_kernel_text_start));
     // We stop at the constants in the kernel, otherwise we'll read the constant ELF64MAGIC which is stored inside the kernel...
- 
+
     size_t headerLoc = 0;
     for(size_t i = InitrdPtr; i < ((size_t) (&_kernel_text_start) - KernelAddr) + InitrdPtr; i++) {
         if(*((volatile uint32_t*)(i)) == ELF64MAGIC) {
@@ -54,21 +58,21 @@ int ParseKernelHeader(size_t InitrdPtr) {
         uint16_t ExecutableType = (uint16_t) *((volatile uint8_t*)(headerLoc + ELFTYPE_OFF));
         uint16_t MachineType = (uint16_t) *((volatile uint8_t*)(headerLoc + ELFMACHINE_OFF));
 
-    
+
         SerialPrintf(
             "[ boot] ELF header at 0x%p.\r\n\tConsidering ELF with:\r\n\tBitness %d: %d\r\n\tEntry point 0x%p\r\n\tFile type %s : 0x%x\r\n\tArchitecture %s : 0x%x\r\n",
             headerLoc,
              HeaderClass == 2 ? 64 : 32,
                  HeaderClass,
             EntryPoint,
-            ExecutableType == FIXENDIAN16(0x0200) ? "EXECUTABLE" : "OTHER", 
-                FIXENDIAN16(ExecutableType), 
-            MachineType == FIXENDIAN16(0x3E00) ? "AMD64" : "OTHER", 
+            ExecutableType == FIXENDIAN16(0x0200) ? "EXECUTABLE" : "OTHER",
+                FIXENDIAN16(ExecutableType),
+            MachineType == FIXENDIAN16(0x3E00) ? "AMD64" : "OTHER",
                 FIXENDIAN16(MachineType));
-        
 
-        
-        
+
+
+
         if(EntryPoint == (size_t) (&_kernel_text_start)) {
             SerialPrintf("[ boot] Header at 0x%p matches kernel header.\r\n", headerLoc);
             flag = 1;
@@ -89,3 +93,6 @@ int ParseKernelHeader(size_t InitrdPtr) {
 
 }
 
+#ifdef  __cplusplus
+}
+#endif

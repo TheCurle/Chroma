@@ -1,4 +1,9 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -172,3 +177,7 @@ typedef struct {
 
 extern pci_device_t** pci_root_devices;
 extern pci_entry_t* pci_map;
+
+#ifdef  __cplusplus
+}
+#endif

@@ -27,6 +27,10 @@
 
 #include <lainlib/lainlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*-- PRIVATE -----------------------------------------------------------------*/
 
 /* Internal definitions */
@@ -188,3 +192,7 @@ lzg_uint32_t LZG_Decode(const unsigned char *in, lzg_uint32_t insize,
     else
         return decodedSize;
 }
+
+#ifdef  __cplusplus
+}
+#endif

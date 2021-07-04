@@ -1,4 +1,9 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -13,3 +18,7 @@ typedef struct stackframe {
 } stackframe_t;
 
 void StackTrace(size_t cycles);
+
+#ifdef  __cplusplus
+}
+#endif

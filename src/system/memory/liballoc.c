@@ -3,6 +3,10 @@
 
 /**  Durand's Amazing Super Duper Memory functions.  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define VERSION 	"1.1"
 #define ALIGNMENT	16ul//4ul				///< This is the byte alignment that memory must be allocated on. IMPORTANT for GTK and other stuff.
 
@@ -858,3 +862,6 @@ void*   PREFIX(realloc)(void *p, size_t size)
 	return ptr;
 }
 
+#ifdef  __cplusplus
+}
+#endif
