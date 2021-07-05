@@ -73,8 +73,8 @@ void        Send8042(size_t);
 void        WriteSerialChar(const char);
 void        WriteSerialString(const char*, size_t);
 
-int         SerialPrintf(const char* restrict format, ...);
-int         Printf(const char* restrict Format, ...);
+int         SerialPrintf(const char* format, ...);
+int         Printf(const char* Format, ...);
 
 void*       memcpy(void* dest, void const* src, size_t len);
 void*       memset(void* dst, int src, size_t len);

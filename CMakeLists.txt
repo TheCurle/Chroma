@@ -1,6 +1,8 @@
 #project config
 cmake_minimum_required(VERSION 3.10)
 
+SET(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED on)
 set(CMAKE_CXX_COMPILER x86_64-elf-g++)
 set(CMAKE_C_COMPILER x86_64-elf-gcc)
 
@@ -12,9 +14,9 @@ SET(CMAKE_CROSSCOMPILING 1)
 project(chroma)
 
 SET(src_files
-    ${CMAKE_SOURCE_DIR}/src/kernel.c
+    ${CMAKE_SOURCE_DIR}/src/kernel.cpp
     ${CMAKE_SOURCE_DIR}/src/video/draw.c
-    ${CMAKE_SOURCE_DIR}/src/video/print.c
+    ${CMAKE_SOURCE_DIR}/src/video/print.cpp
     ${CMAKE_SOURCE_DIR}/src/system/cpu.c
     ${CMAKE_SOURCE_DIR}/src//system/rw.c
     ${CMAKE_SOURCE_DIR}/src/system/serial.c
@@ -34,10 +36,10 @@ SET(lib_files
     ${CMAKE_SOURCE_DIR}/src/lainlib/compression/lzgmini.c
     ${CMAKE_SOURCE_DIR}/src/lainlib/string/str.c
 
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorMain.c
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorMain.cpp
 )
 
-include_directories("inc")
+include_directories("inc" "D:/mingw/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++" "D:/mingw/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32")
 
 SET(src_no_sse
     ${CMAKE_SOURCE_DIR}/src/system/interrupts.c

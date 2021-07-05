@@ -32,8 +32,19 @@ int InternalBufferID;
 size_t BufferLength = 0;
 char* InternalBuffer;
 
+#ifdef  __cplusplus
+}
+#endif
+
+/**
+ * C++ code! Scary!
+ * This is a temporary measure to experiment with the Editor system.
+ */
+
 int Main(void) {
-    KernelAddressSpace = (address_space_t) {0};
+    KernelAddressSpace.Lock.NextTicket = 0;
+    KernelAddressSpace.Lock.NowServing = 0;
+    KernelAddressSpace.PML4 = nullptr; 
 
     SerialPrintf("\r\n[ boot] Booting Chroma..\r\n");
     SerialPrintf("[ boot] Bootloader data structure at 0x%p\r\n", (size_t) &bootldr);
@@ -64,31 +75,8 @@ int Main(void) {
     InternalBuffer = (char*) kmalloc(4096);
     SerialPrintf("[  Mem] Allocated a text buffer at 0x%p\r\n", (size_t) InternalBuffer);
 
-    // TODO: WriteString should accept escape color codes!
-    SetForegroundColor(0x00FF0000);
-    WriteChar('C');
-    SetForegroundColor(0x0000FF00);
-    WriteChar('h');
-    SetForegroundColor(0x000000FF);
-    WriteChar('r');
-    SetForegroundColor(0x00FFFF00);
-    WriteChar('o');
-    SetForegroundColor(0x00FF00FF);
-    WriteChar('m');
-    SetForegroundColor(0x0000FFFF);
-    WriteChar('a');
-    WriteChar(' ');
-    SetForegroundColor(0x00FFFFFF);
-    WriteChar('T');
-    SetForegroundColor(0x0000AAAA);
-    WriteChar('i');
-    SetForegroundColor(0x00BBBBBB);
-    WriteChar('m');
-    SetForegroundColor(0x001E2D42);
-    WriteChar('e');
-    SetForegroundColor(0x00E0A969);
-    WriteChar('!');
-    WriteChar('\n');
+    WriteString("\\${FF0000}C\\${<green>}h\\${<blue>}r\\${FFFF00}o\\${FF00FF}m\\${FFFF}a ");
+    WriteString("\\${FFFFFF}T\\${AAAA}i\\${BBBBBB}m\\${<forgeb>}e\\${<forgey>}!\n");
 
     SetForegroundColor(0x00FFFFFF);
 
@@ -100,6 +88,10 @@ int Main(void) {
 
     return 0;
 }
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void PrintPressedChar(KeyboardData data) {
     if(!KernelLoaded) return;

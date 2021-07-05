@@ -336,6 +336,8 @@ void DrawFilledCircleInternal(size_t centerX, size_t centerY, size_t radius, cha
 
 /******* Public *******/
 
+/** TODO: Move all of this into static DrawUtils:: functions */
+
 void DrawFilledRect(size_t x, size_t y, size_t width, size_t height) {
     for (size_t i = y; i < y + height; i++)
         DrawHorizontalLine(x, i, width);

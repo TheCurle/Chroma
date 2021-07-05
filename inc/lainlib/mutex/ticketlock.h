@@ -1,6 +1,8 @@
 #pragma once
 #include <stdbool.h>
+
 #include <stdatomic.h>
+// TODO: <atomic> for cplusplus.
 
 /************************
  *** Team Kitty, 2020 ***
