@@ -13,7 +13,7 @@
  * ! Do not instantiate!
  */
 
-class FileSystem {
+class BaseFileSystem {
 public:
     virtual void Init(size_t Sector, size_t Size) = 0;
     virtual const char* GetName() = 0;
