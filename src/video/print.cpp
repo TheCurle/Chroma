@@ -202,23 +202,24 @@ int Printf(const char* Format, ...) {
             switch(*Format) {
                 case '$': {
                     // COLOR
-                    Format ++; // Skip $ and {
+                    Format ++; // Skip $
                     size_t Color = 0;
                     bool bgFlag = false;
 
                     switch(*Format) {
                         case '[':
+                            // bg
                             bgFlag = true;
                             [[fallthrough]];
-                            // bg
                         case '{':
                             // fg
-                            Format++;
+                            Format++; // [ or {
+
                             if(*Format == '<') {
-                                Color = ParseEnglishColor((char*) ++Format);
                                 Format++;
+                                Color = ParseEnglishColor((char*) Format);
                             } else {
-                                Color = ParseHexColor(++Format, bgFlag);
+                                Color = ParseHexColor(Format, bgFlag);
                             }
 
                             if(bgFlag) 
@@ -226,20 +227,18 @@ int Printf(const char* Format, ...) {
                             else
                                 SetForegroundColor(Color);
                             
-                            Format++;
+                            while(*Format != '}')
+                                Format++;
+                            Format++; // }
                             break;
                     }
                     
-                    
-                    Format++;
                     break;
                 }
                 case 'f':
                     // FORMAT
                     break;
             }
-
-            Format++;
         } else {
             WriteChar(*Format);
             Format++;
@@ -277,11 +276,10 @@ size_t ParseHexColor(const char* Stream, bool bgFlag) {
     size_t val = 0;
     char c;
 
-    while ((*Stream != (bgFlag ? ']' : '}')) && (c = *Stream++)) {
+    while ((*Stream != (bgFlag ? ']' : '}')) && (c = *(++Stream))) {
         char v = ((c & 0xF) + (c >> 6)) | ((c >> 3) & 0x8);
         val = (val << 4) | (size_t) v;
     }
-    
     return val;
 }
 

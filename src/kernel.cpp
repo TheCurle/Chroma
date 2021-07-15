@@ -76,8 +76,8 @@ int Main(void) {
     InternalBuffer = (char*) kmalloc(4096);
     SerialPrintf("[  Mem] Allocated a text buffer at 0x%p\r\n", (size_t) InternalBuffer);
 
-    WriteString("\\${FF0000}C\\${<green>}h\\${<blue>}r\\${FFFF00}o\\${FF00FF}m\\${FFFF}a ");
-    WriteString("\\${FFFFFF}T\\${AAAA}i\\${BBBBBB}m\\${<forgeb>}e\\${<forgey>}!\n");
+    Printf("\\${FF0000}C\\${<green>}h\\${<blue>}r\\${FFFF00}o\\${FF00FF}m\\${FFFF}a ");
+    Printf("\\${FFFFFF}T\\${AAAA}i\\${BBBBBB}m\\${<forgeb>}e\\${<forgey>}!\n");
 
     SetForegroundColor(0x00FFFFFF);
 

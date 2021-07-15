@@ -22,8 +22,8 @@ size_t strlen(const char* String) {
 bool strcmp(char* a, const char* b) {
     size_t aI = 0, bI = 0;
     while(true) {
+        if(b[bI] == '\0') return true;
         if(a[aI] != b[bI]) return false;
-        if(a[aI] == '\0') return true;
         aI++;
         bI++;
     }
