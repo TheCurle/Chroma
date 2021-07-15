@@ -225,7 +225,5 @@ class ProcessManagement {
 
         size_t HandleRequest(size_t CPU);
 
-
         inline void yield() { __asm __volatile("int 100"); }
-
 };

@@ -1,6 +1,6 @@
 #include <kernel/chroma.h>
 #include <kernel/video/draw.h>
-#include <kernel/system/driver/keyboard.h>
+#include <driver/keyboard.h>
 #include <editor/main.h>
 
 /************************

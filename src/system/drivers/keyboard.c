@@ -1,5 +1,5 @@
 #include <kernel/chroma.h>
-#include <kernel/system/driver/keyboard.h>
+#include <driver/keyboard.h>
 
 /************************
  *** Team Kitty, 2020 ***
