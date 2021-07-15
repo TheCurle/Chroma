@@ -1,8 +1,6 @@
 #pragma once
 #include <stdbool.h>
-
-#include <stdatomic.h>
-// TODO: <atomic> for cplusplus.
+#include <stddef.h>
 
 /************************
  *** Team Kitty, 2020 ***
@@ -25,8 +23,8 @@ extern "C" {
  */
 
 typedef struct {
-    atomic_size_t NowServing;
-    atomic_size_t NextTicket;
+    size_t NowServing;
+    size_t NextTicket;
 } ticketlock_t;
 
 #define NEW_TICKETLOCK()  (ticketlock_t{0})

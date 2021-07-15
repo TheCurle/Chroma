@@ -55,11 +55,11 @@ typedef struct {
 } __attribute__((packed)) psf_t;
 
 
-size_t KernelAddr;
-size_t KernelEnd;
-size_t MemoryPages;
-size_t FreeMemorySize;
-size_t FullMemorySize;
+extern size_t KernelAddr;
+extern size_t KernelEnd;
+extern size_t MemoryPages;
+extern size_t FreeMemorySize;
+extern size_t FullMemorySize;
 
 
 void SetupExtensions();
@@ -81,7 +81,7 @@ int ParseKernelHeader(size_t InitrdPtr);
 
 int Main();
 
-void Exit();
+void Exit(int code);
 
 void SomethingWentWrong(const char* Message);
 

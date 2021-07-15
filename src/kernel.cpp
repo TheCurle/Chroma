@@ -19,10 +19,11 @@ extern "C" {
 
 static bool KernelLoaded = false;
 
+address_space_t KernelAddressSpace;
+
+
 size_t KernelAddr = (size_t) &LoadAddr;
 size_t KernelEnd = (size_t) &end;
-
-address_space_t KernelAddressSpace;
 
 void PrintPressedChar(KeyboardData data);
 int CharPrinterCallbackID;
@@ -145,7 +146,6 @@ void SomethingWentWrong(const char* Message) {
 
 void Exit(int ExitCode) {
     SerialPrintf("Kernel stopped with code %x\r\n", ExitCode);
-
 }
 
 #ifdef  __cplusplus

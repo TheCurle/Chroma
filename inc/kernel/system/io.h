@@ -1,9 +1,4 @@
 #pragma once
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <kernel/system/descriptors.h>
 
 /************************
@@ -13,8 +8,9 @@ extern "C" {
 
 #define PAUSE   __asm__ __volatile__("pause")
 
-uint8_t kbdSBuffer[8];
-uint8_t InputBuffer[128];
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
     uint8_t     ACK;
@@ -24,7 +20,7 @@ typedef struct {
     uint8_t     Error;
 } KBD_FLAGS;
 
-KBD_FLAGS KbdFlags;
+extern KBD_FLAGS KbdFlags;
 
 
 DESC_TBL    ReadGDT(void);

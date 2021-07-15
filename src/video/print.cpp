@@ -18,7 +18,7 @@ extern "C" {
  * This file also provides SerialPrintf.
  */
 
-static void NumToStr(char* Buffer, size_t Num, size_t Base) {
+void NumToStr(char* Buffer, size_t Num, size_t Base) {
     size_t Temp, i = 0, j = 0;
 
     do {
@@ -54,7 +54,7 @@ int SerialPrintf(const char* Format, ...) {
 
 
             switch(*Format) {
-                case 'c':
+                case 'c': {
                     Format++;
 
                     char c = (char) va_arg(Parameters, int);
@@ -63,7 +63,8 @@ int SerialPrintf(const char* Format, ...) {
 
                     CharsWritten++;
                     break;
-                case 's':
+                }
+                case 's': {
                     Format++;
                     const char* Str = va_arg(Parameters, char*);
 
@@ -76,10 +77,11 @@ int SerialPrintf(const char* Format, ...) {
 
                     CharsWritten += Len;
                     break;
+                }
                 case 'd':
                 case 'u':
                 case 'p':
-                case 'x':
+                case 'x': {
 
                     Num = va_arg(Parameters, size_t);
                     Base = 0;
@@ -93,12 +95,13 @@ int SerialPrintf(const char* Format, ...) {
                     Format++;
 
                     NumToStr(BufferStr, Num, Base);
-                    Len = strlen(BufferStr);
+                    size_t Len = strlen(BufferStr);
 
                     WriteSerialString(BufferStr, Len);
 
                     CharsWritten += Len;
                     break;
+                }
                 //case 'p':
                     //uint8_t Base = 16;
                     //size_t Dest = (uintptr_t) va_arg(Parameters, void*);
@@ -117,7 +120,7 @@ int SerialPrintf(const char* Format, ...) {
     return CharsWritten;
 }
 
-size_t ParseEnglishColor(const char* Name);
+size_t ParseEnglishColor(char* Name);
 size_t ParseHexColor(const char* Name, bool bgFlag);
 
 int Printf(const char* Format, ...) {
@@ -137,7 +140,7 @@ int Printf(const char* Format, ...) {
                 Format++;
 
             switch(*Format) {
-                case 'c':
+                case 'c': {
                     Format++;
 
                     char c = (char) va_arg(Parameters, int);
@@ -146,7 +149,8 @@ int Printf(const char* Format, ...) {
 
                     CharsWritten++;
                     break;
-                case 's':
+                }
+                case 's': {
                     Format++;
                     const char* Str = va_arg(Parameters, char*);
 
@@ -159,10 +163,11 @@ int Printf(const char* Format, ...) {
 
                     CharsWritten += Len;
                     break;
+                }
                 case 'd':
                 case 'u':
                 case 'p':
-                case 'x':
+                case 'x': {
 
                     Num = va_arg(Parameters, size_t);
                     Base = 0;
@@ -176,12 +181,13 @@ int Printf(const char* Format, ...) {
                     Format++;
 
                     NumToStr(BufferStr, Num, Base);
-                    Len = strlen(BufferStr);
+                    size_t Len = strlen(BufferStr);
 
                     WriteString(BufferStr);
 
                     CharsWritten += Len;
                     break;
+                }
                 //case 'p':
                     //uint8_t Base = 16;
                     //size_t Dest = (uintptr_t) va_arg(Parameters, void*);
@@ -194,22 +200,22 @@ int Printf(const char* Format, ...) {
             Format++; // Skip backslash
 
             switch(*Format) {
-                case '$':
+                case '$': {
                     // COLOR
                     Format ++; // Skip $ and {
-                    size_t ContentLength = 0;
                     size_t Color = 0;
                     bool bgFlag = false;
 
                     switch(*Format) {
                         case '[':
                             bgFlag = true;
+                            [[fallthrough]];
                             // bg
                         case '{':
                             // fg
                             Format++;
                             if(*Format == '<') {
-                                Color = ParseEnglishColor(++Format);
+                                Color = ParseEnglishColor((char*) ++Format);
                                 Format++;
                             } else {
                                 Color = ParseHexColor(++Format, bgFlag);
@@ -227,6 +233,7 @@ int Printf(const char* Format, ...) {
                     
                     Format++;
                     break;
+                }
                 case 'f':
                     // FORMAT
                     break;
@@ -244,24 +251,24 @@ int Printf(const char* Format, ...) {
 }
 
 
-size_t ParseEnglishColor(const char* Stream) {
-    if(strcmp("red", Stream))
+size_t ParseEnglishColor(char* Stream) {
+    if(strcmp(Stream, "red"))
         return 0xFF0000;
-    if(strcmp("green", Stream))
+    if(strcmp(Stream, "green"))
         return 0xFF00;
-    if(strcmp("blue", Stream))
+    if(strcmp(Stream, "blue"))
         return 0xFF;
-    if(strcmp("yellow", Stream))
+    if(strcmp(Stream, "yellow"))
         return 0xFFFF00;
-    if(strcmp("cyan", Stream))
+    if(strcmp(Stream, "cyan"))
         return 0xFFFF;
-    if(strcmp("magenta", Stream))
+    if(strcmp(Stream, "magenta"))
         return 0xFF00FF;
-    if(strcmp("beans", Stream))
+    if(strcmp(Stream, "beans"))
         return 0xAA11CC;
-    if(strcmp("forgeb", Stream))
+    if(strcmp(Stream, "forgeb"))
         return 0x1E2D42;
-    if(strcmp("forgey", Stream))
+    if(strcmp(Stream, "forgey"))
         return 0xE0A969;
     return 0xFFFFFF;
 }
@@ -270,8 +277,8 @@ size_t ParseHexColor(const char* Stream, bool bgFlag) {
     size_t val = 0;
     char c;
 
-    while ((*Stream != bgFlag ? ']' : '}') && (c = *Stream++)) {
-        char v = (c & 0xF) + (c >> 6) | ((c >> 3) & 0x8);
+    while ((*Stream != (bgFlag ? ']' : '}')) && (c = *Stream++)) {
+        char v = ((c & 0xF) + (c >> 6)) | ((c >> 3) & 0x8);
         val = (val << 4) | (size_t) v;
     }
     

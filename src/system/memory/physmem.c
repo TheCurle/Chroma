@@ -32,6 +32,10 @@ extern "C" {
 uint8_t* MemoryStart;
 size_t MemoryBuckets;
 
+size_t MemoryPages = 0;
+size_t FreeMemorySize = 0;
+size_t FullMemorySize = 0;
+
 static buddy_t LowBuddy = {
     .MaxOrder = 32,
     .Base = (directptr_t) DIRECT_REGION,
@@ -155,9 +159,6 @@ static directptr_t BuddyAllocate(buddy_t* Buddy, size_t Size) {
 void InitMemoryManager() {
 
     SerialPrintf("[  Mem] Counting memory..\r\n");
-
-    FreeMemorySize = 0;
-    FullMemorySize = 0;
     size_t MemMapEntryCount = 0;
 
     MMapEnt* MemMap = &bootldr.mmap;
