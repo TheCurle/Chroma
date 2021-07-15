@@ -36,7 +36,6 @@ char* InternalBuffer;
 #ifdef  __cplusplus
 }
 #endif
-
 /**
  * C++ code! Scary!
  * This is a temporary measure to experiment with the Editor system.
@@ -90,10 +89,6 @@ int Main(void) {
     return 0;
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void PrintPressedChar(KeyboardData data) {
     if(!KernelLoaded) return;
 
@@ -120,7 +115,8 @@ void TrackInternalBuffer(KeyboardData data) {
         InternalBuffer[BufferLength] = '\0'; // Null-terminate to make checking easier
         if(strcmp(InternalBuffer, "editor")) {
             UninstallKBCallback(InternalBufferID);
-            StartEditor(CharPrinterCallbackID);
+            Editor editor;
+            editor.StartEditor(CharPrinterCallbackID);
         } else if(strcmp(InternalBuffer, "zero")) {
             int returnVal = sharp_entryPoint();
             SerialPrintf("Sharp returned %d\r\n", returnVal);
@@ -147,7 +143,3 @@ void SomethingWentWrong(const char* Message) {
 void Exit(int ExitCode) {
     SerialPrintf("Kernel stopped with code %x\r\n", ExitCode);
 }
-
-#ifdef  __cplusplus
-}
-#endif

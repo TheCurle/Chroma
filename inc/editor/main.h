@@ -5,10 +5,6 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * This file contains most of the symbols required to start and run the Chroma Editor.
  *
@@ -33,95 +29,95 @@ extern "C" {
  *   - Drop shadow #000000.
  */
 
-// Stores information about a single line.
-struct EditorLine {
-    size_t Line;
-    size_t Length;
-    char* Text;
-};
-
 // Function pointer for menu-clicked callback.
 typedef void (*MenuCallback)(void);
 
-// A single item in the menu.
-struct MenuItem {
-    size_t ParentID; // 0 for the root menu.
-    size_t ID;
-    MenuCallback Callback;
-};
+class Editor
+{
+public:
+    // Stores information about a single line.
+    struct EditorLine
+    {
+        size_t Line;
+        size_t Length;
+        char *Text;
+    };
 
-// The full menu that should be rendered. Can be nested.
-typedef struct {
-    size_t MenuSize;
-    struct MenuItem* Menu;
-    size_t ActiveMenuItem;
-} EditorMenu;
+    // A single item in the menu.
+    struct MenuItem
+    {
+        size_t ParentID; // 0 for the root menu.
+        size_t ID;
+        MenuCallback Callback;
+    };
 
-struct EditorMessage {
-    size_t TextLength;
-    char* Text;
+    // The full menu that should be rendered. Can be nested.
+    typedef struct
+    {
+        size_t MenuSize;
+        struct MenuItem *Menu;
+        size_t ActiveMenuItem;
+    } EditorMenu;
 
-    size_t MessageWidth;
-    size_t MessageHeight;
-};
+    struct EditorMessage
+    {
+        size_t TextLength;
+        char *Text;
 
-// Provides all the context for rendering the editor.
-struct EditorLayout {
-    size_t ScreenWidth;
-    size_t ScreenHeight;
+        size_t MessageWidth;
+        size_t MessageHeight;
+    };
 
-    size_t HeaderHeight;
+    // Provides all the context for rendering the editor.
+    struct EditorLayout
+    {
+        size_t ScreenWidth;
+        size_t ScreenHeight;
 
-    EditorMenu Menu;
+        size_t HeaderHeight;
 
-    size_t TextBoxX;
-    size_t TextBoxY;
-    size_t TextBoxWidth;
-    size_t TextBoxHeight;
+        EditorMenu Menu;
 
-    bool HasMessage;
-    struct EditorMessage* CurrentMessage;
-};
+        size_t TextBoxX;
+        size_t TextBoxY;
+        size_t TextBoxWidth;
+        size_t TextBoxHeight;
 
-// Provides all the context for manipulating state.
-typedef struct {
+        bool HasMessage;
+        struct EditorMessage *CurrentMessage;
+    };
+
+    // Given the kernel's keyboard handler ID, so that it may restore it at a later point.
+    void StartEditor(int KernelCallbackID);
+
+private:
+    // =========================== Drawing routines =========================== //
+
     struct EditorLayout Layout;
 
-    size_t Length; // How many lines?
-    size_t Size;   // How many characters?
-    size_t CurrentLine;
-    size_t CurrentColumn;
-    struct EditorLine* Lines;
-} EditorState;
+    size_t Length = 0; // How many lines?
+    size_t Size = 0;   // How many characters?
+    size_t CurrentLine = 0;
+    size_t CurrentColumn = 0;
+    struct EditorLine *Lines;
+    // Draw everything.
+    void DrawEditor();
 
+    void DrawHeader();
+    void DrawBackground();
+    void DrawTextArea();
+    void DrawTextLine();
+    void DrawText();
+    void DrawMenus();
+    void DrawBoxes();
+    void DrawBoxShadows();
 
-// Given the kernel's keyboard handler ID, so that it may restore it at a later point.
-void StartEditor(int KernelCallbackID);
+    // =========================== State management ===========================
 
-// =========================== Drawing routines =========================== //
-
-// Draw everything.
-void DrawEditor(EditorState* currentState);
-
-void DrawHeader();
-void DrawBackground();
-void DrawTextArea();
-void DrawTextLine();
-void DrawText();
-void DrawMenus();
-void DrawBoxes();
-void DrawBoxShadows();
-
-// =========================== State management ===========================
-EditorState* GetState();
-
-// Text editing.
-void GetLine(EditorState* state, size_t line);
-void SetLine(EditorState* state, struct EditorLine* line);
-void AppendLine(EditorState* state, struct EditorLine* line);
-void AppendToLine(EditorState* state, struct EditorLine* line, size_t textLength, char* text);
-void RemoveLine(EditorState* state, size_t line);
-
-#ifdef  __cplusplus
-}
-#endif
+    // Text editing.
+    void GetLine(size_t line);
+    void SetLine(struct EditorLine *line);
+    void AppendLine(struct EditorLine *line);
+    void AppendToLine(struct EditorLine *line, size_t textLength, char *text);
+    void RemoveLine(size_t line);
+};

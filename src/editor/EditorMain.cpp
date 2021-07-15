@@ -13,10 +13,10 @@
  */
 static KeyboardCallback KernelHandler;
 
-void StartEditor(int callbackID) {
+void Editor::StartEditor(int callbackID) {
     KernelHandler = KeyboardCallbacks[callbackID];
 
-    struct EditorLayout layout;
+    EditorLayout layout;
     layout.ScreenHeight = PrintInfo.screenHeight;
     layout.ScreenWidth = PrintInfo.screenWidth;
     layout.HeaderHeight = layout.ScreenHeight / 100 * 3;
