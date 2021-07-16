@@ -18,7 +18,7 @@ SET(src_files
     ${CMAKE_SOURCE_DIR}/src/video/draw.c
     ${CMAKE_SOURCE_DIR}/src/video/print.cpp
     ${CMAKE_SOURCE_DIR}/src/system/cpu.c
-    ${CMAKE_SOURCE_DIR}/src//system/rw.c
+    ${CMAKE_SOURCE_DIR}/src/system/rw.c
     ${CMAKE_SOURCE_DIR}/src/system/serial.c
     ${CMAKE_SOURCE_DIR}/src/system/pci.c
     ${CMAKE_SOURCE_DIR}/src/system/memory/stack.c
@@ -26,8 +26,11 @@ SET(src_files
     ${CMAKE_SOURCE_DIR}/src/system/memory/abstract_allocator.c
     ${CMAKE_SOURCE_DIR}/src/system/memory/liballoc.c
     ${CMAKE_SOURCE_DIR}/src/system/memory/physmem.c
-    ${CMAKE_SOURCE_DIR}/src/system/drivers/keyboard.c
-    ${CMAKE_SOURCE_DIR}/src/system/drivers/elf.c
+    ${CMAKE_SOURCE_DIR}/src/drivers/keyboard.c
+    ${CMAKE_SOURCE_DIR}/src/drivers/elf.c
+    ${CMAKE_SOURCE_DIR}/src/drivers/devices/devices.cpp
+    ${CMAKE_SOURCE_DIR}/src/drivers/devices/storage/ata.cpp
+
 )
 
 SET(lib_files
