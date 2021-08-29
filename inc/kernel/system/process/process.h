@@ -14,6 +14,8 @@
 #define MAX_PROCESSES 128
 #define PROCESS_STACK 65535
 
+typedef void (*function_t)();
+
 /**
  * @brief All the data a process needs.
  *
@@ -78,7 +80,7 @@ class Process {
         size_t ParentPID; // If this process was forked, the parent's PID.
 
         char Name[128];
-        size_t Entry;     // The entry point
+        size_t Entry;     // The entry point. Move execution here to start the process.
         uint8_t Core;
 
         bool ORS = false;
@@ -201,6 +203,13 @@ class Process {
 
 };
 
+
+/**
+ * Handles tasks related to processes in general, but that don't need to be
+ * directly linked to any one specific process.
+ * 
+ * Stuff like switching tasks, sleeping, killing, etc.
+ */
 class ProcessManagement {
     public:
         TSS64 TSS[MAX_CORES];
@@ -211,15 +220,29 @@ class ProcessManagement {
 
         void Wait();
         void Initialize();
-        void InitialiseCore(int APIC, int ID);
+        void InitialiseCore(size_t APIC, size_t ID);
 
         void NotifyAllCores();
+
+        void DumpProcess(size_t PID);
+        void LockProcess(size_t PID);
+        void UnlockProcess(size_t PID);
+
+        static void Sleep(size_t Count);
+        void Sleep(size_t Count, size_t PID);
+
+        static void Kill(int Code);
+        void Kill(size_t PID, int Code);
+
+        bool CheckLocked(size_t PID);
+
+        void GetStatus(size_t PID, int* ReturnVal, size_t* StatusVal);
 
         // TODO: Process*
         size_t SwitchContext(INTERRUPT_FRAME* CurrentFrame);
         void MapThreadMemory(size_t from, size_t to, size_t length);
-
-        void InitProcess(/*func EntryPoint*/ int argc, char** argv);
+        void InitProcess(function_t EntryPoint, size_t argc, char** argv);
+        void InitKernelProcess(function_t EntryPoint);
         void InitProcessPagetable(bool Userspace);
         void InitProcessArch();
 
