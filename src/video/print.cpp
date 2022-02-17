@@ -28,7 +28,7 @@ void NumToStr(char* Buffer, size_t Num, size_t Base) {
 
     Buffer[i--] = 0;
 
-    for(j = 0; j < i; j++, i--) {
+    for (j = 0; j < i; j++, i--) {
         Temp = Buffer[j];
         Buffer[j] = Buffer[i];
         Buffer[i] = Temp;
@@ -45,15 +45,19 @@ int SerialPrintf(const char* Format, ...) {
 
     char BufferStr[512] = {0};
 
-    while(*Format != '\0') {
+    while (*Format != '\0') {
         size_t Limit = UINT64_MAX - CharsWritten;
 
-        if(*Format == '%') {
-            if(*(++Format) == '%')
+        if (*Format == '%') {
+            if (*(++Format) == '%')
                 Format++;
 
 
-            switch(*Format) {
+            switch (*Format) {
+                case '.':
+                    Limit = va_arg(Parameters, size_t);
+                    [[fallthrough]];
+
                 case 'c': {
                     Format++;
 
@@ -68,10 +72,7 @@ int SerialPrintf(const char* Format, ...) {
                     Format++;
                     const char* Str = va_arg(Parameters, char*);
 
-                    size_t Len = strlen(Str);
-
-                    if(Limit < Len)
-                        return -1;
+                    size_t Len = MIN(strlen(Str), Limit);
 
                     WriteSerialString(Str, Len);
 
@@ -87,7 +88,7 @@ int SerialPrintf(const char* Format, ...) {
                     Base = 0;
 
 
-                    if(*Format == 'd' || *Format == 'u') {
+                    if (*Format == 'd' || *Format == 'u') {
                         Base = 10; // Decimal & Unsigned are base 10
                     } else {
                         Base = 16; // Hex and Ptr are base 16
@@ -102,7 +103,7 @@ int SerialPrintf(const char* Format, ...) {
                     CharsWritten += Len;
                     break;
                 }
-                //case 'p':
+                    //case 'p':
                     //uint8_t Base = 16;
                     //size_t Dest = (uintptr_t) va_arg(Parameters, void*);
                 default:
@@ -132,14 +133,14 @@ int Printf(const char* Format, ...) {
 
     char BufferStr[512] = {0};
 
-    while(*Format != '\0') {
+    while (*Format != '\0') {
         size_t Limit = UINT64_MAX - CharsWritten;
 
-        if(*Format == '%') {
-            if(*(++Format) == '%')
+        if (*Format == '%') {
+            if (*(++Format) == '%')
                 Format++;
 
-            switch(*Format) {
+            switch (*Format) {
                 case 'c': {
                     Format++;
 
@@ -156,7 +157,7 @@ int Printf(const char* Format, ...) {
 
                     size_t Len = strlen(Str);
 
-                    if(Limit < Len)
+                    if (Limit < Len)
                         return -1;
 
                     WriteString(Str);
@@ -173,7 +174,7 @@ int Printf(const char* Format, ...) {
                     Base = 0;
 
 
-                    if(*Format == 'd' || *Format == 'u') {
+                    if (*Format == 'd' || *Format == 'u') {
                         Base = 10; // Decimal & Unsigned are base 10
                     } else {
                         Base = 16; // Hex and Ptr are base 16
@@ -188,7 +189,7 @@ int Printf(const char* Format, ...) {
                     CharsWritten += Len;
                     break;
                 }
-                //case 'p':
+                    //case 'p':
                     //uint8_t Base = 16;
                     //size_t Dest = (uintptr_t) va_arg(Parameters, void*);
                 default:
@@ -196,17 +197,17 @@ int Printf(const char* Format, ...) {
                     break;
             }
 
-        } else if(*Format == '\\') {
+        } else if (*Format == '\\') {
             Format++; // Skip backslash
 
-            switch(*Format) {
+            switch (*Format) {
                 case '$': {
                     // COLOR
-                    Format ++; // Skip $
+                    Format++; // Skip $
                     size_t Color = 0;
                     bool bgFlag = false;
 
-                    switch(*Format) {
+                    switch (*Format) {
                         case '[':
                             // bg
                             bgFlag = true;
@@ -215,24 +216,24 @@ int Printf(const char* Format, ...) {
                             // fg
                             Format++; // [ or {
 
-                            if(*Format == '<') {
+                            if (*Format == '<') {
                                 Format++;
                                 Color = ParseEnglishColor((char*) Format);
                             } else {
                                 Color = ParseHexColor(Format, bgFlag);
                             }
 
-                            if(bgFlag) 
+                            if (bgFlag)
                                 SetBackgroundColor(Color);
                             else
                                 SetForegroundColor(Color);
-                            
-                            while(*Format != '}')
+
+                            while (*Format != '}')
                                 Format++;
                             Format++; // }
                             break;
                     }
-                    
+
                     break;
                 }
                 case 'f':
@@ -251,23 +252,23 @@ int Printf(const char* Format, ...) {
 
 
 size_t ParseEnglishColor(char* Stream) {
-    if(strcmp(Stream, "red"))
+    if (strcmp(Stream, "red"))
         return 0xFF0000;
-    if(strcmp(Stream, "green"))
+    if (strcmp(Stream, "green"))
         return 0xFF00;
-    if(strcmp(Stream, "blue"))
+    if (strcmp(Stream, "blue"))
         return 0xFF;
-    if(strcmp(Stream, "yellow"))
+    if (strcmp(Stream, "yellow"))
         return 0xFFFF00;
-    if(strcmp(Stream, "cyan"))
+    if (strcmp(Stream, "cyan"))
         return 0xFFFF;
-    if(strcmp(Stream, "magenta"))
+    if (strcmp(Stream, "magenta"))
         return 0xFF00FF;
-    if(strcmp(Stream, "beans"))
+    if (strcmp(Stream, "beans"))
         return 0xAA11CC;
-    if(strcmp(Stream, "forgeb"))
+    if (strcmp(Stream, "forgeb"))
         return 0x1E2D42;
-    if(strcmp(Stream, "forgey"))
+    if (strcmp(Stream, "forgey"))
         return 0xE0A969;
     return 0xFFFFFF;
 }

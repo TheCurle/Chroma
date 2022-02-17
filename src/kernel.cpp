@@ -36,26 +36,32 @@ char* InternalBuffer;
 #ifdef  __cplusplus
 }
 #endif
+
 /**
  * C++ code! Scary!
  * This is a temporary measure to experiment with the Editor system.
  */
 
-int Main(void) {
+extern "C" int Main(void) {
     KernelAddressSpace.Lock.NextTicket = 0;
     KernelAddressSpace.Lock.NowServing = 0;
-    KernelAddressSpace.PML4 = nullptr; 
+    KernelAddressSpace.PML4 = nullptr;
 
     SerialPrintf("\r\n[ boot] Booting Chroma..\r\n");
     SerialPrintf("[ boot] Bootloader data structure at 0x%p\r\n", (size_t) &bootldr);
-    SerialPrintf("[ boot] Kernel loaded at 0x%p, ends at 0x%p, is %d bytes long.\r\n", KernelAddr, KernelEnd, KernelEnd - KernelAddr);
-    SerialPrintf("[ boot] Framebuffer at 0x%p / 0x%p, is %dx%d, 0x%x bytes long.\r\n", bootldr.fb_ptr, (size_t) &fb, bootldr.fb_width, bootldr.fb_height, bootldr.fb_size);
-    SerialPrintf("[ boot] Initrd is physically at 0x%p, and is %d bytes long.\r\n", bootldr.initrd_ptr, bootldr.initrd_size);
-    SerialPrintf("[ boot] Initrd's header is 0x%p\r\n", FIXENDIAN32(*((volatile uint32_t*)(bootldr.initrd_ptr))));
+    SerialPrintf("[ boot] Kernel loaded at 0x%p, ends at 0x%p, is %d bytes long.\r\n", KernelAddr, KernelEnd,
+                 KernelEnd - KernelAddr);
+    SerialPrintf("[ boot] Framebuffer at 0x%p / 0x%p, is %dx%d, 0x%x bytes long.\r\n", bootldr.fb_ptr, (size_t) &fb,
+                 bootldr.fb_width, bootldr.fb_height, bootldr.fb_size);
+    SerialPrintf("[ boot] Initrd is physically at 0x%p, and is %d bytes long.\r\n", bootldr.initrd_ptr,
+                 bootldr.initrd_size);
+    SerialPrintf("[ boot] Initrd's header is 0x%p\r\n", FIXENDIAN32(*((volatile uint32_t*) (bootldr.initrd_ptr))));
 
     ParseKernelHeader(bootldr.initrd_ptr);
 
     SerialPrintf("[ boot] The bootloader has put the paging tables at 0x%p.\r\n", ReadControlRegister(3));
+    SerialPrintf("[ boot] Removing bootloader code.\r\n");
+    memset((void*) 0x600, 0, 0x6600);
 
     ListMemoryMap();
 
@@ -84,15 +90,15 @@ int Main(void) {
 
     InternalBufferID = SetupKBCallback(&TrackInternalBuffer);
 
-    for (;;) {}
+    for (;;) { }
 
     return 0;
 }
 
-void PrintPressedChar(KeyboardData data) {
-    if(!KernelLoaded) return;
+extern "C" void PrintPressedChar(KeyboardData data) {
+    if (!KernelLoaded) return;
 
-    if(data.Pressed) {
+    if (data.Pressed) {
         SerialPrintf("Key pressed: [\\%c (%x)]\r\n", data.Char, data.Scancode);
         Printf("%c", data.Char);
     } else {
@@ -100,24 +106,24 @@ void PrintPressedChar(KeyboardData data) {
     }
 }
 
-void TrackInternalBuffer(KeyboardData data) {
-    if(!data.Pressed) return;
+extern "C" void TrackInternalBuffer(KeyboardData data) {
+    if (!data.Pressed) return;
 
     bool tentative = false;
-    if(BufferLength > 4097) tentative = true;
+    if (BufferLength > 4097) tentative = true;
 
-    if(data.Char == '\b') {
+    if (data.Char == '\b') {
         BufferLength--;
         tentative = false;
     }
 
-    if(data.Scancode == 0x1C) {
+    if (data.Scancode == 0x1C) {
         InternalBuffer[BufferLength] = '\0'; // Null-terminate to make checking easier
-        if(strcmp(InternalBuffer, "editor")) {
+        if (strcmp(InternalBuffer, "editor")) {
             UninstallKBCallback(InternalBufferID);
             Editor editor;
             editor.StartEditor(CharPrinterCallbackID);
-        } else if(strcmp(InternalBuffer, "zero")) {
+        } else if (strcmp(InternalBuffer, "zero")) {
             int returnVal = sharp_entryPoint();
             SerialPrintf("Sharp returned %d\r\n", returnVal);
         } else {
@@ -128,18 +134,21 @@ void TrackInternalBuffer(KeyboardData data) {
         BufferLength = 0;
     }
 
-    if(!tentative && data.Scancode <= 0x2c && data.Scancode != 0x1C) {
+    if (!tentative && data.Scancode <= 0x2c && data.Scancode != 0x1C) {
         SerialPrintf("[  Kbd] Adding %c to the buffer.\r\n", data.Char);
         InternalBuffer[BufferLength] = data.Char;
         BufferLength++;
     }
 }
 
-void SomethingWentWrong(const char* Message) {
+
+extern "C" void SomethingWentWrong(const char* Message) {
     SerialPrintf("Assertion failed! %s\r\n", Message);
-    //for(;;){}
+    for(;;){}
 }
 
-void Exit(int ExitCode) {
+extern "C" void __cxa_pure_virtual() { SomethingWentWrong("Pure Virtual Method Called"); }
+
+extern "C" void Exit(int ExitCode) {
     SerialPrintf("Kernel stopped with code %x\r\n", ExitCode);
 }

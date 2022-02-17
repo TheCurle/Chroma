@@ -77,6 +77,16 @@ typedef struct __attribute__((packed)) {
     uint16_t    IOMap;
 } TSS64;
 
+typedef struct __attribute__((packed)) {
+    uint16_t    Length;
+    size_t      Address;
+} GDT;
+
+typedef struct __attribute__((packed)) {
+    uint16_t    Length;
+    size_t      Address;
+} IDT;
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

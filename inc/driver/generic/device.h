@@ -15,10 +15,11 @@ namespace Device {
 
     // The internal typemap of devices used in Chroma.
     enum DeviceType : uint32_t {
-        STORAGE = 0,
-        KEYBOARD = 1,
-        NETWORK = 2,
-        UNKNOWN = 0xFFFFFFFF
+        STORAGE = 0,            // Stores data.
+        INTERNAL = 1,           // PCI, APIC, AHCI.
+        INTERFACE = 2,          // Peripherals and I/O
+        NETWORK = 3,            // NIC.
+        UNKNOWN = 0xFFFFFFFF    // Unsupported.
     };
 
     // The base class that all devices extend from.
@@ -79,6 +80,35 @@ namespace Device {
         virtual Status Read(uint8_t* Buffer, size_t Count, size_t Start) = 0;
         virtual Status Write(uint8_t* Data, size_t Count, size_t Start) = 0;
     
+    };
+
+    // The base class for every device that uses port or MMIO to communicate.
+    class IODevice : public GenericDevice {
+    public:
+        
+        // Pre-use setup.
+        virtual void Init() = 0;
+
+        // This is an internal register device.
+        DeviceType GetType() const final {
+            return DeviceType::INTERNAL;
+        }
+
+        // Provided for utility checks.
+        static DeviceType GetRootType() {
+            return DeviceType::INTERNAL;
+        }
+
+        // Read data from a given port.
+        virtual uint32_t ReadRegister(uint32_t Register) = 0;
+        // Write data into a given port.
+        virtual void WriteRegister(uint32_t Register, uint32_t Data) = 0;
+
+        // Read data from the given address.
+        virtual uint32_t ReadIO(size_t Base, uint32_t Register) = 0;
+        // Write data into the given address.
+        virtual void WriteIO(size_t Base, uint32_t Register, uint32_t Data) = 0;
+
     };
 
     

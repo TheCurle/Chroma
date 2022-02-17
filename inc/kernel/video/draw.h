@@ -43,7 +43,7 @@ typedef struct {
 extern PRINTINFO PrintInfo;
 
 void DrawPixel(size_t x, size_t y);
-void FillScreen();
+void FillScreen(uint32_t color);
 
 void SetForegroundColor(uint32_t color);
 uint32_t GetForegroundColor();

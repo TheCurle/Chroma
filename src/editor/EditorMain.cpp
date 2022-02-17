@@ -28,7 +28,7 @@ void Editor::StartEditor(int callbackID) {
     layout.TextBoxX = (layout.ScreenWidth - layout.TextBoxWidth) / 2;
 
     SetForegroundColor(0x000084);
-    FillScreen();
+    FillScreen(0x000084);
 
     SetForegroundColor(0x00BBBBBB);
     DrawFilledRect(0, 0, PrintInfo.screenWidth, layout.HeaderHeight);

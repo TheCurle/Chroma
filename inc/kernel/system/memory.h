@@ -132,6 +132,8 @@ extern "C" {
 #define STACK_TOP           0xFFFFFFFFFFFFF000ull   // The start of the highest stack
 #define MEM_CEILING         0xFFFFFFFFFFFFFFFFull   // The top of the stack in the map
 
+#define CORE_BOOTSTRAP      0x0000000000001000ull   // The physical location of the core bootstrapping function.
+
 #define USER_REGION         0x00007FFFFFFFFFFFull   // Not needed yet, but we're higher half so we might as well be thorough
 
 #define KERNEL_STACK_REGION 0xFFFFE00000000000ull   // Kernel Stack Space

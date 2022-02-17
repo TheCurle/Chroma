@@ -4,6 +4,8 @@
  ***     Chroma       ***
  ***********************/
 
+#include <stdint.h>
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -11,8 +13,10 @@ extern "C" {
 /*
 ;*  Memory map
 ;*      0h -   600h reserved for the system
+ *   V----------- CAN REMOVE -----------V
 ;*    600h -   800h stage1 (MBR/VBR, boot.bin)
 ;*    800h -  6C00h stage2 (this)
+ *   ∧----------- CAN REMOVE -----------∧
 ;*   6C00h -  7C00h stack (7000h - 700Fh SMP trampoline code)
 ;*   8000h -  9000h bootboot structure
 ;*   9000h -  A000h environment
@@ -111,7 +115,7 @@ typedef struct {
   uint8_t    protocol;    /* 1, static addresses, see PROTOCOL_* and LOADER_* above */
   uint8_t    fb_type;     /* framebuffer type, see FB_* above */
   uint16_t   numcores;    /* number of processor cores */
-  uint16_t   bspid;       /* Bootsrap processor ID (Local APIC Id on x86_64) */
+  uint16_t   bspid;       /* Bootstrap processor ID (Local APIC Id on x86_64) */
   int16_t    timezone;    /* in minutes -1440..1440 */
   uint8_t    datetime[8]; /* in BCD yyyymmddhhiiss UTC (independent to timezone) */
   uint64_t   initrd_ptr;  /* ramdisk image position and size */

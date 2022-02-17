@@ -16,6 +16,8 @@ extern "C" {
  * required to compatibly access the PCI bus,
  *  as well as set up new PCI devices, PCI bridges, and manipulate
  *   the connections of PCI lanes.
+ * 
+ * TODO: Refactor for consistent naming style
  */
 
 #define PCI_CONFIG_ADDRESS 0xCF8

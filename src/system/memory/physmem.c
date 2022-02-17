@@ -1,6 +1,7 @@
 #include <kernel/chroma.h>
 #include <lainlib/lainlib.h>
 
+
 /************************
  *** Team Kitty, 2020 ***
  ***     Chroma       ***
@@ -12,21 +13,16 @@ extern "C" {
 
 /* This file contains functions for physical memory management.
  *
- * This is also called blocking, or block memory allocation.
- * It mostly deals with the memory map handed to us by the bootloader.
- *
- * It is useful in virtual memory management, because it allows us to map one block of physical memory to one page of virtual memory.
- *
- * Most of the processing here is done with a bitwise mapping of blocks to allocations, normally called a memory bitmap.
- * See heap.h for the implementation.
- *
- * This file also contains memory manipulation functions, like memset and memcpy.
- * //TODO: replace these functions with SSE2 equivalent.
- *
+ * Physical Memory Management is performed with Buddy List allocators, which are one of the most performant systems available.
+ * They tend to be able to allocate physical pages with O(1) efficiency.
+ * 
+ * The implementation here is bespoke, and in need of documentation.
+ * 
+ * TODO: Document this mess.
  */
 
 
-#define MIN_ORDER 3 
+#define MIN_ORDER 3
 #define PEEK(type, address) (*((volatile type*)(address)))
 
 uint8_t* MemoryStart;
@@ -37,17 +33,17 @@ size_t FreeMemorySize = 0;
 size_t FullMemorySize = 0;
 
 static buddy_t LowBuddy = {
-    .MaxOrder = 32,
-    .Base = (directptr_t) DIRECT_REGION,
-    .List = (directptr_t[32 - MIN_ORDER]) {0},
-    .Lock = {0},
+        .MaxOrder = 32,
+        .Base = (directptr_t) DIRECT_REGION,
+        .List = (directptr_t[32 - MIN_ORDER]) {0},
+        .Lock = {.NowServing = 0, .NextTicket = 0},
 };
 
 static buddy_t HighBuddy = {
-    .MaxOrder = 64,
-    .Base = 0,
-    .List = (directptr_t[64 - MIN_ORDER]) {0},
-    .Lock = {0},
+        .MaxOrder = 64,
+        .Base = 0,
+        .List = (directptr_t[64 - MIN_ORDER]) {0},
+        .Lock = {.NowServing = 0, .NextTicket = 0},
 };
 
 static size_t MemoryLength;
@@ -68,12 +64,12 @@ static void AddToBuddyList(buddy_t* Buddy, directptr_t Address, size_t Order, bo
 
     TicketAttemptLock(&Buddy->Lock);
 
-    if(!NewEntry && ListHead != 0) {
+    if (!NewEntry && ListHead != 0) {
         directptr_t ListPrevious = 0;
 
-        while(true) {
-            if(CheckBuddies(Buddy, ListHead, Address, Size)) {
-                if(ListPrevious != 0) {
+        while (true) {
+            if (CheckBuddies(Buddy, ListHead, Address, Size)) {
+                if (ListPrevious != 0) {
                     PEEK(directptr_t, ListPrevious) = PEEK(directptr_t, ListHead);
                 } else
                     Buddy->List[Order - MIN_ORDER] = PEEK(directptr_t, ListHead);
@@ -82,7 +78,7 @@ static void AddToBuddyList(buddy_t* Buddy, directptr_t Address, size_t Order, bo
                 break;
             }
 
-            if(PEEK(directptr_t, ListHead) == 0) {
+            if (PEEK(directptr_t, ListHead) == 0) {
                 PEEK(directptr_t, ListHead) = Address;
                 break;
             }
@@ -91,7 +87,7 @@ static void AddToBuddyList(buddy_t* Buddy, directptr_t Address, size_t Order, bo
             ListHead = PEEK(directptr_t, ListHead);
         }
     } else {
-        *((size_t*)(Address)) = (size_t) ListHead;
+        *((size_t*) (Address)) = (size_t) ListHead;
         Buddy->List[Order - MIN_ORDER] = Address;
     }
 
@@ -99,15 +95,15 @@ static void AddToBuddyList(buddy_t* Buddy, directptr_t Address, size_t Order, bo
 }
 
 static void AddRangeToBuddy(buddy_t* Buddy, directptr_t Base, size_t Size) {
-    while(Size > (1ull << MIN_ORDER)) {
+    while (Size > (1ull << MIN_ORDER)) {
         //SerialPrintf("New iteration. Current Size: 0x%x\r\n\t", Size);
-        for(int Order = Buddy->MaxOrder - 1; Order >= MIN_ORDER; Order--) {
+        for (int Order = Buddy->MaxOrder - 1; Order >= MIN_ORDER; Order--) {
             //SerialPrintf("New Loop. Current Order: %d\r\n\t", Order);
-            if(Size >= (1ull << Order)) {
+            if (Size >= (1ull << Order)) {
                 //SerialPrintf("\tNew loop check passed.\r\n\t");
                 AddToBuddyList(Buddy, Base, Order, true);
                 //SerialPrintf("\tEntry added to current buddy. Moving onto memory operations..\r\n\t");
-                Base = (void*)((((char*)Base) + (1ull << Order)));
+                Base = (void*) ((((char*) Base) + (1ull << Order)));
                 Size -= 1ull << Order;
                 //SerialPrintf("\tMemory operations complete. Moving onto next iteration.\r\n");
                 break;
@@ -121,9 +117,11 @@ static directptr_t BuddyAllocate(buddy_t* Buddy, size_t Size) {
 
     size_t WantedSize = 1ull << InitialOrder;
 
-    if(InitialOrder >= Buddy->MaxOrder) {
+    if (InitialOrder >= Buddy->MaxOrder) {
         SerialPrintf("Tried to allocate too much physical memory for buddy 0x%p\r\n", Buddy);
-        SerialPrintf("Buddy 0x%p has max order %d, but 0x%x bytes was requested.\r\nInitial Order: %d, Wanted Size: 0x%x\r\n", Buddy, Buddy->MaxOrder, Size, InitialOrder, WantedSize);
+        SerialPrintf(
+                "Buddy 0x%p has max order %d, but 0x%x bytes was requested.\r\nInitial Order: %d, Wanted Size: 0x%x\r\n",
+                Buddy, Buddy->MaxOrder, Size, InitialOrder, WantedSize);
         return NULL;
     }
 
@@ -131,9 +129,9 @@ static directptr_t BuddyAllocate(buddy_t* Buddy, size_t Size) {
 
     //SerialPrintf("Searching for a valid order to allocate into. Condition: {\r\n\tOrder: %d,\r\n\tSize: 0x%x\r\n}\r\n\n", InitialOrder, WantedSize);
 
-    for(int Order = InitialOrder; Order < Buddy->MaxOrder; Order++) {
+    for (int Order = InitialOrder; Order < Buddy->MaxOrder; Order++) {
         //SerialPrintf("\tCurrent Order: %d, Buddy entry: %x\r\n", Order, Buddy->List[Order - MIN_ORDER]);
-        if(Buddy->List[Order - MIN_ORDER] != 0) {
+        if (Buddy->List[Order - MIN_ORDER] != 0) {
             //SerialPrintf("\tFound a valid Order!\r\n");
             directptr_t Address = Buddy->List[Order - MIN_ORDER];
             Buddy->List[Order - MIN_ORDER] = PEEK(directptr_t, Address);
@@ -143,7 +141,7 @@ static directptr_t BuddyAllocate(buddy_t* Buddy, size_t Size) {
 
             //SerialPrintf("\tAdding area - Address 0x%p, Size 0x%x\r\n\n", Address, FoundSize);
 
-            AddRangeToBuddy(Buddy, (void*)((size_t)Address + WantedSize), FoundSize - WantedSize);
+            AddRangeToBuddy(Buddy, (void*) ((size_t) Address + WantedSize), FoundSize - WantedSize);
 
             //SerialPrintf("\tArea added!\r\n");
             return Address;
@@ -163,8 +161,8 @@ void InitMemoryManager() {
 
     MMapEnt* MemMap = &bootldr.mmap;
 
-    while((size_t) MemMap < ((size_t) &bootldr) + bootldr.size) {
-        if(MMapEnt_IsFree(MemMap)) {
+    while ((size_t) MemMap < ((size_t) &bootldr) + bootldr.size) {
+        if (MMapEnt_IsFree(MemMap)) {
             FreeMemorySize += MMapEnt_Size(MemMap);
         }
         FullMemorySize += MMapEnt_Size(MemMap);
@@ -185,9 +183,9 @@ void ListMemoryMap() {
     SerialPrintf("[  Mem] BIOS-Provided memory map:\r\n");
 
 
-    for(MMapEnt* MapEntry = &bootldr.mmap; (size_t)MapEntry < (size_t) &bootldr + bootldr.size; MapEntry++) {
+    for (MMapEnt* MapEntry = &bootldr.mmap; (size_t) MapEntry < (size_t) &bootldr + bootldr.size; MapEntry++) {
         char EntryType[8] = {0};
-        switch(MMapEnt_Type(MapEntry)) {
+        switch (MMapEnt_Type(MapEntry)) {
             case MMAP_FREE:
                 memcpy(EntryType, "FREE", 5);
                 break;
@@ -206,17 +204,18 @@ void ListMemoryMap() {
         size_t entry_to = MMapEnt_Ptr(MapEntry) + MMapEnt_Size(MapEntry);
 
 
-        if(entry_from != 0 && entry_to != 0)
+        if (entry_from != 0 && entry_to != 0)
             SerialPrintf("[  Mem]   0x%p-0x%p %s\r\n", entry_from, entry_to, EntryType);
 
-        if(MMapEnt_Type(MapEntry) == MMAP_FREE) {
+        if (MMapEnt_Type(MapEntry) == MMAP_FREE) {
             // We need to page align the inputs to the buddy lists.
             size_t page_from = AlignUpwards(entry_from, 0x1000);
             size_t page_to = AlignDownwards(entry_to, 0x1000);
 
-            if(page_from != 0 && page_to != 0) {
-                SerialPrintf("[  Mem]      Adding the range 0x%p-0x%p to the physical memory manager!\r\n", page_from, page_to);
-                AddRangeToPhysMem((void*)((char*)(page_from)), page_to - page_from);
+            if (page_from != 0 && page_to != 0) {
+                SerialPrintf("[  Mem]      Adding the range 0x%p-0x%p to the physical memory manager!\r\n", page_from,
+                             page_to);
+                AddRangeToPhysMem((void*) ((char*) (page_from)), page_to - page_from);
             }
 
         }
@@ -225,19 +224,21 @@ void ListMemoryMap() {
 }
 
 void AddRangeToPhysMem(directptr_t Base, size_t Size) {
-    if((size_t) Base + Size < (size_t) (LOWER_REGION)) {
+    if ((size_t) Base + Size < (size_t) (LOWER_REGION)) {
         SerialPrintf("[  Mem]      New range in lower memory: 0x%p, size 0x%x\r\n", Base, Size);
         AddRangeToBuddy(&LowBuddy, Base, Size);
     } else {
-        if((size_t) Base < (size_t) LOWER_REGION) {
+        if ((size_t) Base < (size_t) LOWER_REGION) {
             size_t difference = (size_t) LOWER_REGION - (size_t) Base;
-            SerialPrintf("[  Mem]             Base is 0x%p bytes away from the threshold, allocating 0x%p-0x%p to lower memory..\r\n", difference, (size_t) Base, (size_t) Base + difference);
+            SerialPrintf(
+                    "[  Mem]             Base is 0x%p bytes away from the threshold, allocating 0x%p-0x%p to lower memory..\r\n",
+                    difference, (size_t) Base, (size_t) Base + difference);
             AddRangeToBuddy(&LowBuddy, Base, difference);
             Base = (void*) LOWER_REGION;
             Size = Size - difference;
         }
 
-        if(HighBuddy.Base == NULL) {
+        if (HighBuddy.Base == NULL) {
             HighBuddy.Base = Base;
         }
 
@@ -245,8 +246,8 @@ void AddRangeToPhysMem(directptr_t Base, size_t Size) {
         AddRangeToBuddy(&HighBuddy, Base, Size);
     }
 
-    if(MemoryLength < AlignUpwards((size_t)Base + Size, PAGE_SIZE) / PAGE_SIZE) {
-        MemoryLength = AlignUpwards((size_t)Base + Size, PAGE_SIZE) / PAGE_SIZE;
+    if (MemoryLength < AlignUpwards((size_t) Base + Size, PAGE_SIZE) / PAGE_SIZE) {
+        MemoryLength = AlignUpwards((size_t) Base + Size, PAGE_SIZE) / PAGE_SIZE;
     }
 }
 
@@ -260,12 +261,12 @@ directptr_t PhysAllocateLowMem(size_t Size) {
 directptr_t PhysAllocateMem(size_t Size) {
     directptr_t Pointer = NULL;
 
-    if(HighBuddy.Base == 0) {
+    if (HighBuddy.Base == 0) {
         //SerialPrintf("Attempting allocation into high memory.\n");
         Pointer = BuddyAllocate(&HighBuddy, Size);
     }
 
-    if(Pointer == NULL) {
+    if (Pointer == NULL) {
         //SerialPrintf("Attempting allocation into low memory.\n");
         Pointer = BuddyAllocate(&LowBuddy, Size);
     }
@@ -293,7 +294,7 @@ void PhysFreeMem(directptr_t Pointer, size_t Size) {
 
     buddy_t* Buddy;
 
-    if(Pointer < (void*)(LOWER_REGION /* + DIRECT_REGION */)) 
+    if (Pointer < (void*) (LOWER_REGION /* + DIRECT_REGION */))
         Buddy = &LowBuddy;
     else
         Buddy = &HighBuddy;
@@ -305,7 +306,7 @@ void PhysFreeMem(directptr_t Pointer, size_t Size) {
 static _Atomic(uint16_t)* PageRefCount = NULL;
 
 void PhysAllocatorInit() {
-    PageRefCount = PhysAllocateZeroMem(sizeof(uint16_t) * MemoryPages);
+    PageRefCount = (_Atomic(uint16_t)*) PhysAllocateZeroMem(sizeof(uint16_t) * MemoryPages);
 }
 
 directptr_t PhysAllocatePage() {
@@ -319,7 +320,7 @@ void PhysRefPage(directptr_t Page) {
 }
 
 void PhysFreePage(directptr_t Page) {
-    if(--PageRefCount[(size_t)Page >> PAGE_SHIFT] == 0) {
+    if (--PageRefCount[(size_t) Page >> PAGE_SHIFT] == 0) {
         PhysFreeMem(Page, PAGE_SIZE);
     }
 }
@@ -328,7 +329,7 @@ void* memcpy(void* dest, void const* src, size_t len) {
     unsigned char* dst = (unsigned char*) dest;
     const unsigned char* source = (const unsigned char*) src;
 
-    for(size_t i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; i++) {
         dst[i] = source[i];
     }
 
@@ -338,8 +339,8 @@ void* memcpy(void* dest, void const* src, size_t len) {
 void* memset(void* dst, int src, size_t len) {
     unsigned char* buf = (unsigned char*) dst;
 
-    for(size_t i = 0; i < len; i++) {
-        buf[i] =  (unsigned char) src;
+    for (size_t i = 0; i < len; i++) {
+        buf[i] = (unsigned char) src;
     }
 
     return dst;

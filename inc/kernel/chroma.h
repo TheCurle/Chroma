@@ -24,7 +24,10 @@ extern "C" {
 #include <kernel/system/io.h>
 #include <kernel/system/memory.h>
 #include <kernel/system/pci.h>
-#include <kernel/system/stack.h>
+
+#ifdef __cplusplus
+  #include <kernel/system/core.hpp>
+#endif
 
 #include <lainlib/lainlib.h>
 #include <lainlib/ethernet/e1000/e1000.h>
