@@ -17,7 +17,7 @@ Core Core::Processors[Constants::Core::MAX_CORES];
 TSS64 Tasks[Constants::Core::MAX_CORES];
 ACPI::MADT::LAPICEntry* LAPICs[Constants::Core::MAX_CORES];
 
-extern "C" void initcpu() {
+extern "C" [[noreturn]] void initcpu() {
     // Init APIC
     WriteModelSpecificRegister(0x1B, (ReadModelSpecificRegister(0x1B) | 0x800) & ~(1 << 10));
     Device::APIC::driver->Enable();
@@ -39,9 +39,9 @@ Core::Core(size_t APIC, size_t ID) {
     Bootstrap();
     SetupData(ID);
 
-    Device::APIC::driver->InitializeCore(APIC, CORE_BOOTSTRAP);
+    Device::APIC::driver->InitializeCore(APIC, reinterpret_cast<size_t>(initcpu));
 
-    while (Ready != true) {
+    while (!Ready) {
         __asm__ ("nop");
     }
 
@@ -94,12 +94,7 @@ void Core::Init() {
 }
 
 void Core::Bootstrap() {
-    size_t coreStarterLen = endCore - startCore;
-
-    for (size_t i = 0; i < coreStarterLen + 2; i += PAGE_SIZE)
-        MapVirtualPage(AddressSpace, CORE_BOOTSTRAP + i, CORE_BOOTSTRAP + i, 0);
-
-    memcpy((void*) CORE_BOOTSTRAP, &startCore, coreStarterLen);
+    // TODO
 }
 
 void Core::SetupData(size_t Core) {

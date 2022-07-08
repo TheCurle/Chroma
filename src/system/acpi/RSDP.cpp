@@ -61,23 +61,28 @@ void* RSDP::GetFACP(RSDT* Root) {
 
 void RSDP::Init(size_t RSDP) {
     UNUSED(RSDP);
-    SerialPrintf("[ACPI] Loading ACPI subsystem..");
+    SerialPrintf("[ ACPI] Loading ACPI subsystem..\r\n");
 
     Descriptor = (DescriptorV2*) GetRSDP();
     Table = (RSDT *) TO_DIRECT(Descriptor->Header.RSDT);
 
-    SerialPrintf("[RSDP] Dumping RSDT..");
-    auto* table = reinterpret_cast<RSDP::RSDT*>(TO_DIRECT(Descriptor->Header.RSDT));
-    size_t entries = (table->Header.Length - sizeof(table->Header)) / 4;
-
+    SerialPrintf("[ RSDP] Dumping RSDT. Table at 0x%p..\r\n", (size_t) Table);
+    size_t entries = (Table->Header.Length - sizeof(Table->Header)) / 4;
+    SerialPrintf("[ RSDP] Found %u entries.\r\n", entries);
 
     // For each entry: if valid, search for the specified name.
     for (size_t i = 0; i < entries; i++) {
-        if (table->OtherSDTs[i] == 0x0)
+        if (Table->OtherSDTs[i] == 0x0)
             continue;
 
-        ACPIHeader* header = reinterpret_cast<ACPIHeader*>(table->OtherSDTs[i]);
-        SerialPrintf("[RSDP] Entry %d: Signature %.4s, OEM %.6s\n", i, header->Signature, header->OEMID);
+        ACPIHeader* header = (ACPIHeader*) ((size_t) 0 + (uint32_t) Table->OtherSDTs[i]);
+        char signature[5];
+        memcpy(signature, header->Signature, 4);
+        signature[4] = '\0';
+        char oem[7];
+        memcpy(oem, header->OEMID, 6);
+        oem[6] = '\0';
+        SerialPrintf("[ RSDP] Entry %d: Signature %s, OEM %s\n", i, signature, oem);
     }
 }
 

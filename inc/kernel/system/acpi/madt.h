@@ -90,7 +90,7 @@ namespace ACPI {
         MADT();
 
         void LogDump();
-        void Initialize();
+        void Init();
         // Get the byte of the end of the table.
         size_t GetEndOfTable();
         // Get all of the entries in the table, as an array.

@@ -73,47 +73,10 @@ void PrepareCPU() {
 
     SetupInitialGDT();
     SetupIDT();
-
     //SetupExtensions();
 
     InitInterrupts();
-
 }
-
-/*void SetupExtensions() {
-
-    // Enable SSE
-    size_t CR0 = ReadControlRegister(0);
-
-    CR0 &= ~(1 << 2);
-    CR0 |= 1;
-
-    WriteControlRegister(0, CR0);
-
-    // Enable OSXSAVE and gang
-    size_t CR4 = ReadControlRegister(4);
-    CR4 |= (1 << 9);
-    CR4 |= (1 << 10);
-    CR4 |= (1 << 18);
-
-    WriteControlRegister(4, CR4);
-
-    // Enable AVX (and AVX-512 in future)
-    
-    CR0 = ReadExtendedControlRegister(0);
-    SerialPrintf("XCR0 is currently %x.\n", CR0);
-    CR0 |= (1 << 0);
-    CR0 |= (1 << 1);
-    CR0 |= (1 << 2);
-
-    CR0 |= (1 << 5);
-    CR0 |= (1 << 6);
-    CR0 |= (1 << 7);
-
-    SerialPrintf("About to write xcr0: %x\n", CR0);
-    WriteExtendedControlRegister(0, CR0);
-}
-*/
 
 void SetupInitialGDT() {
     size_t TSSBase = (uint64_t) (&TSSEntries);

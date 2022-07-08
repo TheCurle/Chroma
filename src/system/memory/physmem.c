@@ -175,7 +175,7 @@ void InitMemoryManager() {
 
     MemoryPages = FreeMemorySize / PAGE_SIZE;
 
-    SerialPrintf("[  Mem] %u MB of memory detected.\r\n", (FreeMemorySize / 1024) / 1024);
+    SerialPrintf("[  Mem] %u MB of usable memory detected, %u MB total.\r\n", (FreeMemorySize / 1024) / 1024, (FullMemorySize / 1024) / 1024);
 }
 
 

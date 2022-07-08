@@ -58,6 +58,16 @@ void InitPaging() {
         MapVirtualPageNoDirect(&KernelAddressSpace, Addr, TO_DIRECT(Addr), DEFAULT_PAGE_FLAGS);
     }
 
+    SerialPrintf("[  Mem] Identity mapping the entire BIOS memory map.\r\n");
+    for (MMapEnt* MapEntry = &bootldr.mmap; (size_t) MapEntry < (size_t) &bootldr + bootldr.size; MapEntry++) {
+        size_t entry_from = MMapEnt_Ptr(MapEntry);
+        size_t entry_to = MMapEnt_Ptr(MapEntry) + MMapEnt_Size(MapEntry);
+        for (size_t i = entry_from; i < entry_to; i += PAGE_SIZE) {
+            MapVirtualPageNoDirect(&KernelAddressSpace, i, i, DEFAULT_PAGE_FLAGS);
+            MapVirtualPageNoDirect(&KernelAddressSpace, i, TO_DIRECT(i), DEFAULT_PAGE_FLAGS);
+        }
+    }
+
     SerialPrintf("[  Mem] Mapping 0x%x bytes of bootloader structure, starting at 0x%p\r\n", bootldr.size,
                  BootldrAddress);
     for (size_t i = BootldrAddress; i < (BootldrAddress + bootldr.size); i += PAGE_SIZE)

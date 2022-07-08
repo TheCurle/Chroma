@@ -18,7 +18,9 @@
 .extern initcpu
 
 .extern coreidt
-.extern CoreGDT
+
+.extern ProtectedGDT
+.extern LongGDT
 
 # 16-bit startup.
 # Initialize registers.
@@ -35,9 +37,9 @@ startCore:
     mov %ax, %fs
     mov %ax, %gs
     mov %ax, %ss
-
-    lgdtl gdt_protected
-
+.code64
+    lgdt ProtectedGDT
+.code16
     mov %cr0, %eax
     or $0x1, %ax
     mov %eax, %cr0
@@ -74,8 +76,9 @@ startCore32:
     mov %cr0, %eax
     or $2147483648, %eax    # 1 << 31
     mov %eax, %cr0
-
-    lgdt gdt_long
+.code64
+    lgdt LongGDT
+.code32
     ljmp $0x8, $startCore64
 
 # Long mode setup.
@@ -95,7 +98,7 @@ startCore64:
     mov %ax, %ds
     mov %ax, %gs
 
-    lgdt CoreGDT
+    lgdt LongGDT
     lidt coreidt
 
     mov $0x0, %rbp

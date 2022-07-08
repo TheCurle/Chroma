@@ -47,7 +47,7 @@ namespace ACPI {
         // RSDP Entries themselves.
         struct RSDT {
             ACPIHeader Header;
-            uint32_t* OtherSDTs;
+            uint32_t OtherSDTs[];
         } __attribute__((packed));
 
         RSDP();

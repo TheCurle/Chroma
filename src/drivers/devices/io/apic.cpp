@@ -59,14 +59,14 @@ bool APIC::IsReady() {
 }
 
 void APIC::Init() {
-    SerialPrintf("[ACPI] Enabling APICs...");
+    SerialPrintf("[ ACPI] Enabling APICs...\r\n");
 
     Address = (void*) ACPI::MADT::instance->LocalAPICBase;
 
     // TODO: Check whether the identity mapping covers this address
 
     if (Address == nullptr) {
-        SerialPrintf("[ACPI] Unable to locate APICs.");
+        SerialPrintf("[ ACPI] Unable to locate APICs.\r\n");
         for (;;) { }
     }
 
@@ -78,9 +78,9 @@ void APIC::Init() {
     WritePort(0x21, 0xFF, 1);
     WritePort(0xA1, 0xFF, 1);
 
-    SerialPrintf("[ACPI] Enabling Global APIC..");
+    SerialPrintf("[ ACPI] Enabling Global APIC..\r\n");
     IOAPICs = ACPI::MADT::instance->GetIOApicEntries();
-    SerialPrintf("[ACPI] Enabling Interrupt Source Overrides..");
+    SerialPrintf("[ ACPI] Enabling Interrupt Source Overrides..\r\n");
     ISOs = ACPI::MADT::instance->GetISOEntries();
 
     Ready = true;

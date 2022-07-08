@@ -18,8 +18,8 @@ size_t MADT::GetEndOfTable() {
     return ((size_t) &Header->Header) + Header->Header.Length;
 }
 
-void MADT::Initialize() {
-    SerialPrintf("[ACPI] Loading Multiple APIC Descriptor Tables..");
+void MADT::Init() {
+    SerialPrintf("[ ACPI] Loading Multiple APIC Descriptor Tables..\r\n");
     Address = ACPI::RSDP::instance->FindEntry("APIC");
     Header = reinterpret_cast<MADTHeader*>(Address);
 

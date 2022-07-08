@@ -368,7 +368,7 @@ __attribute__((interrupt)) void ISR14Handler(INTERRUPT_FRAME* Frame, size_t Erro
 
     SerialPrintf("[FAULT] } at address\n[FAULT] 0x%p\r\n\n", ReadControlRegister(2));
 
-    Core::GetCurrent()->StackTrace(6);
+    Core::GetCurrent()->StackTrace(10);
     ISR_Error_Common(Frame, ErrorCode, 14); // Page Fault
 }
 

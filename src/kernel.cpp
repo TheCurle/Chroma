@@ -2,6 +2,9 @@
 #include <kernel/video/draw.h>
 #include <driver/keyboard.h>
 #include <editor/main.h>
+#include "kernel/system/acpi/rsdt.h"
+#include "kernel/system/acpi/madt.h"
+#include "driver/io/apic.h"
 
 /************************
  *** Team Kitty, 2020 ***
@@ -20,7 +23,6 @@ extern "C" {
 static bool KernelLoaded = false;
 
 address_space_t KernelAddressSpace;
-
 
 size_t KernelAddr = (size_t) &LoadAddr;
 size_t KernelEnd = (size_t) &end;
@@ -42,7 +44,7 @@ char* InternalBuffer;
  * This is a temporary measure to experiment with the Editor system.
  */
 
-extern "C" int Main(void) {
+extern "C" [[noreturn]] int Main(void) {
     KernelAddressSpace.Lock.NextTicket = 0;
     KernelAddressSpace.Lock.NowServing = 0;
     KernelAddressSpace.PML4 = nullptr;
@@ -86,13 +88,15 @@ extern "C" int Main(void) {
 
     SetForegroundColor(0x00FFFFFF);
 
+    ACPI::RSDP::instance->Init(0);
+    ACPI::MADT::instance->Init();
+    Device::APIC::driver->Init();
+
     CharPrinterCallbackID = SetupKBCallback(&PrintPressedChar);
 
     InternalBufferID = SetupKBCallback(&TrackInternalBuffer);
 
     for (;;) { }
-
-    return 0;
 }
 
 extern "C" void PrintPressedChar(KeyboardData data) {

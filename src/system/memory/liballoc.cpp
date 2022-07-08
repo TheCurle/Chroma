@@ -69,29 +69,29 @@ static int liballoc_free(void* ptr, size_t count) {
 
 /** This macro will conveniently align our pointer upwards */
 #define ALIGN(ptr)                                                    \
-        if ( ALIGNMENT > 1 )                                            \
-        {                                                                \
-            uintptr_t diff;                                                \
-            ptr = (void*)((uintptr_t)ptr + ALIGN_INFO);                    \
-            diff = (uintptr_t)ptr & (ALIGNMENT-1);                        \
-            if ( diff != 0 )                                            \
-            {                                                            \
-                diff = ALIGNMENT - diff;                                \
-                ptr = (void*)((uintptr_t)ptr + diff);                    \
-            }                                                            \
-            *((ALIGN_TYPE*)((uintptr_t)ptr - ALIGN_INFO)) =            \
-                diff + ALIGN_INFO;                                        \
+        if ( ALIGNMENT > 1 )                                          \
+        {                                                             \
+            uintptr_t ldiff;                                          \
+            ptr = (void*)((uintptr_t)ptr + ALIGN_INFO);               \
+            ldiff = (uintptr_t)ptr & (ALIGNMENT-1);                   \
+            if ( diff != 0 )                                          \
+            {                                                         \
+                ldiff = ALIGNMENT - ldiff;                            \
+                ptr = (void*)((uintptr_t)ptr + ldiff);                \
+            }                                                         \
+            *((ALIGN_TYPE*)((uintptr_t)ptr - ALIGN_INFO)) =           \
+                ldiff + ALIGN_INFO;                                   \
         }
 
 
-#define UNALIGN(ptr)                                                    \
-        if ( ALIGNMENT > 1 )                                            \
-        {                                                                \
-            uintptr_t diff = *((ALIGN_TYPE*)((uintptr_t)ptr - ALIGN_INFO));    \
-            if ( diff < (ALIGNMENT + ALIGN_INFO) )                        \
-            {                                                            \
-                ptr = (void*)((uintptr_t)ptr - diff);                    \
-            }                                                            \
+#define UNALIGN(ptr)                                                            \
+        if ( ALIGNMENT > 1 )                                                    \
+        {                                                                       \
+            uintptr_t diff = *((ALIGN_TYPE*)((uintptr_t)ptr - ALIGN_INFO));     \
+            if ( diff < (ALIGNMENT + ALIGN_INFO) )                              \
+            {                                                                   \
+                ptr = (void*)((uintptr_t)ptr - diff);                           \
+            }                                                                   \
         }
 
 

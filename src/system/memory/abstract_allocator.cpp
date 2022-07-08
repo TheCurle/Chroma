@@ -1,6 +1,4 @@
 #include <stddef.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <kernel/system/memory.h>
 #include <kernel/system/io.h>
 
