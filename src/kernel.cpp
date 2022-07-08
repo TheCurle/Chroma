@@ -88,9 +88,13 @@ extern "C" [[noreturn]] int Main(void) {
 
     SetForegroundColor(0x00FFFFFF);
 
+    Device::APIC::driver = new Device::APIC();
+
     ACPI::RSDP::instance->Init(0);
     ACPI::MADT::instance->Init();
     Device::APIC::driver->Init();
+
+    Core::Init();
 
     CharPrinterCallbackID = SetupKBCallback(&PrintPressedChar);
 

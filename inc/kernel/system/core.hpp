@@ -77,4 +77,4 @@ class Core {
     void Bootstrap();
     void SetupData(size_t ID);
 
-} __attribute__((packed));
+};

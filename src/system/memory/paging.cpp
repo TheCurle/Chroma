@@ -68,6 +68,9 @@ void InitPaging() {
         }
     }
 
+    SerialPrintf("[  Mem] Identity mapping core system hardware.\r\n");
+    MapVirtualPageNoDirect(&KernelAddressSpace, APIC_REGION, APIC_REGION, DEFAULT_PAGE_FLAGS);
+
     SerialPrintf("[  Mem] Mapping 0x%x bytes of bootloader structure, starting at 0x%p\r\n", bootldr.size,
                  BootldrAddress);
     for (size_t i = BootldrAddress; i < (BootldrAddress + bootldr.size); i += PAGE_SIZE)
@@ -353,3 +356,11 @@ size_t* CreateNewPageTable(address_space_t* AddressSpace) {
 #ifdef  __cplusplus
 }
 #endif
+
+void *operator new(size_t size) {
+    return kmalloc(size);
+}
+
+void *operator new[](size_t size) {
+    return kmalloc(size);
+}

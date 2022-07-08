@@ -62,6 +62,7 @@ void APIC::Init() {
     SerialPrintf("[ ACPI] Enabling APICs...\r\n");
 
     Address = (void*) ACPI::MADT::instance->LocalAPICBase;
+    SerialPrintf("[ MADT] The APIC of this core is at 0x%p\r\n", (size_t) Address);
 
     // TODO: Check whether the identity mapping covers this address
 

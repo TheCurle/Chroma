@@ -142,6 +142,8 @@ extern "C" {
 #define KERNEL_HEAP_REGION  0xFFFFE00080000000ull   // Kernel Object Space (kmalloc will allocate into this region)
 #define KERNEL_HEAP_END     0xFFFFE000C0000000ull   // End of Kernel Object Space
 
+#define APIC_REGION         0x00000000FEE00000ull   // Physical location of the APIC MMIO region.
+
 #define DIRECT_REGION       0xFFFF800000000000ull
 
 #define LOWER_REGION        0x0000000100000000ull   // Lower Memory cutoff - 4GB

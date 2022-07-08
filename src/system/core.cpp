@@ -7,9 +7,6 @@
  ***     Chroma       ***
  ***********************/
 
-extern size_t startCore;
-extern size_t endCore;
-
 int Cores = 0;
 volatile bool Ready = false;
 
@@ -37,7 +34,7 @@ Core::Core(size_t APIC, size_t ID) {
     GetCore(ID)->LocalAPIC = APIC;
 
     Bootstrap();
-    SetupData(ID);
+    //SetupData(ID);
 
     Device::APIC::driver->InitializeCore(APIC, reinterpret_cast<size_t>(initcpu));
 
@@ -52,7 +49,7 @@ void Core::Init() {
     using namespace ACPI;
 
     Ready = false;
-    SerialPrintf("[CORE] Enabling Multiprocessing\n");
+    SerialPrintf("[ CORE] Enabling Multiprocessing\r\n");
 
     memset(Tasks, 0, Constants::Core::MAX_CORES * sizeof(TSS64));
     for (size_t i = 0; i < Constants::Core::MAX_CORES; i++)
