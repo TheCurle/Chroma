@@ -44,6 +44,11 @@ __attribute__((aligned(64))) static volatile size_t InitGDT[5] = {
         0
 };
 
+__attribute__((aligned(64))) static DESC_TBL CoreGDT = {
+        .Limit = sizeof(InitGDT),
+        .Base = (size_t) InitGDT
+};
+
 __attribute__((aligned(64))) static volatile TSS64 TSSEntries;
 
 __attribute__((aligned(64))) static volatile IDT_GATE IDTEntries[256];
@@ -111,7 +116,6 @@ void PrepareCPU() {
 */
 
 void SetupInitialGDT() {
-    DESC_TBL GDTData;
     size_t TSSBase = (uint64_t) (&TSSEntries);
 
     uint16_t TSSLower = (uint16_t) TSSBase;
@@ -119,15 +123,13 @@ void SetupInitialGDT() {
     uint8_t TSSMid2 = (uint8_t) (TSSBase >> 24);
     uint32_t TSSHigher = (uint32_t) (TSSBase >> 32);
 
-    GDTData.Limit = sizeof(InitGDT) - 1;
-    GDTData.Base = (size_t) InitGDT;
 
     ((TSS_ENTRY*) (&((GDT_ENTRY*) InitGDT)[3]))->BaseLow = TSSLower;
     ((TSS_ENTRY*) (&((GDT_ENTRY*) InitGDT)[3]))->BaseMid1 = TSSMid1;
     ((TSS_ENTRY*) (&((GDT_ENTRY*) InitGDT)[3]))->BaseMid2 = TSSMid2;
     ((TSS_ENTRY*) (&((GDT_ENTRY*) InitGDT)[3]))->BaseHigh = TSSHigher;
 
-    WriteGDT(GDTData);
+    WriteGDT(CoreGDT);
     WriteTSR(3 << 3);
     RefreshCS();
 }

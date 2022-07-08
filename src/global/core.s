@@ -1,27 +1,29 @@
-;************************
-;*** Team Kitty, 2021 ***
-;***     Chroma       ***
-;************************
+.intel_syntax noprefix
+#************************
+#*** Team Kitty, 2021 ***
+#***     Chroma       ***
+#************************
 
-; Initial startup routines for new cores.
-; New cores start in 16 bit real mode.
-; Because of this, this is the only necessary assembler file in the OS.
+# Initial startup routines for new cores.
+# New cores start in 16 bit real mode.
+# Because of this, this is the only necessary assembler file in the OS.
 
-; First, bring them up to Protected and Long mode.
-; Then enable all necessary auxiliary features.
-; Pass off to the CPP code to handle the heavy work, we just want the core running.
+# First, bring them up to Protected and Long mode.
+# Then enable all necessary auxiliary features.
+# Pass off to the CPP code to handle the heavy work, we just want the core running.
 
-[bits 16]
-BASE equ 0x1000
+.intel_syntax
 
-global stack
-extern initcpu
+.code16
+.equ BASE, 0x1000
 
-extern coreidt
-extern coregdt
+.global stack
+.extern initcpu
 
-global startCore
-startCore:
+.extern coreidt
+.extern coregdt
+
+.global startCore
     cli
     mov ax, 0x0
     mov ds, ax
@@ -38,9 +40,9 @@ startCore:
 
     jmp 0x8:(startCore32 - startCore + BASE)
 
-[bits 32]
+.code32
 
-section .text
+.section .text
 startCore32:
     mov bx, 0x10
     mov ds, bx
@@ -67,7 +69,7 @@ startCore32:
     lgdt [gdt_long - startCore + BASE]
     jmp 8:(startCore64 - startCore + BASE)
 
-[bits 64]
+.code64
 startCore64:
     mov ax, 0x10
     mov ds, ax

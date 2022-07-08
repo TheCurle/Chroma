@@ -11,6 +11,10 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 SET(CMAKE_SYSTEM_NAME Generic)
 SET(CMAKE_CROSSCOMPILING 1)
 
+enable_language(ASM)
+enable_language(C)
+enable_language(CXX)
+
 project(chroma)
 
 SET(src_files
@@ -29,11 +33,13 @@ SET(src_files
         ${CMAKE_SOURCE_DIR}/src/system/memory/liballoc.cpp
         ${CMAKE_SOURCE_DIR}/src/system/memory/physmem.c
         ${CMAKE_SOURCE_DIR}/src/system/process/process.cpp
+        ${CMAKE_SOURCE_DIR}/src/system/extern/extern_defs.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/elf.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/devices.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/input/keyboard.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/io/apic.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/storage/ata.cpp
+        ${CMAKE_SOURCE_DIR}/src/global/core-att.s
 )
 
 SET(lib_files
@@ -49,6 +55,9 @@ include_directories("inc" "D:/mingw/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/inc
 SET(src_no_sse
         ${CMAKE_SOURCE_DIR}/src/system/interrupts.cpp
 )
+
+SET(src_as
+        )
 
 SET(src_preamble
         ${CMAKE_SOURCE_DIR}/src/global/crt0.o
@@ -69,6 +78,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(kernel)
 
-target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_files} PUBLIC ${src_no_sse} PUBLIC ${lib_files} PUBLIC ${src_epilogue})
-target_compile_options(kernel PRIVATE -ffreestanding -O0 -Wall -Wextra -Wall -Werror -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -fno-rtti -ggdb3)
+target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_files} PUBLIC ${src_no_sse} PUBLIC ${lib_files} PUBLIC ${src_as} PUBLIC ${src_epilogue})
+target_compile_options(kernel PRIVATE -ffreestanding -O0 -Wall -Wextra -Wall -Werror -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti> -ggdb3)
 target_link_options(kernel PRIVATE -T ${CMAKE_SOURCE_DIR}/linker.ld -ffreestanding -O2 -nostdlib -nostartfiles -lgcc)

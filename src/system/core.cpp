@@ -25,7 +25,6 @@ extern "C" void initcpu() {
     __asm__ __volatile__("mov %%fs, %0" : : "r" (Device::APIC::driver->GetCurrentCore()) : );
 
     SerialPrintf("[CORE] Core %d ready.\r\n", Device::APIC::driver->GetCurrentCore());
-    // TODO: New GDT
     __asm__ __volatile__("cli");
     Ready = true;
     __asm__ __volatile__("sti");
