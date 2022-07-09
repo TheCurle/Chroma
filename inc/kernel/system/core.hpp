@@ -29,17 +29,17 @@ struct StackFrame {
  */
 class Core {
    public:
-    Core() {}
+    Core(){}
     Core(size_t LAPIC, size_t ID);
 
-    size_t ID;
-    size_t LocalAPIC;
+    size_t ID = 0;
+    size_t LocalAPIC = 0;
 
-    address_space_t* AddressSpace;
+    address_space_t* AddressSpace = nullptr;
 
-    uint8_t* SyscallStack;
-    size_t StackAddress;
-    uint8_t StackData[Constants::Core::STACK_SIZE];
+    uint8_t* SyscallStack = 0;
+    size_t StackAddress = 0;
+    uint8_t StackData[Constants::Core::STACK_SIZE] = { 0 };
 
     IDT CoreIDT;
     GDT CoreGDT;
@@ -53,15 +53,15 @@ class Core {
     static Core* GetCurrent() {
         size_t CoreID = 0;
         __asm__ __volatile__("mov %0, %%fs\n" : "=r"(CoreID) : :);
-        return &Processors[CoreID];
+        return Processors[CoreID];
     }
 
-    static Core* GetCore(int ID) { return &Processors[ID]; }
+    static Core* GetCore(int ID) { return Processors[ID]; }
 
     static void Init();
 
    private:
-    static Core Processors[];
+    static Core* Processors[];
 
     // Initialization vectors for all new cores.
     // Numbers derived from boot.h space.

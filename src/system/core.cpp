@@ -10,7 +10,7 @@
 int Cores = 0;
 volatile bool Ready = false;
 
-Core Core::Processors[Constants::Core::MAX_CORES];
+Core* Core::Processors[Constants::Core::MAX_CORES];
 TSS64 Tasks[Constants::Core::MAX_CORES];
 ACPI::MADT::LAPICEntry* LAPICs[Constants::Core::MAX_CORES];
 
@@ -39,7 +39,7 @@ Core::Core(size_t APIC, size_t ID) {
     Device::APIC::driver->InitializeCore(APIC, reinterpret_cast<size_t>(initcpu));
 
     while (!Ready) {
-        __asm__ ("nop");
+        __asm__ __volatile__ ("nop");
     }
 
     Ready = false;
@@ -61,8 +61,6 @@ void Core::Init() {
 
     // While there are more entries in the table..
     while ((size_t) table < MADT::instance->GetEndOfTable()) {
-        // Move to the next entry (by skipping the length of the current entry)
-        table = (MADT::RecordTableEntry*) (((size_t) table) + table->Length);
         // Check for a LAPIC record (which indicates a unique physical core)
         if (table->Type == MADT::Type::LAPIC) {
             // Find the data for the LAPIC with a reinterpret
@@ -75,18 +73,23 @@ void Core::Init() {
             // Move to the next core if there is one.
             Cores++;
         }
+        // Move to the next entry (by skipping the length of the current entry)
+        table = (MADT::RecordTableEntry*) (((size_t) table) + table->Length);
     }
 
-    SerialPrintf("[CORE] Found %d cores.\n", Cores);
+    SerialPrintf("[ CORE] Found %d core(s).\r\n", Cores);
 
     if (Cores > 1)
-        SerialPrintf("[CORE] Bringing up other cores.\n");
+        SerialPrintf("[ CORE] Bringing up other cores.\r\n");
 
     // For each non-bootstrap core, initialize the necessary data and populate the array.
     for (int i = 0; i < Cores; i++) {
-        SerialPrintf("[CORE] Enabling core %d.\n", i);
-        if (Device::APIC::driver->GetCurrentCore() != LAPICs[i]->Core)
-            Processors[i] = Core(LAPICs[i]->APIC, LAPICs[i]->Core);
+
+        if (Device::APIC::driver->GetCurrentCore() != LAPICs[i]->Core) {
+            SerialPrintf("[ CORE] Enabling core %d.\r\n", i);
+            Core* c = new Core(LAPICs[i]->APIC, LAPICs[i]->Core);
+            Processors[i] = c;
+        }
     }
 }
 
