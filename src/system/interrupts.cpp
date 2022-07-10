@@ -2,6 +2,7 @@
 #include <kernel/video/draw.h>
 #include <kernel/system/interrupts.h>
 #include <stdbool.h>
+#include "driver/io/apic.h"
 
 /************************
  *** Team Kitty, 2020 ***
@@ -122,19 +123,15 @@ void IRQ_Common(INTERRUPT_FRAME* Frame, size_t Interrupt) {
         safely tell whether we've actually got something for this IRQ. */
     handler = IRQHandlers[Interrupt];
     if (handler.numHandlers > 0) {
-        SerialPrintf("[  IRQ] IRQ %d raised!\r\n", Interrupt);
+        //SerialPrintf("[  IRQ] IRQ %d raised!\r\n", Interrupt);
         // Call the handlers
         for (size_t i = 0; i < handler.numHandlers; i++)
             handler.handlers[i](Frame);
     }
 
-    /* The Slave PIC must be told it's been read in order to receive another 8+ IRQ. */
-    if (Interrupt > 7)
-        WritePort(0xA0, 0x20, 1);
-
-    /* In either case, we tell the Master PIC it's been read to receive any IRQ. */
-    WritePort(0x20, 0x20, 1);
+    Device::APIC::driver->SendEOI();
 }
+
 #define PIC1		0x20		/* IO base address for master PIC */
 #define PIC2		0xA0		/* IO base address for slave PIC */
 #define PIC1_COMMAND	PIC1
@@ -154,28 +151,10 @@ void IRQ_Common(INTERRUPT_FRAME* Frame, size_t Interrupt) {
 #define ICW4_BUF_MASTER	0x0C		/* Buffered mode/master */
 #define ICW4_SFNM	0x10		/* Special fully nested (not) */
 
-void ClearIRQ(size_t idx) {
-    uint16_t port;
-    uint8_t value;
-
-    if(idx < 8) {
-        port = PIC1_DATA;
-    } else {
-        port = PIC2_DATA;
-        idx -= 8;
-    }
-    value = ReadPort(port, 1) & ~(1 << idx);
-    WritePort(port, value, 1);
-}
-
 /* However, in order to actually be able to receive IRQs, we need to remap the PICs. */
 void RemapIRQControllers() {
     /* 0x20 is the Master PIC,
        0xA0 is the Slave PIC. */
-    unsigned char a1, a2;
-
-    a1 = ReadPort(PIC1_DATA, 1);                        // save masks
-    a2 = ReadPort(PIC2_DATA, 1);
 
     WritePort(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4, 1);  // starts the initialization sequence (in cascade mode)
     WritePort(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4, 1);
@@ -187,17 +166,17 @@ void RemapIRQControllers() {
     WritePort(PIC1_DATA, ICW4_8086, 1);
     WritePort(PIC2_DATA, ICW4_8086, 1);
 
-    WritePort(PIC1_DATA, a1, 1);   // restore saved masks.
-    WritePort(PIC2_DATA, a2, 1);
+    WritePort(PIC1_DATA, 0xFF, 1);   // restore saved masks.
+    WritePort(PIC2_DATA, 0xFF, 1);
 
-    ClearIRQ(1);
-    ClearIRQ(2);
 }
 
 /* In order to actually handle the IRQs, though, we need to tell the kernel *where* the handlers are. */
 /* A simple wrapper that adds a function pointer to the IRQ array. */
 size_t InstallIRQ(int IRQ, IRQHandler Handler) {
     if (IRQ <= 32) {
+        Device::APIC::driver->Set(Core::GetCurrent()->ID, IRQ, 1);
+
         IRQHandlerData* target = &IRQHandlers[IRQ];
         if (target->numHandlers < 7) {
             target->handlers[target->numHandlers] = Handler;
@@ -429,7 +408,6 @@ __attribute__((interrupt)) void IRQ0Handler(INTERRUPT_FRAME* Frame) {
 }
 
 __attribute__((interrupt)) void IRQ1Handler(INTERRUPT_FRAME* Frame) {
-    SerialPrintf("IRQ1\r\n");
     IRQ_Common(Frame, 1); // Keyboard handler
 }
 

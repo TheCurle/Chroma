@@ -45,7 +45,14 @@ Core::Core(size_t APIC, size_t ID) {
     Ready = false;
 }
 
+void Core::PreInit() {
+    for (size_t i = 0; i < Constants::Core::MAX_CORES; i++) {
+        Processors[i] = new Core();
+    }
+}
+
 void Core::Init() {
+
     using namespace ACPI;
 
     Ready = false;
@@ -78,7 +85,6 @@ void Core::Init() {
     }
 
     SerialPrintf("[ CORE] Found %d core(s).\r\n", Cores);
-
     if (Cores > 1)
         SerialPrintf("[ CORE] Bringing up other cores.\r\n");
 
@@ -87,6 +93,7 @@ void Core::Init() {
 
         if (Device::APIC::driver->GetCurrentCore() != LAPICs[i]->Core) {
             SerialPrintf("[ CORE] Enabling core %d.\r\n", i);
+            delete Processors[i];
             Core* c = new Core(LAPICs[i]->APIC, LAPICs[i]->Core);
             Processors[i] = c;
         }
@@ -96,11 +103,6 @@ void Core::Init() {
 void Core::Bootstrap() {
     // TODO
 }
-
-void Core::SetupData(size_t Core) {
-    UNUSED(Core);
-}
-
 
 void Core::StackTrace(size_t Cycles) {
     StackFrame* stack;

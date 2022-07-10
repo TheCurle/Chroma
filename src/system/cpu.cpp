@@ -1,5 +1,6 @@
 #include <kernel/chroma.h>
 #include <kernel/system/interrupts.h>
+#include "driver/io/apic.h"
 
 /************************
  *** Team Kitty, 2020 ***
@@ -71,6 +72,9 @@ void PrepareCPU() {
     //SetupExtensions();
 
     InitInterrupts();
+
+    /* In either case, we tell the Master PIC it's been read to receive any IRQ. */
+    WritePort(0x20, 0x20, 1);
 }
 
 void SetupInitialGDT() {

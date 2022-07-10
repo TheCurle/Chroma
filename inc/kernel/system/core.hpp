@@ -41,9 +41,9 @@ class Core {
     size_t StackAddress = 0;
     uint8_t StackData[Constants::Core::STACK_SIZE] = { 0 };
 
-    IDT CoreIDT;
-    GDT CoreGDT;
-    TSS64 CoreTSS;
+    IDT CoreIDT = { 0, 0 };
+    GDT CoreGDT = { 0, 0 };
+    TSS64 CoreTSS = { };
 
     void LoadExtraRegisters(uint8_t* Data);
     void SaveExtraRegisters(uint8_t* Data);
@@ -58,12 +58,12 @@ class Core {
 
     static Core* GetCore(int ID) { return Processors[ID]; }
 
+    static void PreInit();
     static void Init();
 
    private:
     static Core* Processors[];
 
     void Bootstrap();
-    void SetupData(size_t ID);
 
 };

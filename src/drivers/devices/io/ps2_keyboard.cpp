@@ -1,5 +1,6 @@
 #include <driver/io/ps2_keyboard.h>
 #include <kernel/chroma.h>
+#include "driver/io/apic.h"
 
 /************************
  *** Team Kitty, 2022 ***
@@ -154,6 +155,7 @@ void PS2Keyboard::InterruptHandler() {
             SerialPrintf("[  KEY] %c pressed.\r\n", keys[scancode]);
 
         state = ReadPort(0x64, 1);
+        setState(keystate, scancode);
         KeyboardData data { keys[scancode], (char) scancode, (bool) keystate };
         buffer.emplace_back(data);
     }

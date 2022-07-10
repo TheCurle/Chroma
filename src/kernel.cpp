@@ -77,11 +77,14 @@ extern "C" int Main(void) {
 
     SetForegroundColor(0x00FFFFFF);
 
+
     Device::APIC::driver = new Device::APIC();
     Device::PS2Keyboard::driver = new Device::PS2Keyboard();
 
     ACPI::RSDP::instance->Init(0);
     ACPI::MADT::instance->Init();
+
+    Core::PreInit();
 
     Device::APIC::driver->Init();
     Device::PS2Keyboard::driver->Init();

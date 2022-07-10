@@ -2,6 +2,8 @@
 #include <kernel/system/acpi/madt.h>
 #include <kernel/system/io.h>
 #include <kernel/system/memory.h>
+#include "kernel/system/core.hpp"
+#include "kernel/chroma.h"
 
 /************************
  *** Team Kitty, 2021 ***
@@ -51,7 +53,7 @@ void APIC::Enable() {
 }
 
 void APIC::SendEOI() {
-    WriteRegister(Registers::EOI, 0);
+    *((volatile uint32_t*) 0xfee000B0) = 0;
 }
 
 bool APIC::IsReady() {
@@ -63,10 +65,13 @@ void APIC::Init() {
 
     SerialPrintf("[ ACPI] Enabling APICs...\r\n");
 
+    SerialPrintf("[ ACPI] Memory Mapping APICs..\r\n");
+    for (int i = 0; i < 3; i++) {
+        MapVirtualPage(&KernelAddressSpace, (size_t) Address + i * PAGE_SIZE, (size_t) Address + i * PAGE_SIZE, 3);
+    }
+
     Address = (void*) ACPI::MADT::instance->LocalAPICBase;
     SerialPrintf("[ MADT] The APIC of this core is at 0x%p\r\n", (size_t) Address);
-
-    // TODO: Check whether the identity mapping covers this address
 
     if (Address == nullptr) {
         SerialPrintf("[ ACPI] Unable to locate APICs.\r\n");
@@ -76,10 +81,6 @@ void APIC::Init() {
     // Write "Local APIC Enabled" to the APIC Control Register.
     WriteModelSpecificRegister(0x1B, (ReadModelSpecificRegister(0x1B) | 0x800) & ~(1 << 10));
     Enable();
-
-    // Disable PIC1 and 2
-    WritePort(0x21, 0xFF, 1);
-    WritePort(0xA1, 0xFF, 1);
 
     SerialPrintf("[ ACPI] Enabling Global APIC..\r\n");
     IOAPICs = ACPI::MADT::instance->GetIOApicEntries();
@@ -111,8 +112,8 @@ void APIC::InitializeCore(int Core, size_t EntryPoint) {
     WriteRegister(Registers::ICR1, 0x600 | ((uint32_t) (EntryPoint / PAGE_SIZE)));
 }
 
-void APIC::SetInternal(uint8_t Vector, uint32_t GSI, uint16_t Flags, int Core, int Status) {
-    UNUSED(Core);
+void APIC::SetInternal(uint8_t Vector, uint32_t GSI, uint16_t Flags, int CoreID, int Status) {
+
     size_t temp = Vector;
     int64_t target = -1;
 
@@ -124,7 +125,7 @@ void APIC::SetInternal(uint8_t Vector, uint32_t GSI, uint16_t Flags, int Core, i
             }
 
     if (target == -1) {
-        SerialPrintf("[APIC] No ISO found when setting up redirect.");
+        SerialPrintf("[ APIC] No ISO found when setting up redirect.\r\n");
         return;
     }
 
@@ -137,6 +138,24 @@ void APIC::SetInternal(uint8_t Vector, uint32_t GSI, uint16_t Flags, int Core, i
     if (!Status)
         temp |= (1 << 16);
 
-    // TODO
+    temp |= (((size_t) Core::GetCore(CoreID)->LocalAPIC) << 56);
+    uint32_t IORegister = (GSI - IOAPICs[target]->GSI) * 2 + 0x10;
 
+    SerialPrintf("[ APIC] Setting interrupt %u, redirect %u, on LAPIC %u(%u) of core %u, address 0x%p, register 0x%p, data 0x%p\r\n", GSI, Vector, Core::GetCore(CoreID)->LocalAPIC, target, CoreID, IOAPICs[target]->Address, IORegister, temp);
+
+    WriteIO(IOAPICs[target]->Address, IORegister, (uint32_t) temp);
+    WriteIO(IOAPICs[target]->Address, IORegister + 1, (uint32_t)(temp >> 32));
+}
+
+void APIC::Set(int CPU, uint8_t IRQ, int Enabled) {
+    for(size_t i = 0; ISOs[i] != 0; i++) {
+        // We need to make sure we take into account the overrides, so check whether any IRQ is overriden
+        if (ISOs[i]->IRQ == IRQ) {
+            SetInternal(ISOs[i]->IRQ + 0x20, ISOs[i]->Interrupt, ISOs[i]->Flags, CPU, Enabled);
+            return;
+        }
+    }
+
+    // If there are no overrides, we can just remap it upwards
+    SetInternal(IRQ + 0x20, IRQ, 0, CPU, Enabled);
 }

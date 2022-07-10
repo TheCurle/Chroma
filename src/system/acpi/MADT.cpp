@@ -40,6 +40,7 @@ MADT::IOAPICEntry** MADT::GetIOApicEntries() {
 
         if (table->Type == MADT::Type::IOAPIC) {
             MADT::IOAPICEntry* io_apic = reinterpret_cast<MADT::IOAPICEntry*>(table);
+            MapVirtualPage(&KernelAddressSpace, io_apic->Address, io_apic->Address, 3);
             entries[count] = (MADT::IOAPICEntry*) ((size_t) io_apic);
             count++;
         }
