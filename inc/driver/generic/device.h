@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include "lainlib/vector/vector.h"
 
 /************************
  *** Team Kitty, 2021 ***
@@ -50,7 +51,50 @@ namespace Device {
         };
     };
 
-    // TODO: GenericKeyboard
+    class GenericKeyboard : public GenericDevice {
+    public:
+        struct KeyboardData {
+            char Char;
+            char Scancode;
+            bool Pressed;
+        };
+
+        // This is an input device.
+        DeviceType GetType() const final {
+            return DeviceType::INTERFACE;
+        };
+
+        // Provided for utility checks.
+        static DeviceType GetRootType() {
+            return DeviceType::INTERFACE;
+        };
+
+        virtual bool isPressed(uint8_t) const = 0;
+        virtual uint8_t getLastPress() const = 0;
+
+        size_t readBuffer(void* dest, size_t index, size_t len) {
+            size_t lengthRead = len;
+
+            if (index > buffer.size()) {
+                return 0;
+            } else if (index + len > buffer.size()) {
+                lengthRead = sizeof(KeyboardData) - index; // TODO: wat?
+            }
+
+            memcpy((uint8_t*) dest, ((uint8_t*)buffer.data) + index, lengthRead);
+            return lengthRead;
+        }
+
+        size_t getBufferSize() {
+            return buffer.size();
+        }
+
+    protected:
+        lainlib::vector<KeyboardData> buffer;
+
+    };
+
+
     // TODO: GenericDebugger
     // TODO: GenericNetwork
 

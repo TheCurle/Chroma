@@ -1,9 +1,5 @@
 #include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct list_entry {
     struct list_entry* Previous;
     struct list_entry* Next;
@@ -36,7 +32,3 @@ bool ListIsEmpty(list_entry_t* Head);
     for(pos = UNSAFE_CAST((head)->next, typeof(*(pos)), member); &pos->member != (head); pos = LISTNEXT(pos, member))
 
 #define LASTENTRY 0
-
-#ifdef  __cplusplus
-}
-#endif

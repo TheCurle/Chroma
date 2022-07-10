@@ -7,10 +7,6 @@
  ***    Lainlib       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 size_t strlen(const char* String) {
     size_t Len = 0;
     while(String[Len] != '\0') {
@@ -28,7 +24,3 @@ bool strcmp(char* a, const char* b) {
         bI++;
     }
 }
-
-#ifdef  __cplusplus
-}
-#endif

@@ -1,5 +1,4 @@
 #include <kernel/chroma.h>
-#include <driver/keyboard.h>
 #include <kernel/video/draw.h>
 #include <editor/main.h>
 
@@ -11,11 +10,9 @@
 /**
  * Contains startup and setup routines for the Chroma Editor.
  */
-static KeyboardCallback KernelHandler;
 
 void Editor::StartEditor(int callbackID) {
-    KernelHandler = KeyboardCallbacks[callbackID];
-
+    UNUSED(callbackID);
     EditorLayout layout;
     layout.ScreenHeight = PrintInfo.screenHeight;
     layout.ScreenWidth = PrintInfo.screenWidth;

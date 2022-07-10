@@ -9,10 +9,6 @@
  * It also provides the symbols for the framebuffer and configuration file, which are both equually important.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define UNUSED(x) (void)x
 
 #include <stdint.h>
@@ -73,7 +69,6 @@ void WriteChar(const char character);
 
 void WriteStringWithFont(const char* string);
 
-void InitInterrupts();
 void InitSerial();
 void InitPrint();
 
@@ -82,12 +77,14 @@ void SetupIDT();
 
 int ParseKernelHeader(size_t InitrdPtr);
 
-int Main();
-
-void Exit(int code);
-
-void SomethingWentWrong(const char* Message);
-
 #ifdef __cplusplus
-} // extern "C"
+extern "C" {
+#endif
+    void InitInterrupts();
+
+    int Main();
+    void Exit(int code);
+    void SomethingWentWrong(const char* Message);
+#ifdef __cplusplus
+}
 #endif

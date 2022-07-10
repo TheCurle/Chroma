@@ -5,10 +5,6 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * Drawing routines for screen manipulation.
  * This will be pulled out into the Helix library soon.
@@ -60,7 +56,3 @@ void DrawLineRoundedRect(size_t x, size_t y, size_t width, size_t height, size_t
 void DrawFilledCircle(size_t centerX, size_t centerY, size_t radius);
 void DrawLineCircle(size_t centerX, size_t centerY, size_t radius);
 void DrawLineCircleCorners(size_t centerX, size_t centerY, size_t radius, char cornerMask);
-
-#ifdef  __cplusplus
-}
-#endif

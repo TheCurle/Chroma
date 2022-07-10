@@ -6,10 +6,6 @@
 
 #include <stdint.h>
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
 /*
 ;*  Memory map
 ;*      0h -   600h reserved for the system
@@ -156,9 +152,3 @@ typedef struct {
    * MMapEnt *mmap_ent = &bootboot.mmap; mmap_ent++;
    * until you reach bootboot->size */
 } __attribute__((packed)) bootinfo;
-
-
-
-#ifdef  __cplusplus
-}
-#endif

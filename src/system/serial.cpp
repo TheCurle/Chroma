@@ -4,10 +4,6 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* This file provides functions related to the Serial port.
  * Through this file, you send and receive text and extra debugging information if available.
  */
@@ -50,7 +46,3 @@ void WriteSerialString(const char* str, size_t len) {
         WriteSerialChar(str[i]);
     }
 }
-
-#ifdef  __cplusplus
-}
-#endif

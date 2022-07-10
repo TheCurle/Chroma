@@ -4,10 +4,6 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*
  * This file provides utility functions for parsing ELF headers.
  *  This exists so that the kernel can find itself for remapping,
@@ -92,7 +88,3 @@ int ParseKernelHeader(size_t InitrdPtr) {
     return flag;
 
 }
-
-#ifdef  __cplusplus
-}
-#endif

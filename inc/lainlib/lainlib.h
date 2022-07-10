@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /************************
  *** Team Kitty, 2020 ***
  ***     Chroma       ***
@@ -25,5 +21,5 @@ extern "C" {
 #include <lainlib/compression/lzg.h>
 
 #ifdef __cplusplus
-} // extern "C"
+#include <lainlib/vector/vector.h>
 #endif

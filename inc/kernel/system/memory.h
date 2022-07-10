@@ -1,13 +1,10 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <lainlib/lainlib.h>
 
 #include <stddef.h>
 #include <stdint.h>
 #include <kernel/system/interrupts.h>
-#include <lainlib/lainlib.h>
 
 /************************
  *** Team Kitty, 2020 ***
@@ -41,9 +38,17 @@ extern "C" {
 
 #define CONCAT(x, y) x ## y
 #define CONCAT2(x, y) CONCAT(x, y)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define ASSERT(exp, error) \
         if(!(exp)) SomethingWentWrong(error);
        // typedef char CONCAT2(static_assert, __LINE__) [(exp) ? 1 : -1]
+
+#ifdef __cplusplus
+}
+#endif
 
 #define CLZ(num) (num ? __builtin_clzll(num) : 64)
 
@@ -223,10 +228,15 @@ size_t      AllocatorMaxBlockSize(void);
 size_t      AllocatorPoolOverhead(void);
 size_t      AllocatorAllocateOverhead(void);
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 size_t AlignUpwards(size_t Pointer, size_t Alignment);
 size_t AlignDownwards(size_t Pointer, size_t Alignment);
 void*  AlignPointer(const void* Pointer, size_t Alignment);
+#ifdef __cplusplus
+}
+#endif
 
 
 /************************************************************
@@ -236,6 +246,10 @@ void*  AlignPointer(const void* Pointer, size_t Alignment);
 extern size_t memstart;
 
 extern size_t end;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void        ListMemoryMap();
 
@@ -270,6 +284,7 @@ void        TraversePageTables();
 void*       memcpy(void* dest, void const* src, size_t len);
 
 
+
 /*********************************************
 *      C h r o m a     A l l o c a t o r
 **********************************************/
@@ -300,6 +315,6 @@ extern void    *PREFIX(realloc)(void *, size_t);	///< The standard function.
 extern void    *PREFIX(calloc)(size_t, size_t);		///< The standard function.
 extern void     PREFIX(free)(void *);				///< The standard function.
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif

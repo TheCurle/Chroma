@@ -1,50 +1,41 @@
 #include <kernel/chroma.h>
 #include <kernel/video/draw.h>
-#include <driver/keyboard.h>
 #include <editor/main.h>
 #include "kernel/system/acpi/rsdt.h"
 #include "kernel/system/acpi/madt.h"
 #include "driver/io/apic.h"
+#include "driver/io/ps2_keyboard.h"
 
 /************************
  *** Team Kitty, 2020 ***
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* This file is the entry point to the system.
  * It dictates the order of operations of everything the kernel actually does.
  * If a function isn't fired here, directly or indirectly, it is not run.
  */
 
-static bool KernelLoaded = false;
+bool KernelLoaded = false;
 
 address_space_t KernelAddressSpace;
 
 size_t KernelAddr = (size_t) &LoadAddr;
 size_t KernelEnd = (size_t) &end;
 
-void PrintPressedChar(KeyboardData data);
 int CharPrinterCallbackID;
-void TrackInternalBuffer(KeyboardData data);
+void TrackInternalBuffer(Device::GenericKeyboard::KeyboardData data);
 int InternalBufferID;
 
 size_t BufferLength = 0;
 char* InternalBuffer;
-
-#ifdef  __cplusplus
-}
-#endif
 
 /**
  * C++ code! Scary!
  * This is a temporary measure to experiment with the Editor system.
  */
 
-extern "C" [[noreturn]] int Main(void) {
+extern "C" int Main(void) {
     KernelAddressSpace.Lock.NextTicket = 0;
     KernelAddressSpace.Lock.NowServing = 0;
     KernelAddressSpace.PML4 = nullptr;
@@ -72,9 +63,7 @@ extern "C" [[noreturn]] int Main(void) {
     PrepareCPU();
 
     PCIEnumerate();
-
     InitMemoryManager();
-
     InitPaging();
 
     Printf("Paging complete. System initialized.\n\r");
@@ -89,31 +78,20 @@ extern "C" [[noreturn]] int Main(void) {
     SetForegroundColor(0x00FFFFFF);
 
     Device::APIC::driver = new Device::APIC();
+    Device::PS2Keyboard::driver = new Device::PS2Keyboard();
 
     ACPI::RSDP::instance->Init(0);
     ACPI::MADT::instance->Init();
+
     Device::APIC::driver->Init();
+    Device::PS2Keyboard::driver->Init();
 
     Core::Init();
-
-    CharPrinterCallbackID = SetupKBCallback(&PrintPressedChar);
-
-    InternalBufferID = SetupKBCallback(&TrackInternalBuffer);
 
     for (;;) { }
 }
 
-extern "C" void PrintPressedChar(KeyboardData data) {
-    if (!KernelLoaded) return;
-
-    if (data.Pressed) {
-        SerialPrintf("Key pressed: [\\%c (%x)]\r\n", data.Char, data.Scancode);
-        Printf("%c", data.Char);
-    } else {
-        SerialPrintf("Key released: [\\%c]\r\n", data.Char);
-    }
-}
-
+/*
 extern "C" void TrackInternalBuffer(KeyboardData data) {
     if (!data.Pressed) return;
 
@@ -147,8 +125,7 @@ extern "C" void TrackInternalBuffer(KeyboardData data) {
         InternalBuffer[BufferLength] = data.Char;
         BufferLength++;
     }
-}
-
+}*/
 
 extern "C" void SomethingWentWrong(const char* Message) {
     SerialPrintf("Assertion failed! %s\r\n", Message);

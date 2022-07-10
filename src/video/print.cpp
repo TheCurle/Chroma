@@ -6,10 +6,6 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* This file contains all of the String / Print related functions
  *  that are required by the core of the kernel.
  *
@@ -36,7 +32,7 @@ void NumToStr(char* Buffer, size_t Num, size_t Base) {
 
 }
 
-int SerialPrintf(const char* Format, ...) {
+extern "C" int SerialPrintf(const char* Format, ...) {
     va_list Parameters;
     va_start(Parameters, Format);
 
@@ -283,7 +279,3 @@ size_t ParseHexColor(const char* Stream, bool bgFlag) {
     }
     return val;
 }
-
-#ifdef  __cplusplus
-}
-#endif

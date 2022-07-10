@@ -7,10 +7,6 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * This file contains all of the draw-to-screen routines.
  * It (currently; 23/08/20) handles the keyboard input test routine,
@@ -478,7 +474,3 @@ void DrawFilledCircle(size_t centerX, size_t centerY, size_t radius) {
     DrawVerticalLine(centerX, centerY - radius, 2 * radius + 1);
     DrawFilledCircleInternal(centerX, centerY, radius, 3, 0);
 }
-
-#ifdef  __cplusplus
-}
-#endif

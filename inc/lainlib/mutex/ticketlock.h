@@ -7,11 +7,6 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 /* This file provides a simple implementation of a ticket-based locking system.
  * You should probably prefer Spinlock over Ticketlock.
  *
@@ -21,6 +16,10 @@ extern "C" {
  * Use TicketUnlock() to free the resource after you are done.
  *
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
     size_t NowServing;
@@ -35,6 +34,6 @@ bool TicketAttemptLock(ticketlock_t* Lock);
 
 void TicketUnlock(ticketlock_t* Lock);
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif

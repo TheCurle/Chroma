@@ -8,10 +8,6 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct __attribute__((packed)) {
     uint16_t LowLimit;
     uint16_t BaseLow;
@@ -86,7 +82,3 @@ typedef struct __attribute__((packed)) {
     uint16_t    Length;
     size_t      Address;
 } IDT;
-
-#ifdef __cplusplus
-} // extern "C"
-#endif

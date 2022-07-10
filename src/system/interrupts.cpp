@@ -8,10 +8,6 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* This file contains all of the ISR and IRQ
  * (Interrupt Service Request) functions.
  *
@@ -40,6 +36,10 @@ extern "C" {
  * attribute which allows for error handlers,
  * these having a size_t input as an error code.
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 const char* ExceptionStrings[] = {
         "Division by Zero",
@@ -76,15 +76,7 @@ const char* ExceptionStrings[] = {
         "Reserved"
 };
 
-typedef void (* IRQHandler)(INTERRUPT_FRAME* Frame);
-
-IRQHandler IRQ_Handlers[16] = {
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-};
-
-
-typedef unsigned long long int uword_t;
+IRQHandlerData IRQHandlers[32];
 
 /* All of the ISR routines call this function for now.
    ! This function is NOT leaf, and it might clobber the stack.
@@ -124,112 +116,103 @@ void ISR_Error_Common(INTERRUPT_FRAME* Frame, size_t ErrorCode, size_t Exception
 	which was set up earlier by irq_install.*/
 void IRQ_Common(INTERRUPT_FRAME* Frame, size_t Interrupt) {
     // First we need to define a function pointer..
-    void (* Handler)(INTERRUPT_FRAME* Frame);
+    IRQHandlerData handler;
 
     /* We set all uninitialized routines to 0, so the if(handler) check here allows us to
         safely tell whether we've actually got something for this IRQ. */
-    Handler = IRQ_Handlers[Interrupt];
-    // If there's something there,
-    if (Handler) {
+    handler = IRQHandlers[Interrupt];
+    if (handler.numHandlers > 0) {
         SerialPrintf("[  IRQ] IRQ %d raised!\r\n", Interrupt);
-        // Call the handler.
-        Handler(Frame);
+        // Call the handlers
+        for (size_t i = 0; i < handler.numHandlers; i++)
+            handler.handlers[i](Frame);
     }
+
     /* The Slave PIC must be told it's been read in order to receive another 8+ IRQ. */
     if (Interrupt > 7)
         WritePort(0xA0, 0x20, 1);
 
     /* In either case, we tell the Master PIC it's been read to receive any IRQ. */
     WritePort(0x20, 0x20, 1);
+}
+#define PIC1		0x20		/* IO base address for master PIC */
+#define PIC2		0xA0		/* IO base address for slave PIC */
+#define PIC1_COMMAND	PIC1
+#define PIC1_DATA	(PIC1+1)
+#define PIC2_COMMAND	PIC2
+#define PIC2_DATA	(PIC2+1)
 
+#define ICW1_ICW4	0x01		/* ICW4 (not) needed */
+#define ICW1_SINGLE	0x02		/* Single (cascade) mode */
+#define ICW1_INTERVAL4	0x04		/* Call address interval 4 (8) */
+#define ICW1_LEVEL	0x08		/* Level triggered (edge) mode */
+#define ICW1_INIT	0x10		/* Initialization - required! */
+
+#define ICW4_8086	0x01		/* 8086/88 (MCS-80/85) mode */
+#define ICW4_AUTO	0x02		/* Auto (normal) EOI */
+#define ICW4_BUF_SLAVE	0x08		/* Buffered mode/slave */
+#define ICW4_BUF_MASTER	0x0C		/* Buffered mode/master */
+#define ICW4_SFNM	0x10		/* Special fully nested (not) */
+
+void ClearIRQ(size_t idx) {
+    uint16_t port;
+    uint8_t value;
+
+    if(idx < 8) {
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        idx -= 8;
+    }
+    value = ReadPort(port, 1) & ~(1 << idx);
+    WritePort(port, value, 1);
 }
 
 /* However, in order to actually be able to receive IRQs, we need to remap the PICs. */
 void RemapIRQControllers() {
     /* 0x20 is the Master PIC,
        0xA0 is the Slave PIC. */
-    WritePort(0x20, 0x11, 1);
-    WritePort(0xA0, 0x11, 1);
-    WritePort(0x21, 0x20, 1);
-    WritePort(0xA1, 0x28, 1);
-    WritePort(0x21, 0x04, 1);
-    WritePort(0xA1, 0x02, 1);
-    WritePort(0x21, 0x01, 1);
-    WritePort(0xA1, 0x01, 1);
-    WritePort(0x21, 0x0, 1);
-    WritePort(0xA1, 0x0, 1);
+    unsigned char a1, a2;
+
+    a1 = ReadPort(PIC1_DATA, 1);                        // save masks
+    a2 = ReadPort(PIC2_DATA, 1);
+
+    WritePort(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4, 1);  // starts the initialization sequence (in cascade mode)
+    WritePort(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4, 1);
+    WritePort(PIC1_DATA, 32, 1);                 // ICW2: Master PIC vector offset
+    WritePort(PIC2_DATA, 32 + 8, 1);             // ICW2: Slave PIC vector offset
+    WritePort(PIC1_DATA, 4, 1);                  // ICW3: tell Master PIC that there is a slave PIC at IRQ2 (0000 0100)
+    WritePort(PIC2_DATA, 2, 1);                  // ICW3: tell Slave PIC its cascade identity (0000 0010)
+
+    WritePort(PIC1_DATA, ICW4_8086, 1);
+    WritePort(PIC2_DATA, ICW4_8086, 1);
+
+    WritePort(PIC1_DATA, a1, 1);   // restore saved masks.
+    WritePort(PIC2_DATA, a2, 1);
+
+    ClearIRQ(1);
+    ClearIRQ(2);
 }
 
 /* In order to actually handle the IRQs, though, we need to tell the kernel *where* the handlers are. */
 /* A simple wrapper that adds a function pointer to the IRQ array. */
-void InstallIRQ(int IRQ, void (* Handler)(INTERRUPT_FRAME* Frame)) {
-    IRQ_Handlers[IRQ] = Handler;
+size_t InstallIRQ(int IRQ, IRQHandler Handler) {
+    if (IRQ <= 32) {
+        IRQHandlerData* target = &IRQHandlers[IRQ];
+        if (target->numHandlers < 7) {
+            target->handlers[target->numHandlers] = Handler;
+            target->numHandlers++;
+            return target->numHandlers;
+        }
+    }
+
+    return 0;
 }
 
 /* A simple wrapper that unlinks a function pointer, rendering the IRQ unused. */
-void UninstallIRQHandler(int IRQ) {
-    IRQ_Handlers[IRQ] = NULL; // 0 is used in the common check to make sure that the function is callable.
+void UninstallIRQHandler(int IRQ, size_t ID) {
+    IRQHandlers[IRQ].handlers[ID] = NULL; // 0 is used in the common check to make sure that the function is callable.
     // This removes this IRQ from that check, ergo the function will no longer be called.
-}
-
-void EmptyIRQ(INTERRUPT_FRAME* frame) {
-
-    UNUSED(frame);
-
-    // Flash the borders green, then back to blue
-    SetForegroundColor(0x0000FF00);
-    for (size_t y = 0; y < bootldr.fb_height; y++) {
-        for (size_t x = 0; x < 20; x++) {
-            DrawPixel(x, y);
-        }
-
-        for (size_t x = (bootldr.fb_width - 20); x < bootldr.fb_width; x++) {
-            DrawPixel(x, y);
-        }
-    }
-
-    for (size_t x = 0; x < bootldr.fb_width; x++) {
-        for (size_t y = 0; y < 20; y++) {
-            DrawPixel(x, y);
-        }
-
-        for (size_t y = (bootldr.fb_height - 20); y < bootldr.fb_height; y++) {
-            DrawPixel(x, y);
-        }
-    }
-
-    for (size_t i = 0; i < 100000; i++) { }
-
-    SetForegroundColor(0x000000FF);
-    for (size_t y = 0; y < bootldr.fb_height; y++) {
-        for (size_t x = 0; x < 20; x++) {
-            DrawPixel(x, y);
-        }
-
-        for (size_t x = (bootldr.fb_width - 20); x < bootldr.fb_width; x++) {
-            DrawPixel(x, y);
-        }
-    }
-
-    for (size_t x = 0; x < bootldr.fb_width; x++) {
-        for (size_t y = 0; y < 20; y++) {
-            DrawPixel(x, y);
-        }
-
-        for (size_t y = (bootldr.fb_height - 20); y < bootldr.fb_height; y++) {
-            DrawPixel(x, y);
-        }
-    }
-}
-
-static void KeyboardCallback(INTERRUPT_FRAME* frame) {
-    UNUSED(frame);
-
-    uint8_t msg = ReadPort(0x60, 1);
-
-    UpdateKeyboard(msg);
-
-    WaitFor8042();
 }
 
 void InitInterrupts() {
@@ -238,11 +221,6 @@ void InitInterrupts() {
     if (!(RFLAGS & (1 << 9))) {
         WriteControlRegister('f', RFLAGS | (1 << 9));
     }
-
-
-    InstallIRQ(1, &KeyboardCallback);
-
-    Send8042(0xF002);
 
     __asm__ __volatile__("sti");
 }
@@ -451,6 +429,7 @@ __attribute__((interrupt)) void IRQ0Handler(INTERRUPT_FRAME* Frame) {
 }
 
 __attribute__((interrupt)) void IRQ1Handler(INTERRUPT_FRAME* Frame) {
+    SerialPrintf("IRQ1\r\n");
     IRQ_Common(Frame, 1); // Keyboard handler
 }
 
@@ -510,6 +489,6 @@ __attribute__((interrupt)) void IRQ15Handler(INTERRUPT_FRAME* Frame) {
     IRQ_Common(Frame, 15);
 }
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif

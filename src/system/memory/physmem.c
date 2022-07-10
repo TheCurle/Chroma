@@ -1,16 +1,10 @@
 #include <kernel/chroma.h>
 #include <lainlib/lainlib.h>
 
-
 /************************
  *** Team Kitty, 2020 ***
  ***     Chroma       ***
  ***********************/
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* This file contains functions for physical memory management.
  *
@@ -22,6 +16,9 @@ extern "C" {
  * TODO: Document this mess.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MIN_ORDER 3
 #define PEEK(type, address) (*((volatile type*)(address)))
@@ -347,6 +344,6 @@ void* memset(void* dst, int src, size_t len) {
     return dst;
 }
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif

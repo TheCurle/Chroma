@@ -59,6 +59,8 @@ bool APIC::IsReady() {
 }
 
 void APIC::Init() {
+    Device::RegisterDevice(this);
+
     SerialPrintf("[ ACPI] Enabling APICs...\r\n");
 
     Address = (void*) ACPI::MADT::instance->LocalAPICBase;

@@ -8,10 +8,6 @@
  ***     Lainlib       ***
  ************************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * This file handles all the logic for interfacing with the E1000 networking device.
  * This card is labelled either the Intel I217, or Intel Gigabit 82577LM.
@@ -355,7 +351,3 @@ int E1000Send(e1000_device_t* Device, const void* Data, uint16_t Length) {
 
     return 0;
 }
-
-#ifdef  __cplusplus
-}
-#endif

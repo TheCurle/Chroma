@@ -1,8 +1,5 @@
 #include <lainlib/list/list.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void ListAdd(list_entry_t* Head, list_entry_t* New) {
     New->Next = Head->Next;
@@ -29,7 +26,3 @@ void ListRemove(list_entry_t* Entry) {
 bool ListIsEmpty(list_entry_t* Head) {
     return Head->Next == Head;
 }
-
-#ifdef  __cplusplus
-}
-#endif

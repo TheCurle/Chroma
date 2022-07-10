@@ -5,9 +5,6 @@
  ***    Lainlib       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 struct mac_address {
     uint8_t MAC[6];
@@ -25,7 +22,3 @@ struct ethernet_packet {
     uint16_t Type;
     uint8_t Payload[];
 };
-
-#ifdef  __cplusplus
-}
-#endif

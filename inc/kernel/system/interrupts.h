@@ -6,12 +6,11 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
+ #ifdef __cplusplus
 extern "C" {
 #endif
 
 extern const char* ExceptionStrings[];
-
 
 typedef struct __attribute__((packed)) {
     size_t  rip;
@@ -30,12 +29,17 @@ typedef struct __attribute__((packed)) {
     size_t ss;
 } EXCEPTION_FRAME;
 
-
 typedef void (*IRQHandler)(INTERRUPT_FRAME* Frame);
 
-extern IRQHandler IRQ_Handlers[16];
+typedef struct  {
+    IRQHandler handlers[8];
+    size_t numHandlers;
+} IRQHandlerData;
 
-void InstallIRQ(int IRQ, void (*Handler)(INTERRUPT_FRAME* Frame));
+extern IRQHandlerData IRQHandlers[32];
+
+size_t InstallIRQ(int IRQ, IRQHandler handler);
+void UninstallIRQHandler(int IRQ, size_t ID);
 
 __attribute__((no_caller_saved_registers)) void IRQ_Common(INTERRUPT_FRAME* Frame, size_t Interupt);
 __attribute__((no_caller_saved_registers)) void ISR_Common(INTERRUPT_FRAME* Frame, size_t Interrupt);
@@ -95,5 +99,5 @@ void IRQ14Handler(INTERRUPT_FRAME* Frame);
 void IRQ15Handler(INTERRUPT_FRAME* Frame);
 
 #ifdef __cplusplus
-} // extern "C"
+}
 #endif

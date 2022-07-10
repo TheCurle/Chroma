@@ -36,7 +36,7 @@ SET(src_files
         ${CMAKE_SOURCE_DIR}/src/system/extern/extern_defs.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/elf.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/devices.cpp
-        ${CMAKE_SOURCE_DIR}/src/drivers/devices/input/keyboard.cpp
+        ${CMAKE_SOURCE_DIR}/src/drivers/devices/io/ps2_keyboard.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/io/apic.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/storage/ata.cpp
 )
@@ -46,7 +46,7 @@ SET(lib_files
         ${CMAKE_SOURCE_DIR}/src/lainlib/mutex/ticketlock.cpp
         ${CMAKE_SOURCE_DIR}/src/lainlib/compression/lzgmini.c
         ${CMAKE_SOURCE_DIR}/src/lainlib/string/str.cpp
-        ${CMAKE_SOURCE_DIR}/src/editor/EditorMain.cpp
+        ${CMAKE_SOURCE_DIR}/src/lainlib/vector/vector.cpp
 )
 
 include_directories("inc" "D:/mingw/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++" "D:/mingw/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32")
@@ -79,5 +79,5 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 add_executable(kernel)
 
 target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_files} PUBLIC ${src_no_sse} PUBLIC ${lib_files} PUBLIC ${src_epilogue})
-target_compile_options(kernel PRIVATE -ffreestanding -O0 -Wall -Wextra -Wall -Werror -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti> -ggdb3)
+target_compile_options(kernel PRIVATE -ffreestanding -O0 -Wall -Wextra -Wall -Werror -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -fno-strict-aliasing $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti> -ggdb3)
 target_link_options(kernel PRIVATE -T ${CMAKE_SOURCE_DIR}/linker.ld -ffreestanding -O2 -nostdlib -nostartfiles -lgcc)

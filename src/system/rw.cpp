@@ -5,10 +5,6 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* This file serves to allow us to communicate with the computer through raw I/O.
  * It provides interfaces for Ports and commonly used Registers (Control Registers, Model-Specific Registers, GDT, IDT..)
  *
@@ -257,8 +253,3 @@ void WriteTSR(uint16_t TSRData) {
 
     __asm__ __volatile__("ltr %[src]" : : [src] "m"(TSRData) :);
 }
-
-
-#ifdef  __cplusplus
-}
-#endif

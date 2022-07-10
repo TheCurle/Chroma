@@ -98,20 +98,7 @@ void Core::Bootstrap() {
 }
 
 void Core::SetupData(size_t Core) {
-    // Write page tables
-    GetCore(Core)->AddressSpace->PML4 = GetCurrent()->AddressSpace->PML4;
-    *((size_t*) Initialization::PAGETABLES) = (size_t) GetCore(Core)->AddressSpace->PML4;
-
-    // Prepare stack
-    memset(GetCore(Core)->StackData, 0, Constants::Core::STACK_SIZE);
-    *((size_t*) Initialization::STACK) = (size_t) GetCore(Core)->StackData + Constants::Core::STACK_SIZE;
-
-    // GDT = 0x680
-    // IDT = 0x690
-    __asm__ __volatile__("sgdt (0x680)\n sidt (0x690)");
-
-    // Set startup address
-    *((size_t*) Initialization::STARTUP) = (size_t) &initcpu;
+    UNUSED(Core);
 }
 
 

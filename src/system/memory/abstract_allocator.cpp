@@ -7,10 +7,6 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /************************************************
 *    C O N S T A N T S   A N D   M A C R O S
 *************************************************/
@@ -136,10 +132,6 @@ static void BlockSetSize(block_header_t* Block, size_t Size) {
     Block->Size = Size | (Block->Size & (BLOCK_FREE | BLOCK_PREV_FREE));
 }
 
-static int BlockIsLast(const block_header_t* Block) {
-    return BlockSize(Block) == 0;
-}
-
 static int BlockIsFree(const block_header_t* Block) {
     return CAST(int, Block->Size & BLOCK_FREE);
 }
@@ -177,13 +169,11 @@ static block_header_t* OffsetToBlock(const void* Address, size_t Size) {
 }
 
 static block_header_t* BlockGetPrevious(const block_header_t* Current) {
-    ASSERT(BlockPrevIsFree(Current), "BlockGetPrevious: Previous block NOT free");
     return Current->LastBlock;
 }
 
 static block_header_t* BlockGetNext(const block_header_t* Current) {
     block_header_t* NextBlock = OffsetToBlock(WhereBlock(Current), BlockSize(Current) - BLOCK_OVERHEAD);
-    ASSERT(!BlockIsLast(Current), "BlockGetNext: Current block is last!");
     return NextBlock;
 }
 
@@ -210,17 +200,17 @@ static void BlockMarkUsed(block_header_t* Current) {
 *            P O I N T E R       A L I G N M E N T       F U N C T I O N S
 ************************************************************************************/
 
-size_t AlignUpwards(size_t Pointer, size_t Alignment) {
+extern "C" size_t AlignUpwards(size_t Pointer, size_t Alignment) {
     //ASSERT(((Alignment & (Alignment - 1)) == 0));
     return (Pointer + (Alignment - 1)) & ~(Alignment - 1);
 }
 
-size_t AlignDownwards(size_t Pointer, size_t Alignment) {
+extern "C" size_t AlignDownwards(size_t Pointer, size_t Alignment) {
     //ASSERT((Alignment & (Alignment - 1) == 0));
     return (Pointer - (Pointer & (Alignment - 1)));
 }
 
-void* AlignPointer(const void* Pointer, size_t Alignment) {
+extern "C" void* AlignPointer(const void* Pointer, size_t Alignment) {
 
     const ptrdiff_t AlignedPointer =
             ((
@@ -228,7 +218,6 @@ void* AlignPointer(const void* Pointer, size_t Alignment) {
                      + (Alignment - 1))
              & ~(Alignment - 1)
             );
-    ASSERT(((Alignment & (Alignment - 1)) == 0), "AlignPointer: Requested alignment not aligned!");
 
     return CAST(void*, AlignedPointer);
 }
@@ -297,8 +286,6 @@ static block_header_t* FindSuitableBlock(allocator_control_t* Controller, int* F
         SLMap = Controller->SecondLevel_Bitmap[FirstLevel];
     }
 
-    ASSERT(SLMap, "FindSuitableBlock: Second level bitmap not present!");
-
     SecondLevel = Alloc_FindFirstOne(SLMap);
     *SecondLevelIndex = SecondLevel;
 
@@ -308,9 +295,6 @@ static block_header_t* FindSuitableBlock(allocator_control_t* Controller, int* F
 static void RemoveFreeBlock(allocator_control_t* Controller, block_header_t* Block, int FirstLevel, int SecondLevel) {
     block_header_t* PreviousBlock = Block->LastFreeBlock;
     block_header_t* NextBlock = Block->NextFreeBlock;
-
-    ASSERT(PreviousBlock, "RemoveFreeBlock: PreviousBlock is null!");
-    ASSERT(NextBlock, "RemoveFreeBlock: NextBlock is null!");
 
     NextBlock->LastFreeBlock = PreviousBlock;
     PreviousBlock->NextFreeBlock = NextBlock;
@@ -332,7 +316,6 @@ static void
 InsertFreeBlock(allocator_control_t* Controller, block_header_t* NewBlock, int FirstLevel, int SecondLevel) {
     block_header_t* Current = Controller->Blocks[FirstLevel][SecondLevel];
 
-    ASSERT(Current, "InsertFreeBlock: Current Block is null!");
     if (!Current) {
         SerialPrintf(
                 "Extra info: \r\n\tFirst Level: %x Second Level: %x\r\nFirst Level bitmap: %x, Second Level bitmap: %x\r\n\tBlocks %x, BlocksAddress: %x",
@@ -340,15 +323,11 @@ InsertFreeBlock(allocator_control_t* Controller, block_header_t* NewBlock, int F
                 Controller->Blocks, Controller->Blocks[FirstLevel][SecondLevel]);
         for (;;) { }
     }
-    ASSERT(NewBlock, "InsertFreeBlock: New Block is null!");
 
     NewBlock->NextFreeBlock = Current;
     NewBlock->LastFreeBlock = &Controller->BlockNull;
 
     Current->LastFreeBlock = NewBlock;
-
-    ASSERT(WhereBlock(NewBlock) == AlignPointer(WhereBlock(NewBlock), ALIGN_SIZE),
-           "InsertFreeBlock: Current block is not memory aligned!");
 
     Controller->Blocks[FirstLevel][SecondLevel] = NewBlock;
     Controller->FirstLevel_Bitmap |= (1U << FirstLevel);
@@ -378,14 +357,7 @@ static block_header_t* SplitBlock(block_header_t* Block, size_t NewSize) {
 
     const size_t RemainingSize = BlockSize(Block) - (NewSize + BLOCK_OVERHEAD);
 
-    ASSERT(WhereBlock(Overlap) == AlignPointer(WhereBlock(Overlap), ALIGN_SIZE),
-           "SplitBlock: Requested size results in intermediary block which is not aligned!");
-
-    ASSERT(BlockSize(Block) == RemainingSize + NewSize + BLOCK_OVERHEAD, "SplitBlock: Maths error!");
-
     BlockSetSize(Overlap, RemainingSize);
-
-    ASSERT(BlockSize(Overlap) >= BLOCK_MIN_SIZE, "SplitBlock: Requested size results in new block that is too small!");
 
     BlockSetSize(Block, NewSize);
 
@@ -395,7 +367,6 @@ static block_header_t* SplitBlock(block_header_t* Block, size_t NewSize) {
 }
 
 static block_header_t* MergeBlockDown(block_header_t* Previous, block_header_t* Block) {
-    ASSERT(!BlockIsLast(Previous), "MergeBlockDown: Previous block is the last block! (Current block is first block?)");
 
     Previous->Size += BlockSize(Block) + BLOCK_OVERHEAD;
     BlockLinkToNext(Previous);
@@ -406,8 +377,6 @@ static block_header_t* MergeEmptyBlockDown(allocator_control_t* Controller, bloc
 
     if (BlockPrevIsFree(Block)) {
         block_header_t* Previous = BlockGetPrevious(Block);
-        ASSERT(Previous, "MergeEmptyBlockDown: Previous block is null!");
-        ASSERT(BlockIsFree(Previous), "MergeEmptyBlockDown: Previous block is free!");
         RemoveBlock(Controller, Previous);
         Block = MergeBlockDown(Previous, Block);
     }
@@ -417,10 +386,8 @@ static block_header_t* MergeEmptyBlockDown(allocator_control_t* Controller, bloc
 
 static block_header_t* MergeNextBlockDown(allocator_control_t* Controller, block_header_t* Block) {
     block_header_t* NextBlock = BlockGetNext(Block);
-    ASSERT(NextBlock, "MergeNextBlockDown: Next Block is null!");
 
     if (BlockIsFree(NextBlock)) {
-        ASSERT(!BlockIsLast(Block), "MergeNextBlockDown: Current block is the last block!");
         RemoveBlock(Controller, NextBlock);
         Block = MergeBlockDown(Block, NextBlock);
     }
@@ -429,7 +396,6 @@ static block_header_t* MergeNextBlockDown(allocator_control_t* Controller, block
 }
 
 static void TrimBlockFree(allocator_control_t* Controller, block_header_t* Block, size_t Size) {
-    ASSERT(BlockIsFree(Block), "TrimBlockFree: Current block is wholly free!");
 
     if (CanBlockSplit(Block, Size)) {
         block_header_t* RemainingBlock = SplitBlock(Block, Size);
@@ -443,8 +409,6 @@ static void TrimBlockFree(allocator_control_t* Controller, block_header_t* Block
 }
 
 static void TrimBlockUsed(allocator_control_t* Controller, block_header_t* Block, size_t Size) {
-    ASSERT(!BlockIsFree(Block), "TrimBlockUsed: The current block is wholly used!");
-
     if (CanBlockSplit(Block, Size)) {
 
         block_header_t* RemainingBlock = SplitBlock(Block, Size);
@@ -490,7 +454,6 @@ static block_header_t* LocateFreeBlock(allocator_control_t* Controller, size_t S
     }
 
     if (Block) {
-        ASSERT(BlockSize(Block) >= Size, "LocateFreeBlock: Found a block that is too small!");
         RemoveFreeBlock(Controller, Block, FirstLevel, SecondLevel);
     }
 
@@ -501,7 +464,6 @@ static void* PrepareUsedBlock(allocator_control_t* Controller, block_header_t* B
     void* Pointer = 0;
 
     if (Block) {
-        ASSERT(Size, "PrepareUsedBlock: Size is 0!");
         TrimBlockFree(Controller, Block, Size);
         BlockMarkUsed(Block);
         Pointer = WhereBlock(Block);
@@ -614,10 +576,6 @@ void RemovePoolFromAllocator(allocator_t Allocator, mempool_t Pool) {
 
     int FirstLevel = 0, SecondLevel = 0;
 
-    ASSERT(BlockIsFree(Block), "RemovePoolFromAllocator: Current block is free!");
-    ASSERT(!BlockIsFree(BlockGetNext(Block)), "RemovePoolFromAllocator: Next Block is not free!");
-    ASSERT(BlockSize(BlockGetNext(Block)) == 0, "RemovePoolFromAllocator: Next block is size 0!");
-
     RoundUpBlockSize(BlockSize(Block), &FirstLevel, &SecondLevel);
     RemoveFreeBlock(Controller, Block, FirstLevel, SecondLevel);
 }
@@ -700,8 +658,6 @@ void* AllocatorMalign(allocator_t Allocator, size_t Alignment, size_t Size) {
 
     block_header_t* Block = LocateFreeBlock(Controller, AlignedSize);
 
-    ASSERT(sizeof(block_header_t) == BLOCK_MIN_SIZE + BLOCK_OVERHEAD, "AllocatorMalign: Maths error!");
-
     if (Block) {
         void* Address = WhereBlock(Block);
         void* AlignedAddress = AlignPointer(Address, Alignment);
@@ -719,8 +675,6 @@ void* AllocatorMalign(allocator_t Allocator, size_t Alignment, size_t Size) {
                 Gap = CAST(size_t, CAST(ptrdiff_t, AlignedAddress) - CAST(ptrdiff_t, Address));
             }
 
-            ASSERT(Gap >= MinimumGap, "AllocatorMalign: Maths error 2!");
-
             Block = TrimBlockLeadingFree(Controller, Block, Gap);
 
         }
@@ -733,7 +687,6 @@ void AllocatorFree(allocator_t Allocator, void* Address) {
     if (Address) {
         allocator_control_t* Controller = CAST(allocator_control_t*, Allocator);
         block_header_t* Block = WhichBlock(Address);
-        ASSERT(!BlockIsFree(Block), "AllocatorFree: Attempting to free a freed block!");
 
         BlockMarkFree(Block);
         Block = MergeEmptyBlockDown(Controller, Block);
@@ -778,8 +731,6 @@ void* AllocatorRealloc(allocator_t Allocator, void* Address, size_t NewSize) {
 
         const size_t AdjustedSize = AlignRequestSize(NewSize, ALIGN_SIZE);
 
-        ASSERT(!BlockIsFree(Block), "AllocatorRealloc: Requested block is not free!");
-
         if (AdjustedSize > CurrentSize && (!BlockIsFree(NextBlock) || AdjustedSize > CombinedSize)) {
             // We're going to need more room
 
@@ -802,7 +753,3 @@ void* AllocatorRealloc(allocator_t Allocator, void* Address, size_t NewSize) {
 
     return Pointer;
 }
-
-#ifdef  __cplusplus
-}
-#endif

@@ -5,10 +5,6 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef volatile int spinlock_t;
 
 /* A set of macros that acquire and release a mutex spinlock. */
@@ -22,7 +18,3 @@ typedef volatile int spinlock_t;
 #define SPUNLOCK(name) \
     __sync_synchronize(); \
     name = 0;
-
-#ifdef  __cplusplus
-}
-#endif

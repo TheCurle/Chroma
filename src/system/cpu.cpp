@@ -6,10 +6,6 @@
  ***     Chroma       ***
  ***********************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* This class provides functions for setting up and preparing the CPU for the things the kernel will do.
  * Mainly, it allows you to:
  * 
@@ -70,7 +66,6 @@ static void RefreshCS() {
 
 
 void PrepareCPU() {
-
     SetupInitialGDT();
     SetupIDT();
     //SetupExtensions();
@@ -227,13 +222,10 @@ void SetupIDT() {
     SetISR(46, (size_t) IRQ14Handler);
     SetISR(47, (size_t) IRQ15Handler);
 
-
-    //TODO: ISRs 32 to 256
+    for (size_t i = 0; i < 32; i++) {
+        IRQHandlers[i] = {{}, 0 };
+    }
 
     WriteIDT(IDTData);
 
 }
-
-#ifdef  __cplusplus
-}
-#endif

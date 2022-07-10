@@ -28,10 +28,6 @@
 #ifndef _LIBLZG_H_
 #define _LIBLZG_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define LZG_VERSION "1.0.10"   /**< @brief LZG library version string */
 #define LZG_VERNUM  0x0100000a /**< @brief LZG library version number (strictly */
                                     /* incremental) */
@@ -319,9 +315,5 @@ lzg_uint32_t LZG_Version(void);
 *         @ref LZG_VERSION.
 */
 const char* LZG_VersionString(void);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // _LIBLZG_H_

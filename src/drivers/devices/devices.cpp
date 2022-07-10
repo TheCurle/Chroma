@@ -22,7 +22,7 @@ Device::GenericStorage* StorageDevicesArray[MAX_STORAGE_DEVICES];
 size_t CurrentStorageDevice = 0;
 
 // Internal storage. TODO: Make this not a pain to maintain
-const char* DeviceNames[] = {"Storage", "Keyboard", "Networking"};
+const char* DeviceNames[] = {"Storage", "Internal", "Peripheral", "Networking"};
 
 
 // Add a device pointer to the managed list.
@@ -30,7 +30,7 @@ void Device::RegisterDevice(Device::GenericDevice* Device) {
     DevicesArray[CurrentDevice] = Device;
     Device->DeviceID = CurrentDevice;
     CurrentDevice++;
-    SerialPrintf("[DEVICE] Registered device %d called %s of type %s\r\n", CurrentDevice - 1, Device->GetName(),
+    SerialPrintf("[  DEV] Registered device %d called %s of type %s\r\n", CurrentDevice - 1, Device->GetName(),
                  DeviceNames[Device->GetType()]);
 }
 

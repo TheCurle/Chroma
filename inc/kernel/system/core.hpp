@@ -63,17 +63,6 @@ class Core {
    private:
     static Core* Processors[];
 
-    // Initialization vectors for all new cores.
-    // Numbers derived from boot.h space.
-    // Specifically, the bootloader ROM. 
-    enum Initialization {
-        PAGETABLES = 0x600,
-        STARTUP = 0x620,
-        STACK = 0x670,
-        GDT = 0x680,
-        IDT = 0x690
-    };
-
     void Bootstrap();
     void SetupData(size_t ID);
 

@@ -8,11 +8,7 @@
 
 #define PAUSE   __asm__ __volatile__("pause")
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct {
+typedef struct  {
     uint8_t     ACK;
     uint8_t     SelfTest;
     uint8_t     Echo;
@@ -21,7 +17,6 @@ typedef struct {
 } KBD_FLAGS;
 
 extern KBD_FLAGS KbdFlags;
-
 
 DESC_TBL    ReadGDT(void);
 void        WriteGDT(DESC_TBL GDTData);
@@ -69,12 +64,14 @@ void        Send8042(size_t);
 void        WriteSerialChar(const char);
 void        WriteSerialString(const char*, size_t);
 
-int         SerialPrintf(const char* format, ...);
-int         Printf(const char* Format, ...);
 
-void*       memcpy(void* dest, void const* src, size_t len);
-void*       memset(void* dst, int src, size_t len);
-
-#ifdef  __cplusplus
+#ifdef __cplusplus
+extern "C" {
+#endif
+    int         SerialPrintf(const char* format, ...);
+    int         Printf(const char* Format, ...);
+    void*       memcpy(void* dest, void const* src, size_t len);
+    void*       memset(void* dst, int src, size_t len);
+#ifdef __cplusplus
 }
 #endif
