@@ -154,3 +154,8 @@ void APIC::Set(int CPU, uint8_t IRQ, int Enabled) {
     // If there are no overrides, we can just remap it upwards
     SetInternal(IRQ + 0x20, IRQ, 0, CPU, Enabled);
 }
+
+void APIC::SendInterCoreInterrupt(int Core, uint32_t Interrupt) {
+    WriteRegister(ICR2, (Core << 24));
+    WriteRegister(ICR1, (1 << 14) | Interrupt);
+}

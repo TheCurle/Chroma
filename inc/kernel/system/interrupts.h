@@ -98,6 +98,9 @@ void IRQ13Handler(INTERRUPT_FRAME* Frame);
 void IRQ14Handler(INTERRUPT_FRAME* Frame);
 void IRQ15Handler(INTERRUPT_FRAME* Frame);
 
+void IRQ100Handler(INTERRUPT_FRAME* Frame);
+void IRQ127Handler(INTERRUPT_FRAME* Frame);
+
 #ifdef __cplusplus
 }
 #endif

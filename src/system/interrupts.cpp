@@ -3,6 +3,7 @@
 #include <kernel/system/interrupts.h>
 #include <stdbool.h>
 #include "driver/io/apic.h"
+#include "kernel/system/process/process.h"
 
 /************************
  *** Team Kitty, 2020 ***
@@ -465,6 +466,14 @@ __attribute__((interrupt)) void IRQ14Handler(INTERRUPT_FRAME* Frame) {
 
 __attribute__((interrupt)) void IRQ15Handler(INTERRUPT_FRAME* Frame) {
     IRQ_Common(Frame, 15);
+}
+
+__attribute__((interrupt)) void IRQ100Handler(INTERRUPT_FRAME* Frame) {
+    ProcessManager::instance->SchedulerInterrupt(Frame, false);
+}
+
+__attribute__((interrupt)) void IRQ127Handler(INTERRUPT_FRAME* Frame) {
+    ProcessManager::instance->SchedulerInterrupt(Frame, true);
 }
 
 #ifdef __cplusplus

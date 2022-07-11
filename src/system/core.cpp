@@ -49,6 +49,8 @@ void Core::PreInit() {
     for (size_t i = 0; i < Constants::Core::MAX_CORES; i++) {
         Processors[i] = new Core();
     }
+
+    Processors[0]->AddressSpace = &KernelAddressSpace;
 }
 
 void Core::Init() {

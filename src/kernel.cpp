@@ -5,6 +5,7 @@
 #include "kernel/system/acpi/madt.h"
 #include "driver/io/apic.h"
 #include "driver/io/ps2_keyboard.h"
+#include "kernel/system/process/process.h"
 
 /************************
  *** Team Kitty, 2020 ***
@@ -15,25 +16,12 @@
  * It dictates the order of operations of everything the kernel actually does.
  * If a function isn't fired here, directly or indirectly, it is not run.
  */
-
-bool KernelLoaded = false;
-
 address_space_t KernelAddressSpace;
 
 size_t KernelAddr = (size_t) &LoadAddr;
 size_t KernelEnd = (size_t) &end;
 
-int CharPrinterCallbackID;
-void TrackInternalBuffer(Device::GenericKeyboard::KeyboardData data);
-int InternalBufferID;
-
-size_t BufferLength = 0;
-char* InternalBuffer;
-
-/**
- * C++ code! Scary!
- * This is a temporary measure to experiment with the Editor system.
- */
+extern "C" void mainThread();
 
 extern "C" int Main(void) {
     KernelAddressSpace.Lock.NextTicket = 0;
@@ -61,27 +49,14 @@ extern "C" int Main(void) {
     InitPrint();
 
     PrepareCPU();
-
-    PCIEnumerate();
     InitMemoryManager();
     InitPaging();
 
-    Printf("Paging complete. System initialized.\n\r");
-    KernelLoaded = true;
-
-    InternalBuffer = (char*) kmalloc(4096);
-    SerialPrintf("[  Mem] Allocated a text buffer at 0x%p\r\n", (size_t) InternalBuffer);
-
-    Printf("\\${FF0000}C\\${<green>}h\\${<blue>}r\\${FFFF00}o\\${FF00FF}m\\${FFFF}a ");
-    Printf("\\${FFFFFF}T\\${AAAA}i\\${BBBBBB}m\\${<forgeb>}e\\${<forgey>}!\n");
-
-    SetForegroundColor(0x00FFFFFF);
-
-
     Device::APIC::driver = new Device::APIC();
     Device::PS2Keyboard::driver = new Device::PS2Keyboard();
+    ProcessManager::instance = new ProcessManager();
 
-    ACPI::RSDP::instance->Init(0);
+    ACPI::RSDP::instance->Init();
     ACPI::MADT::instance->Init();
 
     Core::PreInit();
@@ -91,44 +66,16 @@ extern "C" int Main(void) {
 
     Core::Init();
 
-    for (;;) { }
+    ProcessManager::instance->InitKernelProcess(mainThread);
+
+    for(;;) { ProcessManager::yield(); }
 }
 
-/*
-extern "C" void TrackInternalBuffer(KeyboardData data) {
-    if (!data.Pressed) return;
+extern "C" void mainThread() {
+    SerialPrintf("Kernel thread, woooo\r\n");
+    for(;;) {};
+}
 
-    bool tentative = false;
-    if (BufferLength > 4097) tentative = true;
-
-    if (data.Char == '\b') {
-        BufferLength--;
-        tentative = false;
-    }
-
-    if (data.Scancode == 0x1C) {
-        InternalBuffer[BufferLength] = '\0'; // Null-terminate to make checking easier
-        if (strcmp(InternalBuffer, "editor")) {
-            UninstallKBCallback(InternalBufferID);
-            Editor editor;
-            editor.StartEditor(CharPrinterCallbackID);
-        } else if (strcmp(InternalBuffer, "zero")) {
-            int returnVal = sharp_entryPoint();
-            SerialPrintf("Sharp returned %d\r\n", returnVal);
-        } else {
-            SerialPrintf("[  Kbd] No match for %s\r\n", InternalBuffer);
-        }
-
-        memset(InternalBuffer, 0, 4098);
-        BufferLength = 0;
-    }
-
-    if (!tentative && data.Scancode <= 0x2c && data.Scancode != 0x1C) {
-        SerialPrintf("[  Kbd] Adding %c to the buffer.\r\n", data.Char);
-        InternalBuffer[BufferLength] = data.Char;
-        BufferLength++;
-    }
-}*/
 
 extern "C" void SomethingWentWrong(const char* Message) {
     SerialPrintf("Assertion failed! %s\r\n", Message);

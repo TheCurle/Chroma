@@ -59,31 +59,11 @@ void* RSDP::GetFACP(RSDT* Root) {
     return FindEntry("FACP");
 }
 
-void RSDP::Init(size_t RSDP) {
-    UNUSED(RSDP);
+void RSDP::Init() {
     SerialPrintf("[ ACPI] Loading ACPI subsystem..\r\n");
 
     Descriptor = (DescriptorV2*) GetRSDP();
     Table = (RSDT *) TO_DIRECT(Descriptor->Header.RSDT);
-
-    SerialPrintf("[ RSDP] Dumping RSDT. Table at 0x%p..\r\n", (size_t) Table);
-    size_t entries = (Table->Header.Length - sizeof(Table->Header)) / 4;
-    SerialPrintf("[ RSDP] Found %u entries.\r\n", entries);
-
-    // For each entry: if valid, search for the specified name.
-    for (size_t i = 0; i < entries; i++) {
-        if (Table->OtherSDTs[i] == 0x0)
-            continue;
-
-        ACPIHeader* header = (ACPIHeader*) ((size_t) 0 + (uint32_t) Table->OtherSDTs[i]);
-        char signature[5];
-        memcpy(signature, header->Signature, 4);
-        signature[4] = '\0';
-        char oem[7];
-        memcpy(oem, header->OEMID, 6);
-        oem[6] = '\0';
-        SerialPrintf("[ RSDP] Entry %d: Signature %s, OEM %s\n", i, signature, oem);
-    }
 }
 
 void RSDP::PagingInit() {

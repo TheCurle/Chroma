@@ -21,7 +21,7 @@ Process** processes;
 // An array of pointers to the header of each process active on the current core.
 Process* processesPerCore[MAX_CORES];
 
-ProcessManagement* ProcessManagement::instance;
+ProcessManager* ProcessManager::instance;
 
 // A lock "counter". This can be increased and decreased at will.
 // Positive values mean the process is being locked by another, zero and negative means it is active.
@@ -30,6 +30,9 @@ int locked = 0;
 // Counts how many process are slated to be killed.
 // These will be cleaned up by a reaper thread in the background.
 int dying = 0;
+
+// Used in HandleRequest for load balancing if requested.
+size_t lastSelectedCPU = 0;
 
 // Whether the current process is fully loaded into memory and ready to run.
 bool loaded = false;
@@ -46,11 +49,11 @@ size_t nextPID = 1;
 size_t lastProcess = 0;
 
 Process* Process::Current() {
-    return processesPerCore[Core::GetCurrent()->ID];
+    return processesPerCore[Device::APIC::driver->GetCurrentCore()];
 }
 
 void Process::SetCurrent(Process* Target) {
-    processesPerCore[Core::GetCurrent()->ID] = Target;
+    processesPerCore[Device::APIC::driver->GetCurrentCore()] = Target;
 }
 
 void lockProcess() {
@@ -67,7 +70,9 @@ bool isLocked() {
 
 [[noreturn]] void NullProcess() {
     __asm__("cli");
-    for(;;) {}
+    for(;;) {
+        ProcessManager::yield();
+    }
 }
 
 void Process::Destroy() {
@@ -75,7 +80,7 @@ void Process::Destroy() {
     SetState(PROCESS_AVAILABLE);
 }
 
-void Reaper() {
+[[noreturn]] void Reaper() {
     __asm__("cli");
 
     while (true) {
@@ -105,7 +110,7 @@ void Reaper() {
     }
 }
 
-void ProcessManagement::InitKernelProcess(function_t EntryPoint) {
+void ProcessManager::InitKernelProcess(function_t EntryPoint) {
     SerialPrintf("[ PROC] Initializing process manager\r\n");
 
     processes = reinterpret_cast<Process**>(kmalloc(sizeof(Process*) * MAX_PROCESSES * PAGE_SIZE));
@@ -115,6 +120,14 @@ void ProcessManagement::InitKernelProcess(function_t EntryPoint) {
         processes[i] = nullptr;
     }
 
+    SerialPrintf("[ PROC] Creating system processes\r\n");
+    CreateProcess(NullProcess, true, "testproc", false);
+    CreateProcess(EntryPoint, true, "kernel", false);
+    CreateProcess(Reaper, true, "reaper", false);
+
+    loaded = true;
+    unlockProcess();
+    locked = 0;
 
 }
 
@@ -136,38 +149,45 @@ int64_t findFreeProcessSlot() {
     }
 }
 
-Process* ProcessManagement::CreateProcessInternal(const char* name, function_t entry, bool userspace) {
+Process* ProcessManager::CreateProcessInternal(const char* name, function_t entry, bool userspace) {
     int64_t toAdd = findFreeProcessSlot();
     if (toAdd == -1) {
         SerialPrintf("[ PROC] Unable to create new process %s; OUT_OF_SLOTS\r\n", name);
         return nullptr;
     }
+    SerialPrintf("[ PROC] New process: %u, name %s, %s userspace\r\n", nextPID, name, userspace ? "is" : "is not");
 
-    nextPID++;
-    processes[toAdd] = new Process(name, toAdd, nextPID, (size_t) entry, userspace);
+    processes[toAdd] = new Process(name, toAdd, nextPID++, (size_t) entry, userspace);
     processes[toAdd]->SetState(Process::PROCESS_NOT_STARTED);
     return processes[toAdd];
 }
 
 
-void ProcessManagement::InitProcessPagetable(Process* proc, bool Userspace) {
-
+void ProcessManager::InitProcessPagetable(Process* proc, bool Userspace) {
+    if (Userspace)
+        proc->GetHeader()->AddressSpace = new address_space_t { NEW_TICKETLOCK(), 0 };
+    else
+        proc->GetHeader()->AddressSpace = Core::GetCore(Device::APIC::driver->GetCurrentCore())->AddressSpace;
 }
 
-void ProcessManagement::InitProcessArch(Process* proc) {
-
+void ProcessManager::InitProcessArch(Process* proc) {
+    UNUSED(proc);
+    // TODO
 }
 
-void ProcessManagement::InitProcessData(Process* proc, const char* name, bool userspace, char**argv, size_t argc, function_t entry) {
+void ProcessManager::InitProcessData(Process* proc, const char* name, bool userspace, char**argv, size_t argc, function_t entry) {
+    UNUSED(name);
+    UNUSED(argc);
+    UNUSED(argv);
+    UNUSED(entry);
+
     InitProcessPagetable(proc, userspace);
     // TODO: Stack, VFS
     InitProcessArch(proc);
 }
 
 
-Process* ProcessManagement::InitProcess(function_t EntryPoint, bool StartImmediately, const char* Name, bool Userspace, size_t TargetCore, size_t argc, char** argv) {
-    ticketlock_t locker = NEW_TICKETLOCK();
-
+Process* ProcessManager::CreateProcess(function_t EntryPoint, bool StartImmediately, const char* Name, bool Userspace, size_t TargetCore, size_t argc, char** argv) {
     Process* toAdd = CreateProcessInternal(Name, EntryPoint, Userspace);
     if (toAdd == nullptr) {
         SerialPrintf("[ PROC] Unable to create new process, terminating\r\n");
@@ -176,7 +196,7 @@ Process* ProcessManagement::InitProcess(function_t EntryPoint, bool StartImmedia
 
     SerialPrintf("[ PROC] Starting new process %u (%s)\r\n", toAdd->GetPID(), toAdd->GetName());
 
-    toAdd->SetCore(TargetCore);
+    toAdd->SetCore(HandleRequest(TargetCore));
     InitProcessData(toAdd, Name, Userspace, argv, argc, EntryPoint);
     toAdd->SetParent(toAdd->GetPID());
 
@@ -188,11 +208,11 @@ Process* ProcessManagement::InitProcess(function_t EntryPoint, bool StartImmedia
     return toAdd;
 }
 
-Process* ProcessManagement::GetNextToRun(size_t Current) {
+Process* ProcessManager::GetNextToRun(size_t Current) {
     if (locked)
         return Process::Current();
 
-    size_t CoreID = Core::GetCurrent()->ID;
+    size_t CoreID = Device::APIC::driver->GetCurrentCore();
     for (size_t i = Current + 1; i < MAX_PROCESSES; i++) {
         if (processes[i] != nullptr && processes[i]->CanRun(CoreID))
             return processes[i];
@@ -209,7 +229,10 @@ Process* ProcessManagement::GetNextToRun(size_t Current) {
     return nullptr;
 }
 
-size_t ProcessManagement::SchedulerInterrupt(INTERRUPT_FRAME* CurrentFrame, bool ForceSwitch) {
+size_t ProcessManager::SchedulerInterrupt(INTERRUPT_FRAME* CurrentFrame, bool ForceSwitch) {
+
+    SerialPrintf("[ PROC] Scheduler called\r\n");
+
     if (locked)
         return (size_t) CurrentFrame;
 
@@ -220,10 +243,10 @@ size_t ProcessManagement::SchedulerInterrupt(INTERRUPT_FRAME* CurrentFrame, bool
             }
         }
 
-        // TODO: SendSwitchToAll();
+        NotifyAllCores();
     }
 
-    Process* i = nullptr;
+    Process* i;
     if (Process::Current() == nullptr)
         i = GetNextToRun(0);
     else
@@ -257,20 +280,21 @@ Process* Process::FromPID(size_t PID) {
     return nullptr;
 }
 
-void ProcessManagement::Sleep(size_t Count) {
+void ProcessManager::Sleep(size_t Count) {
     lockProcess();
     Process::Current()->IncreaseSleep(Count);
     unlockProcess();
     yield();
 }
 
-void ProcessManagement::Sleep(size_t Count, size_t PID) {
+void ProcessManager::Sleep(size_t Count, size_t PID) {
     lockProcess();
     Process::FromPID(PID)->IncreaseSleep(Count);
     unlockProcess();
 }
 
-void ProcessManagement::Kill(size_t PID, int Code) {
+void ProcessManager::Kill(size_t PID, int Code) {
+    UNUSED(Code);
     Process* target = Process::FromPID(PID);
     if (target == nullptr) {
         SerialPrintf("[ PROC] Attempted to kill invalid process %u\r\n", PID);
@@ -283,7 +307,7 @@ void ProcessManagement::Kill(size_t PID, int Code) {
     unlockProcess();
 }
 
-void ProcessManagement::Kill(int Code) {
+[[noreturn]] void ProcessManager::Kill(int Code) {
     lockProcess();
     __asm__ __volatile__("cli");
 
@@ -300,7 +324,7 @@ void ProcessManagement::Kill(int Code) {
         yield();
 }
 
-void ProcessManagement::NotifyAllCores() {
+void ProcessManager::NotifyAllCores() {
     if (Device::APIC::driver->GetCurrentCore() == 0) {
         for (size_t i = 0; i <= CoreCount; i++) {
             if (i != (size_t) Device::APIC::driver->GetCurrentCore())
@@ -309,13 +333,13 @@ void ProcessManagement::NotifyAllCores() {
     }
 }
 
-void ProcessManagement::MapThreadMemory(Process* proc, size_t from, size_t to, size_t length) {
+void ProcessManager::MapThreadMemory(Process* proc, size_t from, size_t to, size_t length) {
     for (size_t i = 0; i < length; i++) {
         MapVirtualPage(proc->GetHeader()->AddressSpace, from + (i * PAGE_SIZE), to + (i * PAGE_SIZE), 3);
     }
 }
 
-void ProcessManagement::GetStatus(size_t PID, int* ReturnVal, size_t* StatusVal) {
+void ProcessManager::GetStatus(size_t PID, int* ReturnVal, size_t* StatusVal) {
     for (size_t i = 0; i < deadProcesses.size(); i++) {
         if (deadProcesses[i].PID == PID) {
             *ReturnVal = deadProcesses[i].ReturnCode;
@@ -329,14 +353,14 @@ void ProcessManagement::GetStatus(size_t PID, int* ReturnVal, size_t* StatusVal)
     *ReturnVal = -250;
 }
 
-void ProcessManagement::SwitchContextInternal(Process* next) {
+void ProcessManager::SwitchContextInternal(Process* next) {
     // TODO: set TSS Stack
 
-    Core::GetCurrent()->AddressSpace = next->GetHeader()->AddressSpace;
+    Core::GetCore(Device::APIC::driver->GetCurrentCore())->AddressSpace = next->GetHeader()->AddressSpace;
     WriteControlRegister(3, FROM_DIRECT((size_t)next->GetHeader()->AddressSpace->PML4));
 }
 
-size_t ProcessManagement::SwitchContext(INTERRUPT_FRAME* frame, Process* NextProcess) {
+size_t ProcessManager::SwitchContext(INTERRUPT_FRAME* frame, Process* NextProcess) {
     if (locked)
         return (size_t) frame;
 
@@ -353,10 +377,14 @@ size_t ProcessManagement::SwitchContext(INTERRUPT_FRAME* frame, Process* NextPro
     }
 
     NextProcess->SetState(Process::PROCESS_RUNNING);
+    SerialPrintf("[ PROC] Switching to process %u (%s)\r\n", NextProcess->GetPID(), NextProcess->GetName());
     Process::SetCurrent(NextProcess);
     *frame = Process::Current()->GetHeader()->ContextFrame;
 
     // TODO: Load SSE context
+
+    // TODO: New process has 0 mappings, so triple faults.
+    // TODO: copy page tables?
     SwitchContextInternal(NextProcess);
 
     return NextProcess->GetHeader()->RSP;
@@ -385,4 +413,17 @@ bool Process::OwnsAddress(size_t Address, size_t Bytes) {
     }
 
     return true;
+}
+
+size_t ProcessManager::HandleRequest(size_t CPU) {
+    if (CPU == USE_CURRENT_CPU) {
+        return Device::APIC::driver->GetCurrentCore();
+    } else if (CPU == BALANCE_CPUS) {
+        lastSelectedCPU++;
+        if (lastSelectedCPU > CoreCount)
+            lastSelectedCPU = 0;
+        return lastSelectedCPU;
+    } else {
+        return CPU;
+    }
 }

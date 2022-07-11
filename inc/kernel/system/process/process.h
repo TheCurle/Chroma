@@ -15,6 +15,10 @@
 #define MAX_PROCESSES 128
 #define PROCESS_STACK 65535
 
+#define USE_CURRENT_CPU ((size_t)-1)
+#define BALANCE_CPUS ((size_t)-2)
+
+
 typedef void (* function_t)();
 
 /**
@@ -113,7 +117,7 @@ public:
             : User(Userspace), UniquePID(UPID), KernelPID(KPID), Entry(EntryPoint), ORS(false), Sleeping(0),
               LastMessage(0), ProcessMemory(new uint8_t[USERSPACE_MEM_SIZE / PAGE_SIZE / 8], USERSPACE_MEM_SIZE / PAGE_SIZE){
 
-        memcpy((void*) ProcessName, Name, strlen(Name) + 1);
+        memcpy((void*) Name, ProcessName, strlen(ProcessName) + 1);
         ProcessMemory.setFree(0, USERSPACE_MEM_SIZE / PAGE_SIZE);
     };
 
@@ -226,20 +230,15 @@ public:
  * 
  * Stuff like switching tasks, sleeping, killing, etc.
  */
-class ProcessManagement {
+class ProcessManager {
 public:
     TSS64 TSS[MAX_CORES];
     uint32_t CoreCount = 1;
 
-    ProcessManagement() {}
+    ProcessManager() {}
 
-    static ProcessManagement* instance;
-/*
-    void Wait();
+    static ProcessManager* instance;
 
-    void Initialize();
-
-*/
     // Sets internal data, such as the paging tables.
     void SwitchContextInternal(Process* next);
 
@@ -256,7 +255,7 @@ public:
     void GetStatus(size_t PID, int* ReturnVal, size_t* StatusVal);
 
     // Kill the current process with the given return code.
-    static void Kill(int Code);
+    [[noreturn]] static void Kill(int Code);
 
     // Kill the given process with the given return code.
     void Kill(size_t PID, int Code);
@@ -277,7 +276,7 @@ public:
     Process* CreateProcessInternal(const char* name, function_t entry, bool userspace);
 
     // Set up the process ready to run; will be made the active process if StartImmediately is set, or if there is no active process.
-    Process* InitProcess(function_t EntryPoint, bool StartImmediately, const char* Name, bool Userspace, size_t TargetCore, size_t argc, char** argv);
+    Process* CreateProcess(function_t EntryPoint, bool StartImmediately, const char* Name, bool Userspace, size_t TargetCore = USE_CURRENT_CPU, size_t argc = 0, char** argv = nullptr);
 
     // Initialize the data that a process needs to run.
     void InitProcessData(Process* proc, const char* name, bool userspace, char**argv, size_t argc, function_t entry);
@@ -288,16 +287,14 @@ public:
     // A helper for creating the kernel process with PID 0.
     void InitKernelProcess(function_t EntryPoint);
 
-
     // Set up paging for a new process
     void InitProcessPagetable(Process* proc, bool Userspace);
 
     // Set up architecture-specific data for a process. AARCH64 maybe?
     void InitProcessArch(Process* proc);
-    /*
 
+    // Deal with current CPU / CPU load balancing
     size_t HandleRequest(size_t CPU);
-    */
-    inline static void yield() { __asm __volatile("int 100"); }
 
+    inline static void yield() { __asm __volatile("int $100"); }
 };

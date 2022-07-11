@@ -226,6 +226,9 @@ void SetupIDT() {
     SetISR(46, (size_t) IRQ14Handler);
     SetISR(47, (size_t) IRQ15Handler);
 
+    SetISR(100, (size_t) IRQ100Handler);
+    SetISR(127, (size_t) IRQ127Handler);
+
     for (size_t i = 0; i < 32; i++) {
         IRQHandlers[i] = {{}, 0 };
     }

@@ -61,7 +61,7 @@ namespace ACPI {
         void PagingInit();
 
         // Prepare the RSDT for reading.
-        __attribute__((unused)) void Init(size_t RSDP);
+        void Init();
 
         // Find the table with the specified name.
         void* FindEntry(const char* Name);
