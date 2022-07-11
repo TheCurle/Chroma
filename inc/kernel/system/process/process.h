@@ -4,6 +4,7 @@
 #include <kernel/system/memory.h>
 #include <kernel/system/interrupts.h>
 #include <kernel/system/process/process.h>
+#include <lainlib/vector/bitmap.h>
 
 /************************
  *** Team Kitty, 2021 ***
@@ -23,6 +24,7 @@ typedef void (* function_t)();
  * Lots of private members, out of necessity
  */
 class Process {
+public:
     // Tells the scheduler, and system at large, what the current state of the process is
     enum ProcessState {
         PROCESS_AVAILABLE,  // Process is ready to be scheduled
@@ -64,8 +66,13 @@ class Process {
     // Its' stack and stack pointer, plus the page tables.
     struct ProcessHeader {
         uint8_t* Stack;
+        size_t StackSize;
+
         size_t RSP;
+        uint8_t* SSE;
+
         address_space_t* AddressSpace;
+        INTERRUPT_FRAME ContextFrame;
     };
 
 private:
@@ -93,8 +100,7 @@ private:
     ProcessMessage* Messages; // A queue of IPC messages.
     size_t LastMessage; // The index of the current message.
 
-    uint8_t* ProcessMemory;
-    size_t ProcessMemorySize;
+    lainlib::bitmap ProcessMemory;
 
     // TODO: Stack Trace & MFS
 
@@ -105,9 +111,10 @@ public:
 
     Process(const char* ProcessName, size_t KPID, size_t UPID, size_t EntryPoint, bool Userspace)
             : User(Userspace), UniquePID(UPID), KernelPID(KPID), Entry(EntryPoint), ORS(false), Sleeping(0),
-              LastMessage(0) {
+              LastMessage(0), ProcessMemory(new uint8_t[USERSPACE_MEM_SIZE / PAGE_SIZE / 8], USERSPACE_MEM_SIZE / PAGE_SIZE){
 
         memcpy((void*) ProcessName, Name, strlen(Name) + 1);
+        ProcessMemory.setFree(0, USERSPACE_MEM_SIZE / PAGE_SIZE);
     };
 
     Process(const Process &Instance) {
@@ -136,11 +143,11 @@ public:
         memcpy(Name, NewName, strlen(Name) > strlen(NewName) ? strlen(Name) : strlen(NewName));
     }
 
-    size_t* AllocateProcessSpace(size_t Bytes);
+    void* AllocateProcessSpace(size_t Bytes);
 
-    size_t FreeProcessSpace(size_t* Address, size_t Bytes);
+    size_t FreeProcessSpace(size_t Address, size_t Bytes);
 
-    bool OwnsAddress(size_t* Address, size_t Bytes);
+    bool OwnsAddress(size_t Address, size_t Bytes);
 
     /*************************************************************/
 
@@ -224,50 +231,73 @@ public:
     TSS64 TSS[MAX_CORES];
     uint32_t CoreCount = 1;
 
-    ProcessManagement();
+    ProcessManagement() {}
 
-    static ProcessManagement* instance();
-
+    static ProcessManagement* instance;
+/*
     void Wait();
 
     void Initialize();
 
-    void InitialiseCore(size_t APIC, size_t ID);
+*/
+    // Sets internal data, such as the paging tables.
+    void SwitchContextInternal(Process* next);
 
+    // Switch to the given process on the current core.
+    size_t SwitchContext(INTERRUPT_FRAME* frame, Process* NextProcess);
+
+    // Tell all cores to immediately switch context.
     void NotifyAllCores();
 
-    void DumpProcess(size_t PID);
+    // Map some pages into the given process' memory.
+    void MapThreadMemory(Process* proc, size_t from, size_t to, size_t length);
 
-    void LockProcess(size_t PID);
-
-    void UnlockProcess(size_t PID);
-
-    static void Sleep(size_t Count);
-
-    void Sleep(size_t Count, size_t PID);
-
-    static void Kill(int Code);
-
-    void Kill(size_t PID, int Code);
-
-    bool CheckLocked(size_t PID);
-
+    // Check what the process is up to.
     void GetStatus(size_t PID, int* ReturnVal, size_t* StatusVal);
 
-    // TODO: Process*
-    size_t SwitchContext(INTERRUPT_FRAME* CurrentFrame);
+    // Kill the current process with the given return code.
+    static void Kill(int Code);
 
-    void MapThreadMemory(size_t from, size_t to, size_t length);
+    // Kill the given process with the given return code.
+    void Kill(size_t PID, int Code);
 
-    void InitProcess(function_t EntryPoint, size_t argc, char** argv);
+    // Sleep the current process for the given number of milliseconds
+    static void Sleep(size_t Count);
 
+    // Sleep the given process for the given number of milliseconds
+    void Sleep(size_t Count, size_t PID);
+
+    // Called from an interrupt timer handler. Forces task scheduling to switch.
+    size_t SchedulerInterrupt(INTERRUPT_FRAME* CurrentFrame, bool ForceSwitch);
+
+    // Get the next process to run. If current is the ID of the current process, this will emulate round-robin scheduling.
+    Process* GetNextToRun(size_t current);
+
+    // Create a Process instance for the given data
+    Process* CreateProcessInternal(const char* name, function_t entry, bool userspace);
+
+    // Set up the process ready to run; will be made the active process if StartImmediately is set, or if there is no active process.
+    Process* InitProcess(function_t EntryPoint, bool StartImmediately, const char* Name, bool Userspace, size_t TargetCore, size_t argc, char** argv);
+
+    // Initialize the data that a process needs to run.
+    void InitProcessData(Process* proc, const char* name, bool userspace, char**argv, size_t argc, function_t entry);
+
+    // Create a process for the given function, with the given arguments.
+    Process* CreateProcess(function_t EntryPoint, size_t argc, char** argv);
+
+    // A helper for creating the kernel process with PID 0.
     void InitKernelProcess(function_t EntryPoint);
 
-    void InitProcessPagetable(bool Userspace);
 
-    void InitProcessArch();
+    // Set up paging for a new process
+    void InitProcessPagetable(Process* proc, bool Userspace);
+
+    // Set up architecture-specific data for a process. AARCH64 maybe?
+    void InitProcessArch(Process* proc);
+    /*
 
     size_t HandleRequest(size_t CPU);
+    */
+    inline static void yield() { __asm __volatile("int 100"); }
 
-    inline void yield() { __asm __volatile("int 100"); }
 };

@@ -65,7 +65,6 @@ void APIC::Init() {
 
     SerialPrintf("[ ACPI] Enabling APICs...\r\n");
 
-    SerialPrintf("[ ACPI] Memory Mapping APICs..\r\n");
     for (int i = 0; i < 3; i++) {
         MapVirtualPage(&KernelAddressSpace, (size_t) Address + i * PAGE_SIZE, (size_t) Address + i * PAGE_SIZE, 3);
     }
@@ -82,9 +81,7 @@ void APIC::Init() {
     WriteModelSpecificRegister(0x1B, (ReadModelSpecificRegister(0x1B) | 0x800) & ~(1 << 10));
     Enable();
 
-    SerialPrintf("[ ACPI] Enabling Global APIC..\r\n");
     IOAPICs = ACPI::MADT::instance->GetIOApicEntries();
-    SerialPrintf("[ ACPI] Enabling Interrupt Source Overrides..\r\n");
     ISOs = ACPI::MADT::instance->GetISOEntries();
 
     Ready = true;
@@ -140,8 +137,6 @@ void APIC::SetInternal(uint8_t Vector, uint32_t GSI, uint16_t Flags, int CoreID,
 
     temp |= (((size_t) Core::GetCore(CoreID)->LocalAPIC) << 56);
     uint32_t IORegister = (GSI - IOAPICs[target]->GSI) * 2 + 0x10;
-
-    SerialPrintf("[ APIC] Setting interrupt %u, redirect %u, on LAPIC %u(%u) of core %u, address 0x%p, register 0x%p, data 0x%p\r\n", GSI, Vector, Core::GetCore(CoreID)->LocalAPIC, target, CoreID, IOAPICs[target]->Address, IORegister, temp);
 
     WriteIO(IOAPICs[target]->Address, IORegister, (uint32_t) temp);
     WriteIO(IOAPICs[target]->Address, IORegister + 1, (uint32_t)(temp >> 32));

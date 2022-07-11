@@ -26,7 +26,7 @@ typedef struct {
     size_t NextTicket;
 } ticketlock_t;
 
-#define NEW_TICKETLOCK()  (ticketlock_t{0})
+#define NEW_TICKETLOCK()  (ticketlock_t{})
 
 void TicketLock(ticketlock_t* Lock);
 

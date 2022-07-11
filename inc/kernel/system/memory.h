@@ -153,6 +153,8 @@ extern "C" {
 
 #define LOWER_REGION        0x0000000100000000ull   // Lower Memory cutoff - 4GB
 
+#define USERSPACE_MEM_SIZE  0x00000000FFFF0000ull
+
 #define PAGE_SHIFT 12
 
 #define TO_DIRECT(addr) ((size_t)(addr) + DIRECT_REGION)
