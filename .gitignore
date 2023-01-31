@@ -10,6 +10,12 @@ CMakeFiles
 CMakeCache.txt
 .idea/
 
+*ninja*
+.cmake/
+Testing/
+*.log
+*exe*
+
 cmake_install.cmake
 
 temp/
