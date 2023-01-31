@@ -15,11 +15,11 @@ void Window::paint() {
 void windowing_init() {
     Frame frame = { (uint32_t*) &fb, bootldr.fb_width, bootldr.fb_height };
 
-    auto* win1 = new Window(10, 10, 300, 200, &frame);
-    auto* win2 = new Window(100, 150, 400, 400, &frame);
-    auto* win3 = new Window(200, 100, 200, 600, &frame);
+    auto* desktop = new Desktop(&frame);
 
-    win1->paint();
-    win2->paint();
-    win3->paint();
+    desktop->createWindow(10, 10, 300, 200);
+    desktop->createWindow(100, 150, 400, 400);
+    desktop->createWindow(200, 100, 200, 600);
+
+    desktop->paint();
 }

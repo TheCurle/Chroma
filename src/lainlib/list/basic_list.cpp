@@ -1,6 +1,5 @@
 #include <lainlib/list/list.h>
 
-
 void ListAdd(list_entry_t* Head, list_entry_t* New) {
     New->Next = Head->Next;
     New->Previous = Head;
