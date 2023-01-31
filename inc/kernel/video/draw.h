@@ -36,6 +36,11 @@ typedef struct {
     size_t      screenHeight;
 } PRINTINFO;
 
+struct Frame {
+    uint32_t* buffer;
+    uint32_t width, height;
+};
+
 extern PRINTINFO PrintInfo;
 
 void DrawPixel(size_t x, size_t y);
@@ -46,13 +51,13 @@ uint32_t GetForegroundColor();
 void SetBackgroundColor(uint32_t color);
 uint32_t GetBackgroundColor();
 
-void DrawLine(size_t x0, size_t y0, size_t x1, size_t y1);
+void DrawLine(Frame* f, size_t x0, size_t y0, size_t x1, size_t y1);
 
-void DrawFilledRect(size_t x, size_t y, size_t width, size_t height);
-void DrawLineRect(size_t x, size_t y, size_t width, size_t height, size_t thickness);
-void DrawFilledRoundedRect(size_t x, size_t y, size_t width, size_t height, size_t radius);
-void DrawLineRoundedRect(size_t x, size_t y, size_t width, size_t height, size_t radius);
+void DrawFilledRect(Frame* f, size_t x, size_t y, size_t width, size_t height, uint32_t color);
+void DrawLineRect(Frame* f, size_t x, size_t y, size_t width, size_t height, size_t thickness, uint32_t color);
+void DrawFilledRoundedRect(Frame* f, size_t x, size_t y, size_t width, size_t height, size_t radius, uint32_t color);
+void DrawLineRoundedRect(Frame* f, size_t x, size_t y, size_t width, size_t height, size_t radius, uint32_t color);
 
-void DrawFilledCircle(size_t centerX, size_t centerY, size_t radius);
-void DrawLineCircle(size_t centerX, size_t centerY, size_t radius);
-void DrawLineCircleCorners(size_t centerX, size_t centerY, size_t radius, char cornerMask);
+void DrawFilledCircle(Frame* f, size_t centerX, size_t centerY, size_t radius);
+void DrawLineCircle(Frame* f, size_t centerX, size_t centerY, size_t radius);
+void DrawLineCircleCorners(Frame* f, size_t centerX, size_t centerY, size_t radius, char cornerMask);

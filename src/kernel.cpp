@@ -5,6 +5,7 @@
 #include "kernel/system/acpi/madt.h"
 #include "driver/io/apic.h"
 #include "driver/io/ps2_keyboard.h"
+#include <windows/wds-core.h>
 
 /************************
  *** Team Kitty, 2020 ***
@@ -90,6 +91,8 @@ extern "C" int Main(void) {
     Device::PS2Keyboard::driver->Init();
 
     Core::Init();
+
+    windowing_init();
 
     for (;;) { }
 }

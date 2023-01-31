@@ -41,6 +41,10 @@ SET(src_files
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/storage/ata.cpp
 )
 
+SET(windowing_files
+        ${CMAKE_SOURCE_DIR}/src/windows/window.cpp
+)
+
 SET(lib_files
         ${CMAKE_SOURCE_DIR}/src/lainlib/list/basic_list.cpp
         ${CMAKE_SOURCE_DIR}/src/lainlib/mutex/ticketlock.cpp
@@ -78,6 +82,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(kernel)
 
-target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_files} PUBLIC ${src_no_sse} PUBLIC ${lib_files} PUBLIC ${src_epilogue})
+target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_files} PUBLIC ${src_no_sse} PUBLIC ${lib_files} PUBLIC ${windowing_files} PUBLIC ${src_epilogue})
 target_compile_options(kernel PRIVATE -ffreestanding -O0 -Wall -Wextra -Wall -Werror -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -fno-strict-aliasing $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti> -ggdb3)
 target_link_options(kernel PRIVATE -T ${CMAKE_SOURCE_DIR}/linker.ld -ffreestanding -O2 -nostdlib -nostartfiles -lgcc)

@@ -337,30 +337,41 @@ void DrawFilledCircleInternal(size_t centerX, size_t centerY, size_t radius, cha
 
 /** TODO: Move all of this into static DrawUtils:: functions */
 
-void DrawFilledRect(size_t x, size_t y, size_t width, size_t height) {
-    for (size_t i = y; i < y + height; i++)
-        DrawHorizontalLine(x, i, width);
+void DrawFilledRect(Frame* f, size_t x, size_t y, size_t width, size_t height, uint32_t color) {
+    uint32_t currentX;
+    uint32_t maxX = x + width;
+    uint32_t maxY = y + height;
+
+    if (maxX > f->width)
+        maxX = f->width;
+    if (maxY > f->height)
+        maxY = f->height;
+
+    for (; y < maxY; y++)
+        for (currentX = x; currentX < maxX; currentX++)
+            f->buffer[y * f->width + currentX] = color;
 }
 
-void DrawLineRect(size_t x, size_t y, size_t width, size_t height, size_t thickness) {
-    UNUSED(thickness);
+void DrawLineRect(Frame* f, size_t x, size_t y, size_t width, size_t height, size_t thickness, uint32_t color) {
+    UNUSED(thickness); UNUSED(f); UNUSED(color);
     DrawHorizontalLine(x, y, width);
     DrawHorizontalLine(x, y + height - 1, width);
     DrawVerticalLine(x, y, height);
     DrawVerticalLine(x + width - 1, y, height);
 }
 
-void DrawFilledRoundedRect(size_t x, size_t y, size_t width, size_t height, size_t radius) {
+void DrawFilledRoundedRect(Frame* f, size_t x, size_t y, size_t width, size_t height, size_t radius, uint32_t color) {
     size_t max_radius = ((width < height) ? width : height) / 2; // 1/2 minor axis
     if (radius > max_radius)
         radius = max_radius;
-    DrawFilledRect(x + radius, y, width - 2 * radius, height);
+    DrawFilledRect(f, x + radius, y, width - 2 * radius, height, color);
     // draw four corners
     DrawFilledCircleInternal(x + width - radius - 1, y + radius, radius, 1, height - 2 * radius - 1);
     DrawFilledCircleInternal(x + radius, y + radius, radius, 2, height - 2 * radius - 1);
 }
 
-void DrawLineRoundedRect(size_t x, size_t y, size_t width, size_t height, size_t radius) {
+void DrawLineRoundedRect(Frame* f, size_t x, size_t y, size_t width, size_t height, size_t radius, uint32_t color) {
+    UNUSED(color);
     size_t max_radius = ((width < height) ? width : height) / 2; // 1/2 minor axis
     if (radius > max_radius)
         radius = max_radius;
@@ -369,10 +380,10 @@ void DrawLineRoundedRect(size_t x, size_t y, size_t width, size_t height, size_t
     DrawVerticalLine(x, y + radius, height - 2 * radius);         // Left
     DrawVerticalLine(x + width - 1, y + radius, height - 2 * radius); // Right
     // draw four corners
-    DrawLineCircleCorners(x + radius, y + radius, radius, 1);
-    DrawLineCircleCorners(x + width - radius - 1, y + radius, radius, 2);
-    DrawLineCircleCorners(x + width - radius - 1, y + height - radius - 1, radius, 4);
-    DrawLineCircleCorners(x + radius, y + height - radius - 1, radius, 8);
+    DrawLineCircleCorners(f, x + radius, y + radius, radius, 1);
+    DrawLineCircleCorners(f, x + width - radius - 1, y + radius, radius, 2);
+    DrawLineCircleCorners(f, x + width - radius - 1, y + height - radius - 1, radius, 4);
+    DrawLineCircleCorners(f, x + radius, y + height - radius - 1, radius, 8);
 }
 
 void DrawLine(size_t x0, size_t y0, size_t x1, size_t y1) {
@@ -425,7 +436,8 @@ void DrawCircle(size_t centerX, size_t centerY, size_t radius) {
     }
 }
 
-void DrawLineCircleCorners(size_t centerX, size_t centerY, size_t radius, char cornerMask) {
+void DrawLineCircleCorners(Frame* fr, size_t centerX, size_t centerY, size_t radius, char cornerMask) {
+    UNUSED(fr);
     int f = 1 - radius;
     size_t ddF_x = 1;
     size_t ddF_y = -2 * radius;
