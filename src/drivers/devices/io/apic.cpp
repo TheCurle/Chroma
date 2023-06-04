@@ -48,8 +48,10 @@ void APIC::WriteRegister(uint32_t Register, uint32_t Data) {
 }
 
 void APIC::Enable() {
+    WriteRegister(0x80, 0);
     // Set the correct bits in the SIVR register. The Local APIC will be enabled.
-    WriteRegister(Registers::SIVR, ReadRegister(Registers::SIVR) | 0x100);
+    WriteRegister(Registers::SIVR, ReadRegister(Registers::SIVR) | 0x1FF);
+    WriteRegister(Registers::REG_UNK, 0xFFFFFFFF);
 }
 
 void APIC::SendEOI() {
@@ -79,32 +81,6 @@ void APIC::Init() {
         for (;;) { }
     }
 
-    // Remap PICs
-
-#define PIC1		0x20		/* IO base address for master PIC */
-#define PIC2		0xA0		/* IO base address for slave PIC */
-#define PIC1_COMMAND	PIC1
-#define PIC1_DATA	(PIC1+1)
-#define PIC2_COMMAND	PIC2
-#define PIC2_DATA	(PIC2+1)
-#define ICW1_ICW4	0x01		/* Indicates that ICW4 will be present */
-#define ICW1_INIT	0x10		/* Initialization - required! */
-
-#define ICW4_8086	0x01		/* 8086/88 (MCS-80/85) mode */
-
-    WritePort(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4, 1);  // starts the initialization sequence (in cascade mode)
-    WritePort(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4, 1);
-    WritePort(PIC1_DATA, 0xF0, 1);                 // ICW2: Master PIC vector offset
-    WritePort(PIC2_DATA, 0xF0, 1);                 // ICW2: Slave PIC vector offset
-    WritePort(PIC1_DATA, 4, 1);                       // ICW3: tell Master PIC t
-    WritePort(PIC2_DATA, 2, 1);                       // ICW3: tell Slave PIC it
-
-    WritePort(PIC1_DATA, ICW4_8086, 1);               // ICW4: have the PICs use 8086 mode (and not
-    WritePort(PIC2_DATA, ICW4_8086, 1);
-
-    // Disable PIC1 and 2
-    WritePort(0xA1, 0xFF, 1);
-    WritePort(0x21, 0xFF, 1);
     // Write "Local APIC Enabled" to the APIC Control Register.
     WriteModelSpecificRegister(0x1B, (ReadModelSpecificRegister(0x1B) | 0x800) & ~(1 << 10));
     Enable();
@@ -135,11 +111,8 @@ void APIC::Init() {
         SerialPrintf("[ APIC] \t%s triggered.\r\n", ISOs[i]->Flags & 0x100 ? "Edge" : "Level");
     }
 
-    Ready = true;
 
-    SerialPrintf("[ APIC] Testing LAPIC.. Sending an IRQ 5.\r\n");
-    WriteRegister(ICR2, ReadRegister(LAPIC_ID) << 24);
-    WriteRegister(ICR1, 5);
+    Ready = true;
 }
 
 uint32_t APIC::GetMaxRedirect(uint32_t ID) {

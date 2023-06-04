@@ -50,6 +50,7 @@ namespace Device {
         enum Registers {
             LAPIC_ID = 0x20, // ID of the APIC
             EOI = 0xB0,      // Acknowledge
+            REG_UNK = 0xE0,
             SIVR = 0xF0,     // Spurious Interrupt Vector Register
             ICR1 = 0x300,    // Interrupt Command Register Lower
             ICR2 = 0x310,    // Interrupt Command Register Higher

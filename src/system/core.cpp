@@ -30,6 +30,9 @@ void InitPIC() {
 
     WritePort(0x21, 0xFF, 1);
     WritePort(0xA1, 0xFF, 1);
+
+    WritePort(0x22, 0x70, 1);
+    WritePort(0x23, 0x01, 1);
 }
 
 extern "C" [[noreturn]] void initcpu() {
