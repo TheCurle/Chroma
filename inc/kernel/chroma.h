@@ -71,6 +71,7 @@ void WriteStringWithFont(const char* string);
 
 void InitSerial();
 void InitPrint();
+void InitPIC();
 
 void SetupInitialGDT();
 void SetupIDT();

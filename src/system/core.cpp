@@ -14,6 +14,24 @@ Core* Core::Processors[Constants::Core::MAX_CORES];
 TSS64 Tasks[Constants::Core::MAX_CORES];
 ACPI::MADT::LAPICEntry* LAPICs[Constants::Core::MAX_CORES];
 
+void InitPIC() {
+    SerialPrintf("[  CPU] Disabling 8259 PICs\n");
+    WritePort(0x20, 0x11, 1);
+    WritePort(0xA0, 0x11, 1);
+
+    WritePort(0x21, 0xE0, 1);
+    WritePort(0xA1, 0xE8, 1);
+
+    WritePort(0x21, 0x4, 1);
+    WritePort(0xA1, 0x2, 1);
+
+    WritePort(0x21, 0x1, 1);
+    WritePort(0xA1, 0x1, 1);
+
+    WritePort(0x21, 0xFF, 1);
+    WritePort(0xA1, 0xFF, 1);
+}
+
 extern "C" [[noreturn]] void initcpu() {
     // Init APIC
     WriteModelSpecificRegister(0x1B, (ReadModelSpecificRegister(0x1B) | 0x800) & ~(1 << 10));
@@ -37,6 +55,7 @@ Core::Core(size_t APIC, size_t ID) {
     //SetupData(ID);
 
     Device::APIC::driver->InitializeCore(APIC, reinterpret_cast<size_t>(initcpu));
+    __asm__ __volatile__("mov %%fs, %0" : : "r" (Device::APIC::driver->GetCurrentCore()) : );
 
     while (!Ready) {
         __asm__ __volatile__ ("nop");
@@ -71,7 +90,7 @@ void Core::Init() {
         // Check for a LAPIC record (which indicates a unique physical core)
         if (table->Type == MADT::Type::LAPIC) {
             // Find the data for the LAPIC with a reinterpret
-            MADT::LAPICEntry* lapic = reinterpret_cast<MADT::LAPICEntry*>(table);
+            auto* lapic = reinterpret_cast<MADT::LAPICEntry*>(table);
 
             // Set the current ID
             LAPICs[Cores] = lapic;
@@ -109,7 +128,7 @@ void Core::StackTrace(size_t Cycles) {
 
     __asm__ __volatile__ ("mov %%rbp, %[dest]" : [dest] "=r"(stack) : :);
     SerialPrintf("[Trace] Beginning stack trace. RBP is currently 0x%p\r\n", stack);
-    for (size_t frame = 0; stack != 0 && frame < Cycles; ++frame) {
+    for (size_t frame = 0; stack != nullptr && frame < Cycles; ++frame) {
         SerialPrintf("[Trace] (%d) 0x%p:  0x%p \r\n", frame, stack->rbp, stack->rip);
         stack = stack->rbp;
     }

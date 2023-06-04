@@ -40,7 +40,7 @@ namespace Device {
         IOAPICMeta* Meta;
 
         // The internal implementation of Set. Handles raw redirects at the hardware level.
-        void SetInternal(uint8_t Vector, uint32_t TargetGSI, uint16_t Flags, int Core, int Status);
+        void SetInternal(uint8_t Vector, uint32_t TargetGSI, uint16_t Flags, size_t Core, int Status);
 
     public:
 
@@ -81,12 +81,12 @@ namespace Device {
         // Set the APICs ready for use.
         void Enable();
         // Check whether the APICs are ready for use.
-        bool IsReady();
+        bool IsReady() const;
 
         // Prepare a core for use with interrupts.
-        void PreinitializeCore(int Core);
+        void PreinitializeCore(size_t Core);
         // Set a core as available to use interrupts.
-        void InitializeCore(int Core, size_t EntryPoint);
+        void InitializeCore(size_t Core, size_t EntryPoint);
 
         // Check what core ID is currently running.
         int GetCurrentCore();
@@ -98,18 +98,17 @@ namespace Device {
         void WriteIO(size_t Base, uint32_t Register, uint32_t Data) override;
 
         // Send a specified interrupt to another core.
-        void SendInterCoreInterrupt(int Core, uint32_t Interrupt);
+        void SendInterCoreInterrupt(size_t Core, uint32_t Interrupt);
         // Tell the APIC that the interrupt is acknowledged. EOI = End Of Interrupt.
         void SendEOI();
 
         // Tell the APIC that the specified IRQ should come to this core.
-        void Set(int Core, uint8_t IRQ, int status);
+        void Set(size_t Core, uint8_t IRQ, int status);
 
         // Write data into an inter-core interrupt.
         void WriteICI(size_t Data);
     
         // Check what the maximum allowed interrupt redirect is.
         uint32_t GetMaxRedirect(uint32_t APIC);
-
     };
 };

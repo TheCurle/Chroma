@@ -255,7 +255,7 @@ public:
     void GetStatus(size_t PID, int* ReturnVal, size_t* StatusVal);
 
     // TODO: Process*
-    size_t SwitchContext(INTERRUPT_FRAME* CurrentFrame);
+    size_t SwitchContext(InterruptFrame* CurrentFrame);
 
     void MapThreadMemory(size_t from, size_t to, size_t length);
 

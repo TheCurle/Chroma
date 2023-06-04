@@ -33,14 +33,6 @@ typedef struct __attribute__((packed)) {
 } IDT_GATE;
 
 typedef struct __attribute__((packed)) {
-    uint16_t    BaseLow;
-    uint16_t    SegmentSelector;
-    uint8_t     ISTAndZero;
-    uint8_t     Misc;
-    uint16_t    BaseHigh;
-} IDT_ENTRY;
-
-typedef struct __attribute__((packed)) {
     uint16_t    SegmentLimitLow;
     uint16_t    BaseLow;
     uint8_t     BaseMid1;

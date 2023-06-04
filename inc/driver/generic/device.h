@@ -134,7 +134,7 @@ namespace Device {
         virtual void Init() = 0;
 
         // This is an internal register device.
-        DeviceType GetType() const final {
+        DeviceType GetType() const {
             return DeviceType::INTERNAL;
         }
 

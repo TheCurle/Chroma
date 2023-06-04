@@ -106,7 +106,7 @@ Device::PS2Keyboard* Device::PS2Keyboard::driver;
 
 using namespace Device;
 
-void IRQRedirect(INTERRUPT_FRAME* irq) {
+void IRQRedirect(InterruptFrame* irq) {
     UNUSED(irq);
     PS2Keyboard::driver->InterruptHandler();
 }
@@ -135,8 +135,8 @@ void PS2Keyboard::Init() {
     Device::RegisterDevice(this);
     buffer.reserve(100);
 
-    for (size_t idx = 0; idx < 128; idx++) {
-        keyStates[idx] = false;
+    for (bool& keyState : keyStates) {
+        keyState = false;
     }
 
     InstallIRQ(1, IRQRedirect);

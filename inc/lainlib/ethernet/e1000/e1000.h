@@ -174,7 +174,7 @@ void E1000Init(e1000_device_t* Device, pci_device_t* PCIHeader);
 // Initialise and start the driver
 void E1000Startup(e1000_device_t* Device);
 // Handle an interrupt received from the card
-void E1000InterruptFired(INTERRUPT_FRAME* InterruptContext);
+void E1000InterruptFired(InterruptFrame* InterruptContext);
 // Get the E1000's MAC address
 uint8_t* E1000GetMAC(e1000_device_t* Device);
 // Send a packet

@@ -5,6 +5,7 @@
 #include "kernel/system/acpi/madt.h"
 #include "driver/io/apic.h"
 #include "driver/io/ps2_keyboard.h"
+#include "driver/io/ps2_mouse.h"
 #include <windows/wds-core.h>
 
 /************************
@@ -30,11 +31,6 @@ int InternalBufferID;
 
 size_t BufferLength = 0;
 char* InternalBuffer;
-
-/**
- * C++ code! Scary!
- * This is a temporary measure to experiment with the Editor system.
- */
 
 extern "C" int Main(void) {
     KernelAddressSpace.Lock.NextTicket = 0;
@@ -73,14 +69,14 @@ extern "C" int Main(void) {
     InternalBuffer = (char*) kmalloc(4096);
     SerialPrintf("[  Mem] Allocated a text buffer at 0x%p\r\n", (size_t) InternalBuffer);
 
-    Printf("\\${FF0000}C\\${<green>}h\\${<blue>}r\\${FFFF00}o\\${FF00FF}m\\${FFFF}a ");
+    Printf(R"(\${FF0000}C\${<green>}h\${<blue>}r\${FFFF00}o\${FF00FF}m\${FFFF}a )");
     Printf("\\${FFFFFF}T\\${AAAA}i\\${BBBBBB}m\\${<forgeb>}e\\${<forgey>}!\n");
 
     SetForegroundColor(0x00FFFFFF);
 
-
     Device::APIC::driver = new Device::APIC();
     Device::PS2Keyboard::driver = new Device::PS2Keyboard();
+    //Device::PS2Mouse::driver = new Device::PS2Mouse();
 
     ACPI::RSDP::instance->Init(0);
     ACPI::MADT::instance->Init();
@@ -88,13 +84,20 @@ extern "C" int Main(void) {
     Core::PreInit();
 
     Device::APIC::driver->Init();
-    Device::PS2Keyboard::driver->Init();
 
     Core::Init();
 
-    windowing_init();
+    Device::PS2Keyboard::driver->Init();
+    //windowing_init();
+    //Device::PS2Mouse::driver->Init();
 
-    for (;;) { }
+    //asm("int $33");
+    //asm("int $40");
+    //asm("int $44");
+
+    //Frame f {reinterpret_cast<uint32_t *>(&fb), bootldr.fb_width, bootldr.fb_height };
+    //for (;;) { DrawFilledRect(&f, Device::PS2Mouse::driver->getX(), Device::PS2Mouse::driver->getY(), 4, 4, 0xFFFFFFFF); }
+    for (;;) { asm("hlt"); };
 }
 
 /*

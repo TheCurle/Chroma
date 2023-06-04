@@ -5,17 +5,23 @@ SET(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 set(CMAKE_CXX_COMPILER x86_64-elf-g++)
 set(CMAKE_C_COMPILER x86_64-elf-gcc)
+set(CMAKE_ASM_COMPILER nasm)
+set(CMAKE_ASM_NASM_SOURCE_FILE_EXTENSIONS ${CMAKE_ASM_NASM_SOURCE_FILE_EXTENSIONS} s S)
 
 # cheat the compile test
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 SET(CMAKE_SYSTEM_NAME Generic)
 SET(CMAKE_CROSSCOMPILING 1)
 
-enable_language(ASM)
+enable_language(ASM_NASM)
 enable_language(C)
 enable_language(CXX)
 
-project(chroma)
+set(CMAKE_ASM_NASM_OBJECT_FORMAT elf64)
+set(CMAKE_ASM_NASM_COMPILE_OBJECT "<CMAKE_ASM_NASM_COMPILER> <INCLUDES> \
+    <FLAGS> -f ${CMAKE_ASM_NASM_OBJECT_FORMAT} -o <OBJECT> <SOURCE>")
+
+project(chroma C CXX ASM_NASM)
 
 SET(src_files
         ${CMAKE_SOURCE_DIR}/src/kernel.cpp
@@ -26,6 +32,7 @@ SET(src_files
         ${CMAKE_SOURCE_DIR}/src/system/rw.cpp
         ${CMAKE_SOURCE_DIR}/src/system/serial.cpp
         ${CMAKE_SOURCE_DIR}/src/system/pci.cpp
+        ${CMAKE_SOURCE_DIR}/src/system/interrupts.cpp
         ${CMAKE_SOURCE_DIR}/src/system/acpi/MADT.cpp
         ${CMAKE_SOURCE_DIR}/src/system/acpi/RSDP.cpp
         ${CMAKE_SOURCE_DIR}/src/system/memory/paging.cpp
@@ -37,6 +44,7 @@ SET(src_files
         ${CMAKE_SOURCE_DIR}/src/drivers/elf.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/devices.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/io/ps2_keyboard.cpp
+        ${CMAKE_SOURCE_DIR}/src/drivers/devices/io/ps2_mouse.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/io/apic.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/storage/ata.cpp
 )
@@ -53,15 +61,12 @@ SET(lib_files
         ${CMAKE_SOURCE_DIR}/src/lainlib/vector/vector.cpp
 )
 
-include_directories("inc" "D:/mingw/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++" "D:/mingw/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32")
-
-SET(src_no_sse
-        ${CMAKE_SOURCE_DIR}/src/system/interrupts.cpp
-)
+include_directories("inc")
 
 SET(src_as
-        ${CMAKE_SOURCE_DIR}/src/global/core-att.s
-        )
+        #${CMAKE_SOURCE_DIR}/src/global/core-att.s
+        ${CMAKE_SOURCE_DIR}/src/global/interrupt.s
+)
 
 SET(src_preamble
         ${CMAKE_SOURCE_DIR}/src/global/crt0.o
@@ -76,12 +81,16 @@ set(src_epilogue
         ${CMAKE_SOURCE_DIR}/src/assets/zerosharp.o
 )
 
-set_property(SOURCE ${src_no_sse} PROPERTY COMPILE_FLAGS -mgeneral-regs-only)
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(kernel)
 
-target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_files} PUBLIC ${src_no_sse} PUBLIC ${lib_files} PUBLIC ${windowing_files} PUBLIC ${src_epilogue})
-target_compile_options(kernel PRIVATE -ffreestanding -O0 -Wall -Wextra -Wall -Werror -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -fno-strict-aliasing $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti> -ggdb3)
+set_source_files_properties(${src_as} PROPERTIES LANGUAGE ASM_NASM)
+target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_as} PUBLIC ${src_files} PUBLIC ${lib_files} PUBLIC ${windowing_files} PUBLIC ${src_epilogue})
+target_compile_options(kernel PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:-ffreestanding -O0 -Wall -Wextra -Wall -Werror -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -fno-strict-aliasing $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti> -ggdb3>)
 target_link_options(kernel PRIVATE -T ${CMAKE_SOURCE_DIR}/linker.ld -ffreestanding -O2 -nostdlib -nostartfiles -lgcc)
+
+add_custom_command(TARGET kernel
+        POST_BUILD
+        COMMAND "C:/Program Files/Git/bin/sh" -l post.sh
+)
