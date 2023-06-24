@@ -12,30 +12,7 @@
 /* This file contains all of the ISR and IRQ
  * (Interrupt Service Request) functions.
  *
- * As they use the GCC interrupt attribute,
- * this file must be compiled without red-
- * zone protection, thus all of these
- * functions are in their own file to
- * accomodate this.
- *
- * Additionally, the kernel now has SSE/AVX support.
- * So this file and this file *alone* must be compiled with
- * -mgeneral-regs-only
- *
- * Calling a function like so:
- *
- * __attribute__((interrupt)) isr1(registers_t* frame) {}
- *
- * allows the function to be used to serve
- * interrupts - GCC compiles it under unique
- * conditions, as it preserves the state of
- * the processor and stack between execution,
- * as well as using the IRET instruction to
- * return to the middle of the previous function.
- *
- * There is also a version of the interrupt
- * attribute which allows for error handlers,
- * these having a size_t input as an error code.
+ * They are generated with a NASM macro in the global/interrupts.s file, with InterruptsCommon as the entry point.
  */
 
 #ifdef __cplusplus
