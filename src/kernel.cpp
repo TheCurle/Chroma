@@ -3,6 +3,7 @@
 #include "kernel/system/acpi/rsdt.h"
 #include "kernel/system/acpi/madt.h"
 #include "driver/io/apic.h"
+#include "driver/io/ps2_keyboard.h"
 
 /************************
  *** Team Kitty, 2020 ***
@@ -43,6 +44,7 @@ extern "C" int Main(void) {
     KernelLoaded = true;
 
     Device::APIC::driver = new Device::APIC();
+    Device::PS2Keyboard::driver = new Device::PS2Keyboard();
     ACPI::RSDP::instance->Init(0);
     ACPI::MADT::instance->Init();
 
@@ -50,6 +52,9 @@ extern "C" int Main(void) {
     Device::APIC::driver->Init();
     Core::Init();
 
+    Device::PS2Keyboard::driver->Init();
+
+    Device::APIC::driver->SendInterCoreInterrupt(0, 33);
 
     for (;;) { asm("hlt"); };
 }

@@ -40,11 +40,11 @@ uint32_t APIC::ReadIO(size_t Base, uint32_t Register) {
 }
 
 uint32_t APIC::ReadRegister(uint32_t Register) {
-    return *((volatile uint32_t*) ((size_t*) Address + Register));
+    return *((volatile uint32_t*) ((uintptr_t) Address + Register));
 }
 
 void APIC::WriteRegister(uint32_t Register, uint32_t Data) {
-    *((volatile uint32_t*) ((size_t*) Address + Register)) = Data;
+    *((volatile uint32_t*) ((uintptr_t) Address + Register)) = Data;
 }
 
 void APIC::Enable() {

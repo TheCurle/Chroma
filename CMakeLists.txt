@@ -41,6 +41,7 @@ SET(src_files
         ${CMAKE_SOURCE_DIR}/src/system/extern/extern_defs.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/devices.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/io/apic.cpp
+        ${CMAKE_SOURCE_DIR}/src/drivers/devices/io/ps2_keyboard.cpp
 )
 
 SET(lib_files
