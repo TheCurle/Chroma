@@ -176,10 +176,8 @@ void InitMemoryManager() {
 }
 
 
-void ListMemoryMap() {
-
+void ProcessMemoryMap() {
     SerialPrintf("[  Mem] BIOS-Provided memory map:\r\n");
-
 
     for (MMapEnt* MapEntry = &bootldr.mmap; (size_t) MapEntry < (size_t) &bootldr + bootldr.size; MapEntry++) {
         char EntryType[8] = {0};

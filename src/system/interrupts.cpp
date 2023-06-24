@@ -162,7 +162,6 @@ void InitInterrupts() {
         WriteControlRegister('f', RFLAGS | (1 << 9));
     }
 
-    InitPIC();
     __asm__ __volatile__("sti");
 }
 

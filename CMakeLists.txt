@@ -31,7 +31,6 @@ SET(src_files
         ${CMAKE_SOURCE_DIR}/src/system/core.cpp
         ${CMAKE_SOURCE_DIR}/src/system/rw.cpp
         ${CMAKE_SOURCE_DIR}/src/system/serial.cpp
-        ${CMAKE_SOURCE_DIR}/src/system/pci.cpp
         ${CMAKE_SOURCE_DIR}/src/system/interrupts.cpp
         ${CMAKE_SOURCE_DIR}/src/system/acpi/MADT.cpp
         ${CMAKE_SOURCE_DIR}/src/system/acpi/RSDP.cpp
@@ -39,32 +38,20 @@ SET(src_files
         ${CMAKE_SOURCE_DIR}/src/system/memory/abstract_allocator.cpp
         ${CMAKE_SOURCE_DIR}/src/system/memory/liballoc.cpp
         ${CMAKE_SOURCE_DIR}/src/system/memory/physmem.c
-        ${CMAKE_SOURCE_DIR}/src/system/process/process.cpp
         ${CMAKE_SOURCE_DIR}/src/system/extern/extern_defs.cpp
-        ${CMAKE_SOURCE_DIR}/src/drivers/elf.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/devices.cpp
-        ${CMAKE_SOURCE_DIR}/src/drivers/devices/io/ps2_keyboard.cpp
-        ${CMAKE_SOURCE_DIR}/src/drivers/devices/io/ps2_mouse.cpp
         ${CMAKE_SOURCE_DIR}/src/drivers/devices/io/apic.cpp
-        ${CMAKE_SOURCE_DIR}/src/drivers/devices/storage/ata.cpp
-)
-
-SET(windowing_files
-        ${CMAKE_SOURCE_DIR}/src/windows/window.cpp
 )
 
 SET(lib_files
         ${CMAKE_SOURCE_DIR}/src/lainlib/list/basic_list.cpp
         ${CMAKE_SOURCE_DIR}/src/lainlib/mutex/ticketlock.cpp
-        ${CMAKE_SOURCE_DIR}/src/lainlib/compression/lzgmini.c
         ${CMAKE_SOURCE_DIR}/src/lainlib/string/str.cpp
-        ${CMAKE_SOURCE_DIR}/src/lainlib/vector/vector.cpp
 )
 
 include_directories("inc")
 
 SET(src_as
-        #${CMAKE_SOURCE_DIR}/src/global/core-att.s
         ${CMAKE_SOURCE_DIR}/src/global/interrupt.s
 )
 
@@ -86,7 +73,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 add_executable(kernel)
 
 set_source_files_properties(${src_as} PROPERTIES LANGUAGE ASM_NASM)
-target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_as} PUBLIC ${src_files} PUBLIC ${lib_files} PUBLIC ${windowing_files} PUBLIC ${src_epilogue})
+target_sources(kernel PUBLIC ${src_preamble} PUBLIC ${src_as} PUBLIC ${src_files} PUBLIC ${lib_files} PUBLIC ${src_epilogue})
 target_compile_options(kernel PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:-ffreestanding -O0 -Wall -Wextra -Wall -Werror -fPIC -fno-exceptions -fno-omit-frame-pointer -mno-red-zone -fno-stack-protector -fno-strict-aliasing $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti> -ggdb3>)
 target_link_options(kernel PRIVATE -T ${CMAKE_SOURCE_DIR}/linker.ld -ffreestanding -O2 -nostdlib -nostartfiles -lgcc)
 

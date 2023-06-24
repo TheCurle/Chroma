@@ -251,7 +251,7 @@ extern size_t end;
 extern "C" {
 #endif
 
-void        ListMemoryMap();
+void        ProcessMemoryMap();
 
 void        InitMemoryManager();
 

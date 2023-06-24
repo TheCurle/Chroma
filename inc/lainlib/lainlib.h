@@ -15,11 +15,4 @@
 
 #include <lainlib/mutex/spinlock.h>
 #include <lainlib/mutex/ticketlock.h>
-
-#include <lainlib/string/str.h>
-
-#include <lainlib/compression/lzg.h>
-
-#ifdef __cplusplus
-#include <lainlib/vector/vector.h>
-#endif
+#include <lainlib/string/string.h>

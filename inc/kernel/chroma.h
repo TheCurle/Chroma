@@ -19,14 +19,12 @@
 #include <kernel/boot/boot.h>
 #include <kernel/system/io.h>
 #include <kernel/system/memory.h>
-#include <kernel/system/pci.h>
 
 #ifdef __cplusplus
   #include <kernel/system/core.hpp>
 #endif
 
 #include <lainlib/lainlib.h>
-#include <lainlib/ethernet/e1000/e1000.h>
 
 extern size_t LoadAddr;
 extern bootinfo bootldr;
@@ -35,11 +33,7 @@ extern uint8_t fb;
 extern volatile unsigned char _binary_src_assets_font_psf_start;
 extern volatile size_t* _kernel_text_start;
 
-extern int sharp_entryPoint();
-
 extern address_space_t KernelAddressSpace;
-
-extern e1000_device_t* E1000NIC;
 
 typedef struct {
     uint32_t magic;
@@ -61,16 +55,11 @@ extern size_t FreeMemorySize;
 extern size_t FullMemorySize;
 
 
-void SetupExtensions();
 void PrepareCPU();
 
 void WriteString(const char* string);
 void WriteChar(const char character);
 
-void WriteStringWithFont(const char* string);
-
-void InitSerial();
-void InitPrint();
 void InitPIC();
 
 void SetupInitialGDT();

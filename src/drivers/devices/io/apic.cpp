@@ -137,6 +137,12 @@ void APIC::InitializeCore(size_t Core, size_t EntryPoint) {
     WriteRegister(Registers::ICR1, 0x600 | ((uint32_t) (EntryPoint / PAGE_SIZE)));
 }
 
+void APIC::SendInterCoreInterrupt(size_t Core, uint32_t Interrupt) {
+    size_t InterruptNumber = (1 << 14) | Interrupt;
+    WriteRegister(Registers::ICR2, (Core << 24));
+    WriteRegister(Registers::ICR1, InterruptNumber);
+}
+
 void APIC::SetInternal(uint8_t Vector, uint32_t irq, uint16_t Flags, size_t CoreID, int Status) {
 
     size_t temp = Vector;

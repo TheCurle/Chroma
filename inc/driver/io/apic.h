@@ -8,7 +8,6 @@
  ***********************/
 
 namespace Device {
-
     /**
      * Contains the driver definition for the Advanced Programmable Interrupt Controller - APIC.
      * Each processor core contains at least one APIC, and they have a unique identifier,
